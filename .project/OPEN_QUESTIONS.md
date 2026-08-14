@@ -2,20 +2,6 @@
 
 Updated: 2026-08-14
 
-## GitHub publication target
-
-The repository has no `origin` and no GitHub publication history. Before the first
-push, confirm the exact authenticated `owner/repository`, private visibility,
-`main` as the branch, and permission to upload the complete committed history.
-Under the current memory-only policy that history contains only the scoped project
-memory commits; all other local files remain untracked and local.
-
-Why it matters: creating or selecting the wrong remote is an external change, and
-the first push must not silently broaden the publication payload.
-
-Known option: derive a private repository name from the project directory after
-checking the authenticated GitHub account and exact-name availability.
-
 ## Dashboard visual gate
 
 The information architecture and data requirements are specified, but the final

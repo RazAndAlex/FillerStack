@@ -12,6 +12,8 @@
 - Captured the current M10/dashboard state, active architectural decisions,
   publication boundary, known limitations, and next priorities from source,
   specs, handoffs, ADRs, and tests present in the working directory.
+- Created the private GitHub repository `RazAndAlex/PLC-Sim-V`, configured
+  `origin`, and pushed `main` with upstream tracking.
 
 ### Why
 
@@ -31,13 +33,12 @@ generated data, screenshots, local database state, or private review evidence.
   tests passed; 65 pipeline tests passed with one warning; M9 and M10 acceptance
   checks exited successfully on 2026-08-13. The newer OEE backend remains to be
   rerun in the locked environment.
+- The initial memory commit `5ba964c` was pushed successfully to
+  `origin/main`; repository visibility was verified as private.
 
 ### Remaining
 
-- Validate and commit only the five intended memory files.
-- Verify GitHub CLI authentication and determine the exact private repository
-  target.
-- Obtain explicit first-push confirmation for the exact owner/name, visibility,
-  branch, and complete committed-history payload.
-- After publication, record the canonical remote in memory and push the small
-  follow-up commit.
+- Validate and publish the small memory follow-up that records the canonical
+  repository.
+- Keep every unrelated untracked project file local unless the publication policy
+  is explicitly broadened in a future request.

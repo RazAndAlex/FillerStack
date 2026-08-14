@@ -10,11 +10,11 @@ virtual PLC, cycle validation, telemetry, analytics, machine-learning inference,
 and an IIoT path. Ground truth remains separate from every operational input used
 by the virtual PLC or ML.
 
-Canonical GitHub repository: not configured yet. The local Git repository was
-initialized on `main` on 2026-08-14 and currently follows a memory-only
-publication policy: project source, datasets, generated outputs, screenshots,
-issue evidence, and local infrastructure state are not part of the intended
-memory commit.
+Canonical GitHub repository: `RazAndAlex/PLC-Sim-V`, private,
+<https://github.com/RazAndAlex/PLC-Sim-V>. Local `main` tracks `origin/main`.
+The repository follows a memory-only publication policy: project source,
+datasets, generated outputs, screenshots, issue evidence, and local
+infrastructure state are not part of the published history.
 
 ## Current objective and milestone
 
