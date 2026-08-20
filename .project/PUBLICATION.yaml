@@ -1,0 +1,15 @@
+protocol: PROJECT_MEMORY_V1
+mode: full-source
+repository:
+  visibility: private
+  name: RazAndAlex/PLC-Sim-V
+publication:
+  include:
+    - ".project/**"
+    - "AGENTS.md"
+  exclude:
+    - ".review/**"
+    - ".scratch/**"
+    - "work/**"
+    - "data/**"
+    - "edge/postgres/**"

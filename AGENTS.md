@@ -22,3 +22,11 @@ handoff, then verify the relevant claims against the actual code, issue files,
 ADRs, and Git state. After meaningful work, update the memory files affected by
 the change; do not record secrets, private raw evidence, generated data, or
 unsupported assumptions.
+
+<!-- BEGIN PROJECT_MEMORY_V1 -->
+## Project memory
+
+Before substantial work, read `.project/OVERVIEW.md`, `.project/STATE.md`, relevant entries in `.project/DECISIONS.md`, and `.project/OPEN_QUESTIONS.md`. Inspect the implementation and Git state because memory is a navigational summary.
+
+After substantial work, update material state, append a concise `.project/RECENT_WORK.md` entry, record durable decisions, and resolve or add open questions. Add task contracts, receipts, or review handoffs only when they materially help another agent continue.
+<!-- END PROJECT_MEMORY_V1 -->

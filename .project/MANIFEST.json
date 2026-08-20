@@ -1,0 +1,56 @@
+{
+  "directories": [
+    ".project/receipts",
+    ".project/reviews",
+    ".project/tasks"
+  ],
+  "files": [
+    {
+      "path": ".project/DECISIONS.md",
+      "sha256": "566022807ea967c32f08c59982c261ce28409b1c6f5cf29f84255263bc682aa0",
+      "size": 25384
+    },
+    {
+      "path": ".project/OPEN_QUESTIONS.md",
+      "sha256": "48132637613335ddc930e3188562ee4d257ad5673b585d184318306fe57f4dc3",
+      "size": 16896
+    },
+    {
+      "path": ".project/OVERVIEW.md",
+      "sha256": "fd5246f94f4594d989b51cde57621915349a5535f13320f9e48ec4bb2589b323",
+      "size": 4095
+    },
+    {
+      "path": ".project/PUBLICATION.yaml",
+      "sha256": "5ebcb6e395d71df6a3a62287390cf64c24d64290117455dfc2dd2d8eb05a4cde",
+      "size": 278
+    },
+    {
+      "path": ".project/RECENT_WORK.md",
+      "sha256": "f77a15ee1e26501ffa4895d1913e9eeb6957e22da92cae1877f3bd96e5696d12",
+      "size": 67264
+    },
+    {
+      "path": ".project/STATE.md",
+      "sha256": "f619289ed718ad27b752fb5db764f2b7c16acb6c4a4b1ed6cd28397da051d42d",
+      "size": 15432
+    },
+    {
+      "path": ".project/receipts/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": ".project/reviews/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": ".project/tasks/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    }
+  ],
+  "manifest_version": 1,
+  "protocol": "PROJECT_MEMORY_V1"
+}
