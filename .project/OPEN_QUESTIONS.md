@@ -16,6 +16,43 @@ Updated: 2026-08-20
 
 ## Aperte dal 2026-08-20
 
+## Una deriva lunga settimane — possibilita' futura, non in coda (2026-08-20)
+
+**Registrata su richiesta dell'utente come nota, non come lavoro pianificato.**
+
+Il motore dei guasti sa gia' fare derive: `onset.mode = gradual` applica una
+rampa lineare sulla gravita' distribuita su `ramp_cycles`, che e' un numero
+libero (`plcsim/scenario.py`, `severity_at`). I tipi di guasto sono sei:
+`restriction`, `closing_delay`, `opening_delay`, `pressure_instability`,
+`flowmeter_dropout`, `flowmeter_glitch`.
+
+In `storico_60d` le rampe piu' lunghe sono di **40.000 cicli**, cioe' circa due
+giorni e mezzo (valvola 8). Il gruppo di pressione sale su 25.000. La valvola 30
+parte tardi e sta ancora salendo a fine run. La 21 e' a gradino di proposito.
+
+**Il modello rileva le rampe quasi subito.** Misurato ora per ora sulla valvola
+8: tutto il 2 luglio fra 0,01 e 0,06 (rumore), poi il 3 luglio 0,161 alle 04:00,
+0,817 alle 05:00, **1,000 alle 06:00**. Da rumore a saturazione in **due ore**,
+dentro il primo 4% della rampa. La valvola 30 si comporta allo stesso modo il
+12 agosto.
+
+**Il punteggio poi satura e non dice piu' niente**: resta a 1,000 per sette
+settimane. Dice *che* qualcosa non va, non *quanto* ne' *con che velocita'*. Per
+il peggioramento servono le grandezze nominate.
+
+Cosa comprerebbe una rampa su tre settimane: e' l'unico modo per misurare
+**quanto il modello anticipa** il degrado della qualita'. Oggi ogni guasto viene
+rilevato in due ore, quindi non c'e' spazio per misurare l'anticipo, e non si
+puo' dire se il modello serva a prevenire o solo ad accorgersi.
+
+Costo: una riga di scenario, poi una run nuova — circa tre ore di simulazione
+piu' ricaricamento e ricalcolo delle previsioni. Strada gia' percorsa.
+
+Limiti che restano comunque: `severity_at` e' monotona crescente e ogni valvola
+ammette un solo fault. Non esistono guasti che si riparano ne' usure che vanno e
+vengono.
+
+
 ## Il confronto con la propria base e' cieco su cio' che e' sempre stato storto (2026-08-20)
 
 Misurato sulla finestra sana di `storico_60d` (21 giu - 2 lug), valvola per
