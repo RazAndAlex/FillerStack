@@ -1,6 +1,6 @@
 # Open questions
 
-Updated: 2026-08-23 (secondo aggiornamento)
+Updated: 2026-08-23 (terzo aggiornamento)
 
 > **Come si legge questo file.** Il titolo di una sezione dice il suo stato, e va
 > creduto solo se porta una data. Fino al 2026-08-23 molte sezioni sono rimaste
@@ -14,7 +14,13 @@ Updated: 2026-08-23 (secondo aggiornamento)
 
 
 
-## APERTA dal 2026-08-23 — M11 non si chiude riaddestrando, e serve una decisione
+## CHIUSA il 2026-08-23 — M11 si chiude sull'allarme, e il nome va a schermo
+
+> **DECISA — non riaprire questa scelta.** L'utente ha preso la strada
+> raccomandata: M11 si chiude prendendo atto che l'allarme funziona, e il lavoro
+> e' andato sulla resa. Le pagine MACCHINA e VALVOLE ora scrivono il nome del
+> guasto, e dove il modello non concorda lo dichiarano. Vedi `DECISIONS.md` e
+> `RECENT_WORK.md`, 2026-08-23. Il testo qui sotto resta come storia.
 
 Il silenzio del modello sulla valvola 21 e' **capito fino in fondo** e la
 correzione ovvia e' stata **misurata e scartata**. Il dettaglio completo, con i

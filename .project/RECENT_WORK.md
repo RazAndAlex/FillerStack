@@ -2131,3 +2131,59 @@ Niente fuori da `.scratch/silenzio-21/`, dove restano `n1.py`..`n13.py`,
 `p1.py`..`p3.py`, `p1_results.json` e `fr_all.parquet`. `model.joblib`,
 `zstats.json`, gli split, `plcsim/` e `pipeline/` sono intatti. Il banco `n2.py`
 riproduce il riferimento registrato alla cifra: 0,0029 / 0,0892 / 699 / 4 / 0,24%.
+
+## 2026-08-23 — il nome del guasto arriva a schermo, e M11 si chiude
+
+Eseguito il piano approvato dall'utente, sette passi.
+
+### Un'assunzione del piano e' caduta subito, in meglio
+
+Il piano prevedeva di aggiungere `score` alla superficie API di `comune/dati.js`
+e temeva trentacinque chiamate su MACCHINA. Non serve niente di tutto questo:
+**`/valves` porta gia' `last_prediction.predicted_label` per tutte e trentacinque
+le valvole**, nella chiamata che le pagine fanno comunque. Nessuna route nuova,
+nessuna chiamata in piu', nessun costo di latenza.
+
+### Cosa e' cambiato
+
+- **`comune/dati.js`** — `NOME_GUASTO`, i sette nomi in italiano in un dizionario
+  solo, e `nomeGuasto(valvola)`, che li applica. Restituisce «il modello la dice
+  sana» quando l'etichetta e' `healthy`, «guasto non diagnosticato» quando la
+  predizione manca, e l'etichetta cruda quando e' sconosciuta al dizionario.
+- **`a/pagina.js:636`** — la riga dell'allarme nel pannello valvola.
+- **`v1/pagina.js`** — la stessa riga (`:839`), l'etichetta di accessibilita'
+  della cella (`:401`) e il tooltip della giostra (`:246`). Il nome viaggia sulla
+  riga per valvola come `nomeAtt` (`:322`).
+- **`giornoOra()`** al posto di `ora()` sugli allarmi, su entrambe le pagine.
+  In `v1/` la funzione non esisteva ed e' stata aggiunta.
+- **`LESSICO.md`** — sezione 6bis, la grammatica dei nomi di guasto.
+
+### Il difetto che ho introdotto e come e' venuto fuori
+
+Togliendo `tipiAtt` da `v1/pagina.js` ho lasciato un secondo uso vivo in
+`tipValvola()`: il tooltip della giostra sollevava `ReferenceError: tipiAtt is
+not defined` su ogni passaggio del mouse. **La schermata sembrava a posto** — il
+difetto stava su un percorso che uno screenshot non attraversa. L'ha trovato la
+console del browser. `tipValvola()` e' stata sganciata dal parametro e legge
+`v.nomeAtt`, e il percorso e' stato riesercitato su tutte e 35 le celle, con
+`mousemove` e `focus`, a zero errori.
+
+### Verifica
+
+Sui dati veri di `storico_60d`, API 8123, proxy 8078, viewport 1536x770:
+
+| | prima | dopo |
+|---|---|---|
+| valvola 8 | `score_aggregation · da 07:05` | `restringimento · da 03/07, 07:05` |
+| valvole 13-18 | `score_aggregation` | `pressione instabile` |
+| valvola 21 | `score_aggregation` | `il modello la dice sana` |
+| valvola 30 | `score_aggregation` | `restringimento` |
+
+Le 35 etichette di accessibilita' di VALVOLE non contengono piu' nessun
+`score_aggregation`. Console pulita su tutte e cinque le pagine — MACCHINA,
+VALVOLE, OEE, TEMPO, CARTA — e `scrollWidth` uguale a `innerWidth`, quindi
+nessun trabocco orizzontale.
+
+Suite: **567 su 567**, un solo avviso, nei quattro comandi registrati in
+`STATE.md`. Fuori da `.scratch/dashboard-v7/` e `.project/` non e' stato
+modificato nessun file: verificato con `find -newermt`.

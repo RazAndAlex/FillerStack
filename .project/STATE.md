@@ -575,3 +575,23 @@ Due trappole costate tempo: `pytest-timeout` non e' installato, quindi
 `--timeout` fa fallire la riga di comando con codice 4; e incanalare l'uscita in
 `tail` la bufferizza fino alla fine, per cui un processo morto lascia un file
 vuoto e sembra ancora in corso. Si scrive su file e si guarda quello.
+
+## Stato al 2026-08-23, terzo aggiornamento — M11 chiuso, i guasti hanno un nome
+
+- **M11 e' chiuso.** Non sulla classificazione del modello, che resta come e' e
+  come e' spiegata, ma sulla constatazione che l'allarme funziona. Vedi
+  `DECISIONS.md`.
+- **Le pagine MACCHINA e VALVOLE scrivono il nome del guasto**, preso da
+  `last_prediction.predicted_label` che `/valves` gia' porta. Nessuna route
+  nuova, nessuna chiamata in piu'. Otto valvole su nove prendono il nome giusto;
+  la 21 dichiara che il modello non concorda.
+- **Il dizionario dei nomi vive in un posto solo**, `comune/dati.js`. La regola e
+  il perche' stanno in `LESSICO.md`, sezione 6bis.
+- **Sugli allarmi la data porta il giorno.** Era una data sbagliata, non una
+  rifinitura.
+- Restano fuori dalla modifica le altre tre pagine, la lineage nel motore, il
+  modello, il normalizzatore e l'API.
+- **Resta aperta una sola voce**: la provenienza del modello
+  (`inference.py:75-96` ripiega su `manifest.yaml:code_version`). Conta il giorno
+  in cui si spedisse un modello nuovo.
+- Suite 567 su 567.

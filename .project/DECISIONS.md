@@ -669,3 +669,31 @@ cronologia K/N le mescola.
 
 Resta da decidere se aprire lavoro sulle feature o chiudere M11 sull'allarme che
 già funziona. Vedi `OPEN_QUESTIONS.md`.
+
+## 2026-08-23, M11 si chiude sull'allarme e il lavoro va sulla resa
+
+L'utente ha scelto la strada raccomandata: non si apre lavoro nuovo sulle feature
+per far parlare il modello sulla valvola 21. **M11 e' chiuso.** L'allarme la
+segnala per il 93,0% della corsa, quindi il manutentore e' avvisato; quello che
+mancava era il nome del guasto, e mancava su tutte e nove le valvole in allarme.
+
+**Le pagine non stampano piu' `alert.fault_type`.** Quel campo vale sempre
+`score_aggregation` — la lineage tecnica decisa il 21 agosto — e a schermo si
+leggeva tale e quale. Il nome viene ora da `last_prediction.predicted_label`, che
+`/valves` porta gia' per tutte e trentacinque: **nessuna route nuova, nessuna
+chiamata in piu', nessun tocco al motore o all'API**.
+
+**Dove i due strumenti non concordano, la riga lo dichiara.** Una valvola in
+allarme che il modello dice sana si legge «il modello la dice sana». La forma e'
+stata scelta fra quattro varianti costruite sui dati veri e sul foglio di stile
+vero (<https://claude.ai/code/artifact/6137ca77-0262-497e-b133-85001c7fea43>).
+Le due scartate: «non classificato», che nasconde il fatto che una risposta c'e'
+ed e' sbagliata; e «in allarme · <nome>», che duplica il titolo della sezione.
+
+**Sugli allarmi la data porta il giorno.** `ora()` dava il solo orario, e un
+allarme aperto il 3 luglio si leggeva «da 07:05». Corretto in `giornoOra()` su
+entrambe le pagine. Non e' una rifinitura: era una data sbagliata.
+
+Restano fuori: le altre tre pagine, la lineage dentro il motore, il modello, il
+normalizzatore e l'API. La voce aperta sulla provenienza del modello resta tale —
+riguarda il giorno in cui si spedisse un modello nuovo, che ora non succede.
