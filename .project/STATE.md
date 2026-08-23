@@ -1,6 +1,6 @@
 # Project state
 
-Updated: 2026-08-20
+Updated: 2026-08-21
 
 ## Project
 
@@ -23,6 +23,26 @@ and diagnostic dashboard with a machine-level OEE home (L0), a 35-valve machine
 view (L1), and valve drill-down (L2/L3). The non-visual M10 scope—PostgreSQL
 operational storage, alert engine, read-only FastAPI observation API, and the M9
 prediction migration—was documented as accepted on 2026-08-13.
+
+Alert engine status (2026-08-21): the operational default is score-only
+K=5/N=150 per valve, with the label-independent `score_aggregation` lineage and
+`threshold_open=0.5`. Full-history simulation selected this setting because it
+kept zero false positives, detected 9/9 injected faults, and kept valve 21 active
+for 93.0% of the run with 8 openings. K=5/N=100 kept valve 21 active for 70.8%
+with 33 openings. The measured delay change across nine valves had a maximum
+degradation of +0.4 s and improved valve 21 by 2,080.69 s (-34 min 40.69 s).
+The N=150 history read 5,250 rows for 35 valves, with a 9.811 ms warm median
+versus 7.625 ms for N=100.
+The operational alert store was rebuilt transactionally from 723,110 persisted
+predictions after a verified `pg_dump`; the API now reports active alerts on
+valves 8, 13-18, 21, and 30. Legacy per-label persistence remains available only
+with K/N both disabled. With K/N enabled, inference rebuilds the per-valve
+boolean history from the latest stored predictions before processing a new
+batch. It excludes the current already-persisted batch by the exact
+`prediction_id` UUIDs, so cycle identifiers reused by another run cannot remove
+valid history. Ties use the total order `prediction_ts`,
+`window_end_cycle_id`, `prediction_id`. The seed has no writes or alert events.
+Legacy cooldown and streak state remain ephemeral.
 
 **Latest dashboard status (2026-08-19): the dashboard is COMPLETE and ACCEPTED.**
 Three pages — `MACCHINA · VALVOLE · OEE` — all accepted by the user, after six
@@ -124,8 +144,22 @@ in attesa di conferma prima di essere rimosse. Il primo giro di correzioni su
 mancante, il «dati fermi» scritto invece che disegnato, la coda tagliata di un
 giorno e mezzo.
 
-**Non e' live.** Nessun processo alimenta il database in continuo; il ponte OPC UA
-copre una valvola su 35.
+**Il ponte OPC UA copre tutte e 35 le valvole dal 2026-08-21.** Il mapping edge
+ha 567 tag generati dalle costanti di `plcsim/opcua_server.py`, l'innesco e' per
+valvola (`ValveNN.LastCycleId`, non piu' `Machine.DataReady`), e la catena
+simulatore -> OPC UA -> Node-RED -> MQTT -> ingest ha retto **20 min 44 s
+continui** a 10,49 cicli/s, 35 valvole su 35, gap massimo per valvola 3,703 s,
+zero scarti di validazione e zero `ingest_ts` nulli. Verificato sul parquet raw,
+non sul rapporto.
+
+**Non e' ancora live fino in fondo.** Nessun processo porta i dati dal raw al
+database in continuo: `pipeline/cycles_backfill.py` resta una botta sola a mano.
+E' il Blocco B di `.scratch/HANDOFF-percorso-live.md`.
+
+Nota di metodo, costata tre tentativi: **ogni corsa di misura parte da un
+container Node-RED riavviato.** Il fallimento a 26 secondi dei primi tentativi
+non era un difetto del prodotto — era stato di sessione rotto accumulato in un
+container su da due giorni, dentro cui i flow venivano ridistribuiti a caldo.
 
 ## Implemented capabilities
 
@@ -195,9 +229,15 @@ accepted pages still run against the frozen-fixture shell. Closing that is
 
 ## Known issues and limitations
 
-- Superseded 2026-08-19: `pytest` 9.1.1 is available and the full suite was rerun
-  — **433 passed, 4 warnings**, on Python 3.14.6. The four warnings are benign
-  (two unregistered pytest markers, a Starlette/httpx deprecation).
+- Current check on 2026-08-21: `python -m pytest pipeline/tests -q` reported
+  **298 passed, 1 warning in 177.52s (0:02:57)** with Python 3.14. The run used
+  the existing user site-packages and the uv archive through `PYTHONPATH`; no
+  package was installed. The default runtime is still not self-contained because
+  its system and bundled environments do not provide `pytest` or `polars`.
+  The warning is a `StarletteDeprecationWarning` in `fastapi/testclient.py` for
+  using httpx with `starlette.testclient`; the suggested follow-up is httpx2.
+- Historical evidence from 2026-08-19: `pytest` 9.1.1 was available and the
+  full suite reported **433 passed, 4 warnings** on Python 3.14.6.
 - PostgreSQL integration tests require the dedicated test database and skip when
   the server is unavailable. They must never write to the operational `plcsim`
   database.
@@ -221,15 +261,18 @@ accepted pages still run against the frozen-fixture shell. Closing that is
    Nessuna pagina nuova prima che quella sia approvata.
 2. Estrarre la grammatica della pagina TEMPO in `LESSICO.md` e
    `comune/lessico.css` appena e' accettata, com'e' stato fatto per le prime tre.
-3. Progettare con l'utente la seconda meta' del percorso live: oggi il ponte OPC
-   UA copre una valvola su 35 e nessun processo alimenta il database in continuo.
+3. **Blocco B del percorso live:** rendere incrementale il backfill dei cicli e
+   dare alla catena un battito, cosi' che il raw arrivi al database senza un
+   comando a mano. La larghezza a 35 valvole e' fatta; manca il movimento.
+   Subito dopo, la scelta che spetta all'utente (Blocco C): la dashboard mostra
+   il run live o continua a mostrare `storico_60d`?
 4. Costruire la carta di controllo sulla media mobile di 46 cicli **come seconda
    variante** accanto a quella attuale, da confrontare sui dati veri.
 5. Rigenerare le sei fixture su profili di fermata confrontabili, piu' i due
    difetti trovati al loro interno.
-6. Indagare i due silenzi del modello: l'instabilita' di pressione che non muove
-   la qualita', e il ritardo di apertura della valvola 21 che l'inferenza non
-   riconosce.
+6. Valutare se la copertura di K=5/N=150 giustifica i ritardi osservati, da
+   1 h 15 min a 15 h 12 min, oppure se M11 deve introdurre un aggregatore con
+   una latenza piu' controllabile. La classificazione ML resta un tema separato.
 
 
 ## Architecture
@@ -274,3 +317,218 @@ Primary modules:
   environment.
 - Use the repository-local Markdown issue tracker conventions in
   `docs/agents/issue-tracker.md`.
+
+## Blocco A edge, 2026-08-21
+
+Il mapping edge ora contiene 567 tag. Include 7 tag macchina e 16 tag per
+ognuna delle 35 valvole. Il flow usa `ValveNN.LastCycleId` per ogni trigger.
+
+La verifica statica è completa. Il flow attivo è stato ridistribuito con
+l'Admin API Node-RED e i log hanno confermato mapping 567, 35 trigger,
+subscription 567 e MQTT connesso.
+
+La controprova runtime, senza deploy dopo il riavvio del solo container
+Node-RED alle 22:47:12+02:00, ha prodotto una finestra raw continua di
+18 min 51,598 s: 11.869 envelope da tutte le 35 valvole, 339--340 per
+valvola, nessun gap superiore a 10 s e massimo gap per valvola 3,703 s.
+Il checkpoint ha riportato 4.812 envelope ricevuti e 4.812 scritti (conteggi,
+non rate), zero reject, duplicati, invalidi e reconnect; il ritardo medio era
+circa 1,74 ms. L'analisi dei timestamp raw conferma inoltre 1.575 record
+senza interruzioni attraverso il cambio di agente. Non è stato usato il
+database e i Blocchi B e C non sono iniziati. Il dettaglio è in
+`.scratch/percorso-live/BLOCK-A-SUBSCRIPTION-RESTART-REPORT-20260821.md`.
+
+## 2026-08-22 — Blocco B, finestra live interrotta
+
+Il gate `GATE_PASS` è stato riusato. Il server OPC UA e l'ingest hanno
+prodotto battito live nella sola partizione `date=2026-08-21`; l'ingest ha
+registrato 1.211 record scritti e CmdStart ha dato `Running=True`. Il Terra
+manager ha fermato la finestra al checkpoint. Non sono stati avviati
+supervisor, backfill o inference e non sono cambiati database, schema o
+`current_run_id`. Dopo cleanup non risultavano listener sulle porte 4840 e
+4841. Il restart post autorizzato ha trovato `plcsim-nodered` in esecuzione,
+ma `/health` ha risposto 404. La misura v21 post è terminata con exit 0 e resta
+7 su 150, con le stesse nove valvole allarmate del gate. Dettaglio:
+`.scratch/percorso-live/BLOCK-B-BATTITO-REPORT-20260822.md`.
+
+## 2026-08-22 — Blocco B, secondo e ultimo tentativo
+
+Il supervisor `live_20260822_battito_attempt2` si è fermato al primo
+heartbeat. Il backfill sulla sola data live `2026-08-21` ha trovato 6.217
+duplicati su `(valve_id, cycle_id)` e ha restituito exit 2; l'inference non è
+partita. I PID attribuibili sono stati fermati e le porte 4840/4841 e le
+connessioni al broker risultano pulite. Il restart post di Node-RED è riuscito;
+la misura v21 resta 7 su 150 con le nove valvole allarmate invariate. I conteggi
+cycles e predictions non sono cambiati e `current_run_id` resta `storico_60d`.
+Lo stato è `BLOCKED_FOR_REASONING / NEEDS-REVIEW`. Dettaglio:
+`.scratch/percorso-live/BLOCK-B-BATTITO-REPORT-20260822.md`.
+
+## 2026-08-22 — Blocco B, terzo tentativo isolato
+
+La root raw nuova `attempt3-20260822T013358/raw` era assente prima della
+creazione. L'ingest è terminato subito perché `Start-Process` ha spezzato il
+percorso con spazio passato a `--out`. Il supervisor non è stato avviato. I
+soli PID attribuibili sono stati fermati; porte 4840/4841 e broker host sono
+puliti. Node-RED è `healthy`; v21, nove allarmi e `current_run_id` restano
+invariati. Blocco B resta `BLOCKED_FOR_REASONING / NEEDS-REVIEW`.
+
+## Stato al 2026-08-22, sera — supera tutte le sezioni precedenti
+
+Questa sezione è la più recente. Dove contraddice una sezione più in alto, vale
+questa. In particolare supera i tre rapporti del Blocco B qui sopra, che
+lasciavano il percorso live `BLOCKED_FOR_REASONING`, e la sezione del 20 agosto,
+che parla di tre pagine.
+
+**La dashboard ha cinque pagine, tutte accettate dall'utente.**
+
+| pagina | indirizzo | accettata |
+|---|---|---|
+| MACCHINA | `/a/` | 19 agosto |
+| VALVOLE | `/v1/` | 19 agosto |
+| OEE | `/oee/` | 19 agosto |
+| TEMPO | `/pc/` | 20 agosto |
+| CARTA | `/k1/` | 22 agosto |
+
+**Il percorso live è chiuso.** La catena
+`macchina → OPC UA → Node-RED → MQTT → raw → cycles → predizioni → allarmi`
+gira da sola, provata con un guasto vero iniettato dal vivo sulla valvola 5:
+punteggio del modello 1,000 alla prima finestra, allarme aperto da solo al ciclo
+700. Criterio di accettazione `verifica_battito.py 10` con uscita 0. Prove in
+`.scratch/percorso-live/PERCORSO-LIVE-CHIUSURA-20260822.md`.
+
+Tre regole valgono per ogni corsa live nuova, e servono tutte e tre:
+riavviare il container Node-RED prima della misura, usare un `--client-id`
+dedicato alla corsa, partire da una partizione raw nuova con `--run-id`
+esplicito passato anche all'inference.
+
+**Il Blocco C è deciso.** La dashboard mostra `storico_60d`. Il KV
+`current_run_id` resta lì. Vedi `DECISIONS.md`, 2026-08-22.
+
+**Numeri di oggi**, misurati e non riferiti:
+
+| | |
+|---|---|
+| suite `pipeline/tests` + `tests` + `edge` | 567 passed, due corse |
+| cicli nello storico | 36.241.832 |
+| predizioni persistite | 723.110 |
+| allarmi attivi | 9 — valvole 8, 13-18, 21, 30 |
+| corse live nel database | 4, dal 22 agosto, nessuna mostrata |
+| viewport vero dell'utente | 1536x770 px CSS |
+| copia di sicurezza | `plcsim_pre_run4_20260822.dump` |
+
+**Come si accende tutto**: `docker start plcsim-postgres`, poi
+`python -m uvicorn pipeline.api:app --port 8123`, poi
+`python .scratch/dashboard-v7/server_api.py --port 8078`. Riavvia sempre tutti e
+due: l'elenco delle route ammesse vive dentro il processo del proxy, e un proxy
+vecchio contro un'API nuova dà 404 che sembrano route mancanti.
+
+**Difetti noti ancora aperti**
+
+- Le sei fixture congelate hanno profili di fermata non confrontabili, e l'OEE
+  che ne esce si legge al rovescio. È l'ultimo difetto dei dati conosciuto.
+- L'ambiente Python non è bloccato. La suite passa appoggiandosi ai
+  `site-packages` dell'utente e all'archivio uv via `PYTHONPATH`.
+- Il menu è cresciuto per accumulo: ogni pagina rimanda solo alle pagine nate
+  prima di lei, e nessuna rimanda a CARTA.
+- Nessuna pagina legge `alert-history.json`.
+- Il silenzio del modello sulla valvola 21 è spiegato ma non corretto, materia
+  di M11.
+- `GET /machine/oee/series` senza `at` costa 3,3 s, causa non isolata.
+
+## Stato al 2026-08-23 — supera tutte le sezioni precedenti
+
+Questa sezione è la più recente. Dove contraddice una sezione più in alto, vale
+questa. In particolare **corregge tre voci dell'elenco «difetti noti ancora
+aperti»** della sezione del 22 agosto sera: due erano già chiuse e nessuno le
+aveva depennate, la terza aveva un numero che non è una costante.
+
+**La pulizia del disco è fatta.** Vedi `DECISIONS.md`, 2026-08-23. Tolte le sei
+varianti scartate (`pa/`, `pb/`, `v2/`, `v3/`, `b/`, `c/`), i cinque file sparsi
+alla radice e `.playwright-mcp/`. `.pi-subagents/` resta, 331 MB, per decisione
+dell'utente. Suite dopo la pulizia: **567 passed**, due corse, identica alla base.
+
+**M11 non è più una questione di taratura.** K=5/N=150 è accettata come
+definitiva. Resta solo la classificazione del modello sulla valvola 21.
+
+### Le tre voci corrette
+
+- ~~«Il menu è cresciuto per accumulo, nessuna pagina rimanda a CARTA»~~ —
+  **già corretto il 22 agosto**. Tutte e quattro le altre pagine rimandano a
+  `/k1/`. Verificato nel codice e cliccando il menu a schermo.
+- ~~«Nessuna pagina legge `alert-history.json`»~~ — **voce senza oggetto**. Quel
+  file esiste solo nelle fixture congelate della v6, superate per decisione del
+  22 agosto. La route viva `/alerts/history` è invece usata da
+  `comune/dati.js`.
+- ~~«`GET /machine/oee/series` senza `at` costa 3,3 s, causa non isolata»~~ —
+  **causa isolata, ma il numero non è una costante**. Vedi qui sotto.
+
+### `/machine/oee/series`: la causa è l'allineamento all'ora, non il parametro
+
+Misurato il 2026-08-23, profilando le fasi interne invece di dedurle.
+
+Il discriminante **non è la presenza di `at`**: è se quell'istante cade su
+un'ora esatta.
+
+| `at` | tempo |
+|---|---|
+| allineato all'ora | 0,58 s |
+| non allineato | da 0,9 s a 6,2 s |
+
+Senza `at` la finestra finisce «adesso», che non è quasi mai allineato: per
+questo il difetto sembrava riguardare il parametro.
+
+**Dove va il tempo.** Tutto in `_conta_bordi`, l'unico statement che legge da
+`cycles` i bordi d'ora parziali. Con `at` allineato quel tempo è **0,000 s**:
+i bordi sono vuoti e non vengono nemmeno chiesti. Con `at` non allineato la
+serie ne chiede circa 230, che valgono ~1,75 milioni di tuple d'indice.
+
+**Non è un difetto di indice né di manutenzione.** Il piano dice
+`Index Only Scan` con `Heap Fetches: 0` su `ix_cycles_run_event_ts_cover`, e
+`pgstatindex` dà densità delle foglie 90,05% e frammentazione 0,08%. L'indice
+di copertura c'è già e funziona: il lavoro è reale, non sprecato.
+
+**Perché il numero scritto oscillava.** La stessa identica chiamata, nella
+stessa giornata, ha dato **13,3 s** alla prima esecuzione, poi 5,5 / 5,1 / 5,3 s,
+e infine **0,93 s**. È lo stato del buffer di Postgres, non una regressione del
+codice. Il «3,3 s» registrato prima era un punto di quell'intervallo. Chi
+riprende il lavoro non deve inseguire una differenza fra 3,3 e 5,3: **deve
+confrontare allineato contro non allineato, a cache pari.**
+
+**La strada per una correzione**, se e quando si vorrà: eliminare i bordi. O si
+allineano all'ora gli istanti della serie — costa che il punto più recente sia
+vecchio fino a un'ora, e rompe l'identità dichiarata «ogni punto è la risposta
+esatta di `/machine/oee` con quell'`at`» — oppure si aggiunge un riepilogo a
+grana più fine dell'ora. Nessuna delle due è una rifinitura: **è una decisione
+di prodotto e va portata all'utente.**
+
+### Difetti noti ancora aperti, elenco aggiornato
+
+- Le sei fixture congelate hanno profili di fermata non confrontabili, e l'OEE
+  che ne esce si legge al rovescio. Deciso: non si rigenerano.
+- L'ambiente Python non è bloccato. Deciso: il progetto resta su questa macchina.
+- Il silenzio del modello sulla valvola 21, materia di M11. Non è taratura.
+- ~~`/machine/oee/series` con `at` non allineato all'ora~~ — **non è più un
+  difetto aperto**. Causa isolata qui sopra, e il 2026-08-23 l'utente ha deciso
+  di lasciarla così: il costo accettato è circa un secondo, solo sul grafico
+  dell'andamento, solo al caricamento. Vedi `DECISIONS.md`. La strada giusta se
+  un giorno servirà è il riepilogo a grana di minuto, **non** l'arrotondamento
+  all'ora, che è scartato.
+- `StarletteDeprecationWarning` in `fastapi/testclient.py` per l'uso di httpx
+  con `starlette.testclient`. **È l'unico avviso rimasto della suite** e resta
+  di proposito: nasce in una libreria e toglierlo vuol dire installare `httpx2`,
+  cioè modificare l'ambiente. Il motivo è scritto dentro `pytest.ini`, perché
+  nessuno lo silenzi con un filtro.
+
+### Aggiunte del secondo turno del 2026-08-23
+
+- **`OPEN_QUESTIONS.md` è stato ripulito.** Undici sezioni erano intitolate
+  «APERTA» pur essendo chiuse da giorni, e facevano rifare indagini già fatte.
+  Ognuna è stata verificata sulla cosa e non sull'etichetta, e porta ora un
+  riquadro «SUPERATA» con la prova. **Al 2026-08-23 non c'è nessuna domanda
+  aperta che richieda una decisione dell'utente.**
+- **Esiste `pytest.ini`**, che prima non c'era. Dichiara i marcatori `slow` e
+  `opcua`, e toglie tre dei quattro avvisi. Non cambia cosa viene raccolto:
+  567 prima, 567 dopo.
+- **La deriva lunga settimane è stata riproposta e rifiutata per adesso.**
+- **I tre difetti dei generatori di fixture non si correggono**, perché vivono
+  solo in codice superato. Vedi `DECISIONS.md`.

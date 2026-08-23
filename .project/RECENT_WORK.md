@@ -1,3 +1,494 @@
+## 2026-08-21 (tardi) — L'aggregazione ritarata a 5 su 150, e chiusa
+
+Ultimo dei quattro passaggi a Codex. `AlertConfig` passa da N=100 a **N=150**,
+K resta 5.
+
+### Perche'
+
+Con 5 su 100 la valvola 21 stava **sul filo**: cronologia letta dal database,
+**esattamente 5 finestre sopra soglia su 100**, cioe' il minimo per qualificarsi.
+Una in meno e l'allarme si chiudeva. Simulazione: accesa il 70,8% del tempo, con
+33 aperture — un lampeggio, non un allarme.
+
+Allungare la memoria e' diventato sicuro **solo dopo** la ricostruzione della
+cronologia all'avvio: prima, un N piu' grande allungava il buco dopo ogni
+riavvio.
+
+### Verificato da me sul database vero
+
+| | prima (5/100) | dopo (5/150) |
+|---|---|---|
+| valvola 21, finestre sopra soglia | **5 su 100** (margine zero) | **7 su 150** (margine 2) |
+| valvola 9, controllo sano | — | **2 su 150**, ben sotto K |
+| valvola 21 accesa (simulazione) | 70,8% | **93,0%** |
+| aperture | 33 | **8** |
+| falsi positivi | 0 | **0** |
+| ricostruzione cronologia | 3.500 righe | 5.250 righe, **10,9 ms** |
+| suite | 298 | **298 passed**, rimisurata |
+
+Prova di riavvio rifatta con la regola nuova: con la cronologia l'allarme della
+21 resta `sustained`, senza si chiude. Nove valvole in allarme — 8, 13-18, 21,
+30 — e la pagina VALVOLE le mostra a 1536 px, zero errori in console.
+
+### Il ritardo non e' peggiorato
+
+Era il numero che mancava per congelare la scelta. Misurato su tutte e nove le
+guaste: il peggioramento massimo e' di **0,4 secondi** (valvola 8), e la valvola
+21 **migliora di 35 minuti** — da 6 h 28 a 5 h 53. Allungare la memoria non ha
+comprato stabilita' al prezzo della prontezza: l'ha comprata gratis.
+
+Resta vero il fatto gia' registrato: quei ritardi di 1 h 15 - 15 h 12 sono del
+**modello**, non della regola d'allarme.
+
+### Due note
+
+- Copia di sicurezza nuova in
+  `.scratch/taratura-aggregazione/backup-2026-08-21-n150/`, con SHA256 e
+  `pg_restore --list` verificato. Il replay ha cambiato **+1 allarme e +75
+  transizioni**: lo storico passa da 11 a 12 righe.
+- Codex ha dichiarato come blocco che «il runtime Python predefinito non e'
+  autosufficiente senza PYTHONPATH». **Non si riproduce**: la suite gira qui con
+  un semplice `python -m pytest pipeline/tests -q`. E' un artefatto del suo
+  ambiente, non del progetto.
+
+---
+
+## 2026-08-21 (fine): Ritaratura score-only a K=5/N=150
+
+La simulazione ha confrontato il nuovo default K=5/N=150 con K=5/N=100. Le due
+regole hanno 0 falsi positivi e rilevano 9 guasti su 9. La valvola 21 resta
+attiva per il 93,0% del run con 8 aperture, contro il 70,8% e 33 aperture di
+N=100. `threshold_open` resta 0,5. Modello, feature extraction, inference e
+schema ML-F1 non cambiano.
+
+La misura dei ritardi sulle nove valvole mostra un peggioramento massimo di 0,4
+s e un miglioramento di 2.080,69 s (-34 min 40,69 s) sulla valvola 21. `load_score_history` con
+N=150 legge 5.250 righe per 35 valvole e ha una mediana warm di 9,811 ms, contro
+7,625 ms per N=100.
+
+Il replay con il nuovo default ha portato il database da 11 a 12 alert e da
+64.105 a 64.180 transizioni. Il dump precedente al replay e' in
+`.scratch/taratura-aggregazione/backup-2026-08-21-n150/alerts-pre-score-replay.dump`
+con SHA-256
+`4443A54C4931227D424B14372D702FB28CB89103E93AD683B19885D02C006045`. L'API
+espone nove alert attivi sulle valvole 8, 13-18, 21 e 30.
+
+Il controllo UI a 1536x770 passa nei temi chiaro e scuro. Non risultano overflow
+orizzontali o verticali e la console non mostra errori.
+
+La suite richiesta `python -m pytest pipeline/tests -q` ha dato **298 passed, 1
+warning in 177,52 s (0:02:57)** con Python 3.14. Il run ha usato i
+`site-packages` utente e l'archivio uv gia' presenti tramite `PYTHONPATH`, senza
+installare pacchetti. Il runtime predefinito resta non autosufficiente perche'
+non espone `pytest` o `polars`. Il costo della latenza score-only resta una
+domanda aperta per M11.
+
+---
+
+## 2026-08-21 (notte) — Cronologia K/N ricostruita al riavvio
+
+`load_score_history` carica le ultime N prediction delle 35 valvole, le ordina
+con la chiave totale `prediction_ts`, `window_end_cycle_id`, `prediction_id` e
+costruisce solo booleani `anomaly_score >= threshold_open`. Il seed non crea
+eventi, non scrive e non aggiunge padding.
+
+`InferenceConsumer` esegue il seed prima di `engine.process(records)`. Poiché
+le prediction del lotto sono già persistite, passa i loro UUID esatti al
+loader. Il lotto entra quindi una sola volta nella cronologia. L'identità non
+dipende dal ciclo e resta corretta quando due run riusano gli stessi numeri.
+K/N disabilitato evita il loader e la sua query.
+
+`load_states` mantiene la sua API. Cooldown e streak legacy restano in memoria.
+I test coprono riavvio positivo, assenza del seed, seed senza eventi, modalità
+disabilitata, doppio conteggio del lotto corrente, esclusione selettiva per UUID
+e parità di timestamp e ciclo. Verifica finale: 30 test mirati e 298 test della
+suite `pipeline/tests` passano. La query reale carica 3.500 righe per 35 valvole
+con mediana 7,906 ms e massimo 8,511 ms su dieci campioni. Dopo il riavvio API,
+`/health` conferma database disponibile e `/valves` espone nove valvole attive,
+compresa la 21 con allarme `score_aggregation` aperto. La pagina VALVOLE passa
+il controllo a 1536x770 nei temi chiaro e scuro senza errori in console.
+
+---
+
+## 2026-08-21 (sera) — L'aggregazione del punteggio, implementata da Codex
+
+Lavoro passato a un altro harness con due handoff su disco
+(`.scratch/HANDOFF-codex-aggregazione-punteggio.md` e
+`.scratch/HANDOFF-codex-2-taratura-aggregazione.md`). Implementazione di Codex,
+verifica mia.
+
+### Che cosa fa adesso il motore degli allarmi
+
+`AlertConfig` ha due parametri nuovi: `score_aggregation_window = 100` e
+`score_aggregation_required = 5`. Un allarme si apre quando **5 degli ultimi 100
+punteggi** della stessa valvola stanno sopra 0,5, **ignorando la classe
+prevista** — scelta obbligata, perche' sulla valvola 21 l'etichetta piu'
+frequente sopra soglia era `flowmeter_glitch` e sulla 19, sana, era
+`opening_delay`. La regola **sostituisce** il percorso per classe invece di
+aggiungersi, e usa un `fault_type` tecnico stabile, `score_aggregation`.
+
+### Il risultato, verificato da me sull'API vera
+
+- **`GET /valves`: nove valvole con allarme attivo — 8, 13-18, 21, 30 — una sola
+  riga ciascuna.** La valvola 21 c'e', ed e' la ragione per cui il lavoro
+  esisteva.
+- **Lo storico allarmi passa da 184 righe a 11** (8 sustained, 1 open, 2 closed).
+  I ~180 allarmi di rumore per classe, che c'erano su tutte e trentacinque le
+  valvole comprese le sane, sono spariti.
+- Pagina VALVOLE a 1536 px: «9 valvole in allarme», la 21 marcata sulla corona,
+  zero errori in console.
+- Suite: **290 passed**, misurato da me.
+- Copia di sicurezza presa prima del riprocessamento
+  (`.scratch/taratura-aggregazione/backup-2026-08-21/`), e il replay e' a secco
+  per default: la sostituzione richiede `--replace` piu' un `--backup` valido.
+
+### La taratura: il primo tentativo non accendeva la 21
+
+Codex aveva scelto K=5 su N=20. Simulato sui punteggi veri di tutte e
+trentacinque le valvole: zero falsi positivi, ma la valvola 21 restava accesa lo
+**0,7%** del tempo e **finiva spenta**, quindi invisibile. La dimensione che
+discrimina non e' la severita' K ma la lunghezza della memoria N: il segnale
+della 21 e' rado (5,9% delle finestre) e una memoria di venti finestre lo
+dimentica. Con **5 su 100** resta accesa il 70,8% del tempo, con 33 aperture
+invece di 76. **Zero falsi positivi a ogni impostazione provata**, fino a 2 su
+20: le valvole sane non fanno mai grappolo.
+
+Lo strumento di taratura resta in `.scratch/taratura-aggregazione/simula.py`.
+
+### Il timore sul ritardo era infondato, e la misura lo dice
+
+Temevo che N=100 rallentasse molto l'accensione. Ho misurato la regola **vecchia**
+sugli stessi dati per confronto:
+
+| valvola | regola vecchia | 5 su 100 |
+|---|---|---|
+| 8 | 9 h 14 | 9 h 36 |
+| 13 | 13 h 18 | 13 h 02 |
+| 15 | 16 h 06 | 15 h 12 |
+| **21** | 9 h 05 | **6 h 28** |
+| 30 | 1 h 18 | 1 h 15 |
+
+Il ritardo e' sostanzialmente **invariato**, e sulla 21 e' persino minore. Non
+c'e' nessun compromesso da mettere davanti all'utente. Cio' che e' cambiato non e'
+la prontezza ma la **persistenza**: la regola vecchia apriva e richiudeva, la
+nuova resta aperta.
+
+**Fatto separato che ne emerge**: quei ritardi di nove-sedici ore appartengono al
+**modello**, non alla regola d'allarme — tutte e due le regole aspettano quel
+tempo perche' e' il punteggio a impiegarlo. Sull'instabilita' di pressione sono
+circa tredici ore dall'iniezione al primo allarme. Non e' toccato da questo
+lavoro.
+
+### Due cose da sapere
+
+- Nota successiva del 2026-08-21: il primo limite qui sotto è stato chiuso dalla
+  ricostruzione della cronologia persistita descritta all'inizio del file.
+- **La cronologia K/N vive solo in memoria e riparte vuota al riavvio del
+  motore.** Dopo un riavvio servono fino a cento finestre prima che un allarme
+  possa riaprirsi: sulla valvola 21 e' la differenza fra visibile e invisibile.
+  E' il difetto aperto piu' importante di questo lavoro.
+- `ESITO.md` di Codex intitola la matrice K/N «sull'intera storia»: non lo e'.
+  Rieseguito lo script, legge al massimo 5.000 finestre per valvola dalla route.
+  I numeri sono giusti, la loro base e' piu' stretta di come e' dichiarata. La
+  tabella dei **ritardi**, invece, usa davvero i parquet interi.
+
+---
+
+## 2026-08-21 — Aggregazione score-only degli alert
+
+`pipeline.alert.AlertConfig` adotta K=5/N=100 come default operativo per
+valvola. Conta soltanto `anomaly_score >= 0.5` e non usa mai la label ML come
+filtro. La lineage unica `score_aggregation` evita aperture duplicate quando le
+label cambiano. Impostare K/N entrambi a `0` o `None` conserva la persistenza
+legacy per label.
+
+La simulazione sull'intera storia ha confrontato K/N 5/20, 4/20, 3/20, 2/20,
+5/50, 4/50, 3/50, 6/100 e 5/100. Tutte le configurazioni hanno mantenuto zero
+falsi positivi. Solo 3/50 e 5/100 hanno rilevato 9 guasti su 9 e incluso la
+valvola 21; 5/100 ha dato la copertura migliore, 70,8%, ed e' diventato il
+default. `threshold_open` resta 0,5.
+
+Il replay ha letto 723.110 predizioni persistite e ricostruito in una sola
+transazione 64.105 transizioni score-only. Prima della modifica e' stato creato
+e verificato un dump PostgreSQL da 2.350.934 byte, SHA-256
+`ECDA4E7F97EFE39F53F46695941E5F580BE8C96F4D0760BB78CAB1A0B4FF2402`. L'API
+reale espone ora allarmi attivi sulle valvole 8, 13-18, 21 e 30; la 21 e' `open`
+con `fault_type=score_aggregation`.
+
+La latenza diagnostica misurata va da 1 h 15 min a 15 h 12 min. Ground truth e
+scenario sono stati usati soltanto per questa misura offline. Non sono entrati
+nel motore o nel replay. Modello, `pipeline/features.py`, `pipeline/inference.py`
+e schema ML-F1 non sono cambiati.
+
+Verifiche: **16 test mirati passati**, **290 test della suite `pipeline` passati**,
+compilazione dei tre script di taratura riuscita, API controllata dal vivo e
+dashboard `/v1/` controllata a 1536x770 nei temi chiaro e scuro, senza errori in
+console. Script, matrice e rapporto sono in `.scratch/taratura-aggregazione/`.
+
+Limite dichiarato in quel momento, poi chiuso il 2026-08-21: la cronologia K/N
+era in memoria e al restart ripartiva vuota.
+
+---
+
+## 2026-08-21 — Il punto 2 del piano, e il difetto che stava a monte
+
+### I due difetti delle fixture, misurati prima di toccarli
+
+**Le righe fantasma non erano allarmi rotti: non erano allarmi.** 183 righe su
+347 avevano `status: "closed"` con `closed_ts` nullo — e nullo anche `opened_ts`,
+`last_seen_ts`, `opened_at_cycle_id`, con punteggio 0,0 e zero cicli sopra
+soglia. Erano coppie valvola/guasto **valutate e mai aperte**: `closed` era solo
+il valore iniziale del dataclass `AlertState`. `alert_rows()` iterava gli stati
+interni del motore invece degli eventi emessi. Corretto nel generatore:
+**347 righe -> 164**, `closed_ts` nullo **183 -> 0**, e gli 85 allarmi attivi
+invariati, ora combacianti con `alerts.json` in tutti e sei gli scenari. Il
+numero giusto era gia' scritto nel docstring di `alerts_history()`.
+
+**La contraddizione dell'OEE non era delle fixture.** Le tre di guasto davano
+0,756 / 0,760 / 0,701 contro lo 0,504 della sana: con un guasto la macchina
+sembrava andare meglio. Il worker ha dimostrato che le fixture **replicano
+fedelmente l'API** e si e' fermato senza scrivere un file — la scelta giusta. La
+causa e' in `_compute_oee_window`: una finestra che comincia prima dei dati
+accorcia il denominatore in silenzio. **Tocca le pagine vive**, non solo le
+fixture: la serie dell'OEE al bordo sinistro dello storico parte da 0,666 e
+scende verso 0,503, un peggioramento mai avvenuto.
+
+### Changed
+
+**`pipeline/api.py`** — la finestra parziale si dichiara. `availability_detail`
+porta `window_s`, `uncovered_s`, `coverage`; `source` porta `window_partial`; e
+`reason` porta il motivo in italiano con le ore mancanti. **Nessun numero e'
+cambiato**: e' una dichiarazione, non una correzione di calcolo. `degraded`
+mantiene il proprio significato, per scelta: allargarlo avrebbe fatto sparire
+l'OEE dalle pagine all'inizio dello storico. Suite **286 passed**.
+
+**`.scratch/dashboard-v7/oee/pagina.js`** — il segmento «Non pianificato» era
+sbagliato **in tutti gli scenari**: `planned_s` somma gia' Idle, Stopping e
+Stopped, quindi quel tratto e' sempre e solo dato mancante. Ora si chiama
+**«Senza storia»**, e con lui tutto il vocabolario della pagina — cascata,
+pannello disponibilita', suggerimenti, etichette per lettori di schermo.
+
+**`.scratch/dashboard-v6/fixtures/validate.py`** — 67 fallimenti, tutti falsi. Il
+controllo sulla verita' nascosta cercava la sottostringa `fault` nel testo grezzo
+e pescava `fault_type` (la classe **predetta**), `by_fault_type` e la parola
+`de-fault` nelle note di provenienza. Ora i nomi si controllano sulle **chiavi**
+del JSON con tre deroghe dichiarate, e sul testo restano solo le sequenze senza
+lettura innocente. Provato in tutti e due i versi: quattro casi legittimi
+passano, nove fughe vere falliscono. Sulle sei fixture: **nessun fallimento**,
+per la prima volta.
+
+### La scelta dell'utente
+
+Fra quattro opzioni ha scelto **dichiarare la finestra parziale**. Poi, davanti a
+tre modi di trattare l'OEE al 76,4% mostrato sopra un riferimento del 50,4% —
+numeri non confrontabili, 15,5 ore contro 24 — ha risposto **«va bene come e'
+adesso»**, contro la mia raccomandazione di spegnere il riferimento. Il fatto era
+gia' dichiarato altrove nella pagina, quindi la discrepanza resta leggibile e in
+vista.
+
+### Verificato da me, non solo riferito
+
+Sonda dal vivo sulla 8123 sui tre casi di copertura; diff contro la copia di
+sicurezza; conteggi delle righe e coerenza dei `__meta` ricalcolati; il gate
+provato anche in negativo; le pagine guardate in un browser vero a 1536 px, tema
+chiaro e scuro, zero errori in console. Controllato anche che il nuovo `reason`
+non compaia dove prima non c'era: TEMPO lo mostra solo sui dati degradati, CARTA
+legge un campo diverso su route che non passano di li'.
+
+### Cosa resta aperto
+
+Tre difetti latenti registrati in `OPEN_QUESTIONS.md` e non toccati:
+`history_extract_ef.py` e' codice morto che scrive storici vuoti poi
+sovrascritti; `predict.py::alert_rows` ha la stessa falla, innocua solo perche'
+il chiamante filtra; e **nessuna pagina legge `alert-history.json`** — la
+correzione e' reale nei dati e invisibile a schermo.
+
+---
+
+## 2026-08-21 — Il verdetto della striscia di CARTA passa dal riempimento al bordo
+
+### Contesto
+
+L'innesto del colore di k3 nella striscia di k1 era stato consegnato con **due
+fasce piene da 11 px**, una per carta, sopra e sotto il numero della valvola.
+L'utente l'ha bocciato guardandolo: *«i rettangoli un po' rendono il numero meno
+chiaro. Non potresti fare simile alla selezionata? Cioe' il contorno o solo il
+lato alto o basso in colore?»*. La cella e' alta 34 px: al numero — che e'
+l'identita' della valvola — ne restavano 12.
+
+### Il metodo, proposto dall'utente
+
+Invece di rifare l'innesto nella pagina per ogni ipotesi, l'utente ha chiesto un
+**artefatto di anteprime**: una piccola versione della barra dei numeri con
+qualche numero, per mostrare le differenze fra le opzioni senza implementarle.
+
+Pubblicato come artefatto: cinque forme una sotto l'altra, **celle a grandezza
+reale** (42 x 34 px, la misura vera a 1536 px), palette e carattere presi da
+`comune/lessico.css`, e gli **stessi otto stati incolonnati** in ogni riga —
+non misurata, sana, appena fuori, solo la carta alta, il disaccordo della
+valvola 21, due gravita' diverse, fuori scala, cella scelta.
+
+- **A** l'attuale, per confronto · **B** due bordi da 4 px, alto e basso ·
+  **C** contorno e lato basso · **D** una riga sola sotto, divisa a meta' ·
+  **E** filetti sottili su fondo velato.
+
+L'utente ha scelto **D**, e la motivazione e' registrata come vincolante:
+*«mi piace di piu' il D, perche' il B sarebbe l'altro, ma guardare uno in alto e
+un altro in basso li separa un po' troppo»*. B e D erano identiche in tutto
+tranne la distanza fra i due segni.
+
+### Changed
+
+Due file di `k1/`, nient'altro.
+
+- **`pagina.js`** — le due fasce sono sostituite da una riga alta **5 px** sotto
+  il numero, divisa a meta': sinistra il ciclo singolo, destra la media di 46.
+  Cella alta 34 px e riga della griglia da 104 px **invariate**.
+- **`stile.css`** — i campioni della legenda seguono la forma nuova (mezza riga
+  a sinistra, mezza a destra) invece del filetto sopra e sotto. Il campione
+  ripete la cella, quindi la legenda non si decodifica.
+
+### Il lessico, con due contraddizioni dichiarate
+
+`LESSICO.md` da 480 a 499 righe. Le regole nuove sono intrecciate nelle sezioni
+esistenti, non appese in coda, e due regole scritte sono state **corrette perche'
+la pagina accettata le contraddiceva**:
+
+1. «Una navigazione non si tinge» diventa «**finche' la scelta non e' essa stessa
+   la domanda**». La striscia delle 35 e' l'eccezione dichiarata: popolazione
+   chiusa, e la domanda e' *quale* valvola. Conta comunque come **una** regione
+   tinta.
+2. Nuova regola in §1: **il colore sta sul bordo, non addosso a cio' che si
+   legge**.
+3. Nuova regola in §3: **due valori da confrontare stanno accostati**, non ai due
+   estremi della forma.
+4. Nuova regola in §4: **il segno della scelta e il segno del verdetto non usano
+   lo stesso canale** — la scelta resta il contorno `--ink`, il verdetto scende
+   sul bordo basso.
+5. Nel conteggio delle regioni tinte, CARTA e' registrata a **3** come massimo
+   strutturale e a **2** sulla valvola 21.
+
+### Verificato
+
+Browser vero a 1536 px, dati veri sulla porta 8078, temi chiaro e scuro. Zero
+errori in console. Geometria letta dal DOM, non dedotta: valvola 8 riga piena
+(entrambe le carte al 100%), valvola 9 solo meta' destra (media di 46 allo
+0,06%), **valvola 21 solo meta' destra** — il ciclo singolo e' a zero e non
+disegna niente, quindi il disaccordo si vede dalla riga monca senza spiegazioni.
+Cliccando su 21 le due carte si ridisegnano e la cella scelta resta riconoscibile
+dal contorno d'inchiostro, che non va contro il colore.
+
+Nota di lavoro: la prima verifica ha mostrato ancora le fasce vecchie perche' il
+browser aveva `pagina.js` in cache. Il difetto era mio, non del codice — le
+anteprime a schermo vanno confrontate con la geometria letta dal DOM prima di
+concludere qualcosa.
+
+---
+
+## 2026-08-21 — La grammatica di TEMPO nel lessico condiviso
+
+### Contesto
+
+Punto 4 di `HANDOFF-tempo.md`, lasciato indietro il giorno prima: `LESSICO.md` e
+`comune/lessico.css` descrivevano le prime tre pagine e non nominavano TEMPO. Va
+fatto prima della carta di controllo, che e' una schermata strutturalmente nuova:
+senza il lessico aggiornato le sue varianti reinventerebbero la lingua invece di
+ereditarla.
+
+### Changed
+
+**`LESSICO.md`, da 226 a 380 righe.** Le regole di TEMPO sono intrecciate nelle
+sezioni esistenti, non appese in coda: una lingua sola, non una lingua piu'
+un'appendice. Ogni regola nuova porta il riferimento al codice che la prova
+(`pc/pagina.js:233`). Nuova sezione 5, «Il tempo, e i confini del dato».
+
+Quattro regole scritte sono state **corrette perche' la pagina accettata le
+contraddiceva**, e la contraddizione e' dichiarata invece di essere nascosta:
+
+1. «Il meccanismo e' uno solo» diventa **due meccanismi nominati**: contro la
+   propria base storica, e contro la mediana delle altre trentaquattro. Il
+   secondo esiste perche' il primo e' cieco sulle valvole 9 e 21, storte dal
+   primo giorno.
+2. «Il confronto fra valvole si fa contro la base della singola valvola, non
+   contro la media macchina» vietava esattamente il riquadro di popolazione che
+   l'utente ha scelto fra tre varianti. Ammesso, con la sua ragione scritta.
+3. «Un grafico convenzionale per riquadro» diventa «**una convenzione** per
+   riquadro»: piu' copie della stessa contano come una, ma solo se restano
+   neutre.
+4. «Classifiche di sospetti» resta vietato **come vista**: il posto in classifica
+   puo' stare nel suggerimento, mai nell'ordine dell'asse.
+
+Corretta anche la sezione 10: la validazione diceva 1920x1080, che e' la misura
+sbagliata. Ora dice **1536x770 px CSS**, il viewport vero dell'utente.
+
+**`comune/lessico.css`, da 229 a 284 righe.** Solo aggiunte. Nessuna riga
+originale rimossa — verificato per confronto riga a riga — e nessuno dei nomi di
+classe nuovi (`.per`, `.pan-per`, `.trascinabile`, `.cella-pop`, `.pop-scelta`)
+compare in `a/`, `v1/`, `oee/`: le tre pagine accettate rendono identiche per
+costruzione, non per speranza. Nuovo token `--barra-muto: #aab3bc`, che dava
+nome a un letterale orfano usato due volte in `pc/stile.css`.
+
+### Verificato
+
+Browser vero a 1536x770, dati veri sulla porta 8078. TEMPO si disegna corretta e
+porta le **tre** regioni tinte che il lessico le assegna: la traiettoria OEE, il
+riquadro di popolazione, la fascia delle 35. MACCHINA verificata identica prima
+e dopo la modifica al foglio condiviso, rimettendo l'originale e riguardando.
+
+### Poi: le due route lente, chiuse lo stesso giorno
+
+Il difetto trovato verificando il lessico e' stato messo davanti all'utente, che
+ha scelto di chiuderlo prima di andare avanti col piano. Il lavoro e' stato
+delegato con un pacchetto su disco che distingueva **cio' che era accertato da
+cio' che non lo era**: il primo difetto aveva gia' un `EXPLAIN` e un precedente
+da imitare, il secondo aveva solo due tracce, ed e' stato dato l'ordine di
+misurarlo prima di riscriverlo. Le due tracce erano tutte e due sbagliate.
+
+| route | prima | dopo |
+|---|---|---|
+| `GET /valves` | 15,6 s | **0,10 s** |
+| `GET /machine/oee/series`, con l'`at` vero | 13,7 s | **0,69 s** |
+| `GET /machine/oee/series`, senza `at` | 27,0 s | 3,3 s |
+
+**`/valves`**: `DISTINCT ON` su `predictions` che percorreva 723.110 righe per
+tenerne 35. Sostituito da un `LATERAL` su `generate_series(1, 35)`.
+
+**`/machine/oee/series`**: la causa non era una query lenta ma **739
+interrogazioni per richiesta**, di cui 8,0 s su 9,0 in attesa di rete. Tre
+ripetizioni: contatore costruito per finestra invece che per richiesta, con
+`shift` e `day` che rileggevano gli stessi bordi; storia OMAC riletta 358 volte
+per finestra su una tabella di 300 righe; ogni ora di bordo letta due volte
+invece di ricavarne la seconda meta' per differenza dal riepilogo, che sono
+interi e non un'approssimazione. Interrogazioni dopo: **12**, indipendenti dal
+numero di punti.
+
+Verificato da me e non solo dichiarato: tempi rimisurati alla terza chiamata,
+MACCHINA guardata in un browser vero a 1536x770 (si disegna per intero in tre
+secondi, contro la ventina di prima, con i quattro guasti giusti nella fascia
+degli allarmi), file toccati confrontati con quelli dichiarati, e la suite fatta
+girare per intero: **539 passed**, uscita 0.
+
+Toccati solo `pipeline/api.py`, `pipeline/tests/test_api.py`,
+`pipeline/tests/test_oee.py`. Nessuna pagina della dashboard, nessun indice
+nuovo nel database.
+
+Resta aperto in `OPEN_QUESTIONS.md`: i 3,3 s della serie senza `at`, causa non
+isolata, e il pavimento di 0,7 s con `at`, irriducibile senza un riepilogo a
+grana di minuto.
+
+### Trovato per strada
+
+Due difetti registrati in `OPEN_QUESTIONS.md`, nessuno dei due riparato qui:
+
+- **`/machine/oee/series` a 27,0 s e `/valves` a 15,6 s** sull'API vera. MACCHINA
+  resta vuota una ventina di secondi e poi si riempie tutta insieme; nessun
+  errore in console. Le due route non hanno ricevuto il riepilogo orario che il
+  20 agosto ha sistemato le altre.
+- La contraddizione fra le due fixture dell'OEE e' su **tre** scenari, non due, e
+  sono i tre di guasto.
+
+---
+
 ## 2026-08-20 — Sessantacinque giorni di storico, il riepilogo orario, e la pagina TEMPO scelta dall'utente
 
 ### Contesto
@@ -1131,3 +1622,393 @@ rottura improvvisa sulla 21, condizione diffusa sul gruppo 13-18, guasto di
 sensore sulla 30 ancora in salita a fine run. **Il motore dei guasti non sa
 riparare** (severità monotona, un fault per valvola): gli allarmi chiusi nello
 storico saranno quelli spontanei, non riparazioni. Dichiarato nel file.
+
+## 2026-08-21, percorso live Blocco A
+
+Il mapping edge è ora generato dalle costanti OPC UA. Contiene 567 voci, con 7
+tag macchina e 16 tag per 35 valvole. Il flow sottoscrive il mapping e usa un
+watermark indipendente per ogni `ValveNN.LastCycleId`.
+
+Il builder crea l'envelope dalla valvola che ha generato il trigger. Non usa
+`Machine.DataReady` e non usa un fallback `cycleCounter`.
+
+Le verifiche statiche sono verdi. `edge/tests/parity_check.py` ha 17 pass e 1
+skip. Il generatore produce lo stesso `tag-mapping.js` presente nel repository.
+
+La suite `pipeline/tests` ha dato **298 passed, 1 warning in 177,52 s**. È
+un'evidenza separata e non sostituisce il requisito runtime del Blocco A.
+
+La prova runtime è poi stata eseguita con Docker disponibile e deploy `full`
+del flow tramite l'Admin API Node-RED. I log hanno confermato mapping 567,
+subscription 567 e 35 trigger. Il tentativo 4 ha ricevuto e scritto 269 eventi,
+con zero reject e backlog zero, ma dopo circa 30 secondi il server OPC UA ha
+registrato la scadenza della subscription con `publish cycle count(31) >
+lifetime count(30)` e `BadNoSubscription`. Per oltre due minuti il contatore è
+rimasto fermo. I 269 eventi coprono le 35 valvole, con 7 o 8 eventi per
+valvola, ma solo per 25,812 secondi. La prova continua di dieci minuti e la
+copertura nella relativa finestra non sono quindi completate. Non sono stati
+modificati database, core congelato, Blocco B o Blocco C.
+
+## 2026-08-21, controprova Blocco A dopo restart Node-RED
+
+Il solo container Node-RED è stato riavviato alle 22:47:12+02:00; dopo il
+preflight dei log (mapping 567, 35 trigger, subscription 567, MQTT connesso)
+non è stato eseguito alcun POST a `/flows`. La finestra raw successiva è durata
+18 min 51,598 s, con 11.869 envelope per tutte le 35 valvole (339--340 per
+valvola), nessun gap superiore a 10 s e massimo gap di 3,703 s. Il checkpoint
+ha registrato 4.812 ricevuti e 4.812 scritti come conteggi cumulativi, zero
+reject, duplicati, invalidi e reconnect; ritardo medio circa 1,74 ms.
+
+Il controllo indipendente dei timestamp raw attraversa anche l'interruzione
+del gestore: 1.575 record continui, 35 valvole e massimo gap 398 ms. La suite
+edge è risultata `19 passed`; `pipeline/tests`, usando un basetemp locale per
+evitare un PermissionError della temp utente, è risultata `298 passed`.
+Il rapporto con le due uscite integrali di `misura_percorso.py` è
+`.scratch/percorso-live/BLOCK-A-SUBSCRIPTION-RESTART-REPORT-20260821.md`.
+
+## 2026-08-22 — Blocco B, checkpoint finestra live
+
+- Riutilizzato il gate `GATE_PASS` prima del live.
+- OPC UA PID `42088` e ingest in due sessioni controllate hanno ricevuto
+  CmdStart. L'ingest ha registrato `written=1211` entro le 01:06:57 CEST.
+- La finestra è stata chiusa per ordine del Terra manager. Nessun supervisor,
+  backfill o inference è stato avviato. Dopo cleanup, 4840 e 4841 non avevano
+  listener. Il PID ingest non era leggibile per `Accesso negato`, quindi non è
+  stato fermato alcun processo ignoto.
+- Dopo escalation autorizzata, Node-RED è stato riavviato e il container era
+  `running`; `/health` ha risposto 404. La misura v21 post è uscita con codice
+  0 e resta `7 su 150`, con le nove valvole allarmate immutate. Report:
+  `.scratch/percorso-live/BLOCK-B-BATTITO-REPORT-20260822.md`.
+
+## 2026-08-22, Blocco B, secondo tentativo
+
+- Avviati con PID attribuibili il server OPC UA (42924), l'ingest (14388) e il
+  supervisor (27556). CmdStart ha dato `Running=True`; la sola partizione live
+  era `date=2026-08-21`.
+- Il primo heartbeat ha fermato il supervisor: backfill exit 2 per 6.217
+  duplicati su `(valve_id, cycle_id)`. L'inference non è stata eseguita.
+- Fermati i soli PID avviati. Porte 4840/4841 e connessioni al broker pulite.
+  Dopo restart Node-RED, v21 resta 7 su 150 con le nove valvole allarmate
+  invariate. Nessun cambiamento a cycles, predictions o `current_run_id`.
+- Esito: `BLOCKED_FOR_REASONING / NEEDS-REVIEW`. Report:
+  `.scratch/percorso-live/BLOCK-B-BATTITO-REPORT-20260822.md`.
+
+## 2026-08-22, Blocco B, terzo tentativo isolato
+
+- Creata una root raw nuova e non preesistente:
+  `.scratch/percorso-live/attempt3-20260822T013358/raw`.
+- Il server OPC UA ha ricevuto CmdStart, ma l'ingest è terminato subito:
+  `Start-Process` ha spezzato il percorso con spazio di `--out`.
+- Non avviato il supervisor. Fermati solo i PID attribuibili; porte e broker
+  puliti. Node-RED post-cleanup `healthy`; v21, nove allarmi e
+  `current_run_id` invariati.
+- Esito: `BLOCKED_FOR_REASONING / NEEDS-REVIEW`. Nessun quarto giro.
+
+## 2026-08-22, Blocco B, quarta corsa live — autorizzata dall'utente
+
+- Copia di sicurezza `plcsim_pre_run4_20260822.dump` (585.296.036 byte,
+  `pg_restore --list` 51 voci) prima di accendere.
+- Catena accesa nell'ordine: server OPC UA, ingest su `data/raw`, riavvio di
+  Node-RED (567 sottoscrizioni, 35 trigger), CmdStart, supervisore.
+- **Il battito funziona da raw a cycles.** `verifica_battito.py 10` ha visto
+  +6.653 righe raw e +6.651 cycles; `predict` fermo a 723.110.
+- L'incrementale non rilegge il pregresso: 1.432/1.432 · 161/1.593 · 693/2.286
+  · 638/2.924 · 692/3.616. Primo battito 3.668 ms.
+- Riavvio a metà corsa: supervisore B ha inserito 372 righe sulle 3.988 lette,
+  esattamente le mancanti. Totale 8.886 righe su 8.886 chiavi distinte.
+- Valvola 21 invariata a 7 su 150, nove allarmi immutati, `current_run_id`
+  intatto. Nessuna predizione prodotta, quindi nulla poteva spingerla fuori.
+- Unica modifica di prodotto: `pipeline/cycles_backfill.py:753`, argomenti
+  `dates` e `db_url` invertiti nel log d'avvio.
+- `pipeline/tests` → 307 passed.
+- Rapporto: `.scratch/percorso-live/BLOCK-B-RUN4-REPORT-20260822.md`.
+
+## 2026-08-22 — `predictions` riceve il discriminante di run
+
+- Migrazione idempotente `Storage._migrate_predictions_run_id`, ricalcata su
+  quella di `cycles` del 2026-08-19. Le 723.110 righe esistenti attribuite a
+  `storico_60d`, verificato dal `window_end_cycle_id` massimo (1.036.100,
+  coerente con 36.241.832 cicli su 35 valvole).
+- `run_id` NON entra nel record wire: `prediction-v1.json` ha
+  `additionalProperties: false`. È parametro di `insert_prediction`, come per
+  `cycles`.
+- Watermark (`existing_window_end_cycle_ids`) e cronologia allarmi
+  (`load_score_history`) filtrano per run. Le rotte prediction dell'API
+  filtrano sul run risolto e degradano senza filtro se il run è ambiguo.
+- **Risultato: l'inference sul run live ha prodotto 140 record.** Prima erano
+  zero e sarebbero rimasti zero.
+- Storico invariato: 723.110 prediction, valvola 21 a 7 su 150, nove allarmi.
+- `pipeline/tests` → 307 passed; `tests` + `edge` → 259 passed.
+- Rapporto: `.scratch/percorso-live/RUN-ID-PREDICTIONS-REPORT-20260822.md`.
+
+## 2026-08-22 — `alerts` per run, e due difetti trovati accendendo la catena
+
+- `alerts` e `alert_transitions` hanno `run_id`; chiave unica
+  `(run_id, valve_id, fault_type)`; `alert_id_for` include il run. Migrazione
+  transazionale: 12 allarmi e 64.180 transizioni riscritte, zero orfane.
+  Guardia a runtime rimossa, la separazione è nello schema.
+
+- **DIFETTO 1 — il cursore incrementale perdeva righe in silenzio.** Il
+  cursore era un high-water mark per valvola sul `cycle_id`, e dava per
+  scontato che i cicli arrivassero in ordine. Non è vero: alla ripartenza di
+  Node-RED la prima lettura della subscription consegna il valore CORRENTE di
+  `LastCycleId`. Sulla valvola 1 è arrivato un `cycle_id` 274 prima della
+  sequenza reale, ripartita da 4; il cursore ha preso 274 come soglia e ha
+  scartato ogni ciclo autentico successivo. Il log diceva «backfill ok … 0
+  righe inserite», che si legge come "niente di nuovo" e non come "ho buttato
+  via 643 righe". Corretto spostando il cursore su `ingest_ts`, che è monotono
+  per costruzione; confronto `>=` per non perdere le righe sul bordo del
+  flush, con l'ON CONFLICT del writer che assorbe la sovrapposizione. Dopo la
+  correzione un backfill ha recuperato **2.554 righe** che erano state perse.
+  Test di regressione:
+  `test_cursore_non_perde_i_cicli_arrivati_fuori_ordine`.
+
+- **DIFETTO 2 — il supervisore non passava il run all'inference.** Il comando
+  aveva `--dates` e `--raw` ma non `--run-id`, quindi l'inference ricadeva sul
+  KV `current_run_id` (il run storico): watermark sbagliato, `prediction: 0
+  record prodotti` a ogni battito mentre i cicli entravano regolarmente. E se
+  avesse prodotto, avrebbe scritto sotto l'identità del run storico. Corretto
+  in `SupervisorConfig.inference_command`, con l'asserzione aggiunta al test
+  del supervisore.
+
+- Dopo le due correzioni il battito produce da solo: 533 cicli incrementali e
+  **105 prediction** in un singolo giro.
+- `pipeline/tests` → 308 passed.
+
+## 2026-08-22 — percorso live CHIUSO: i dati arrivano da soli fino alla diagnosi
+
+Catena completa e autonoma:
+`macchina → OPC UA → Node-RED → MQTT → raw → cycles → predizioni → allarmi`.
+
+- **Criterio di accettazione superato**: `verifica_battito.py 10` a catena
+  accesa, **uscita 0**, tutti e tre gli stadi in movimento (+6.814 raw,
+  +6.281 cycles, +140 predizioni in dieci minuti).
+- **Prova end-to-end con un guasto vero**: macchina avviata sana
+  (`scenarios/m5_healthy.yaml`), guasto `restriction` severità 0.95 iniettato
+  dal vivo via OPC UA sulla valvola 5. Visibile nei dati grezzi
+  (`delta_pulse` medio 1957 contro ~9 delle altre), isolato dal modello alla
+  prima finestra (punteggio 1,000 contro 0,431 della seconda valvola), e
+  arrivato fino all'**allarme aperto al ciclo 700**, con una transizione
+  registrata. I nove allarmi dello storico sono rimasti invariati e la
+  valvola 21 a 7 su 150.
+- **Riavvio a metà corsa**: fermato a 11.003 righe, il supervisore nuovo ne ha
+  inserite 270 — esattamente le mancanti. Fine corsa 11.913 righe su 11.913
+  chiavi distinte, zero duplicati.
+- Suite `pipeline/tests` + `tests` + `edge` → **567 passed**.
+
+**Terzo difetto trovato accendendo la catena: la coda del broker.** Dopo un
+quarto d'ora il battito si è fermato su 158 duplicati `(valve_id, cycle_id)`
+dentro UNA sola sessione del simulatore. Gli `event_ts` lo spiegano: quelle
+righe venivano dalla sessione precedente, rimaste nella coda persistente MQTT
+(QoS 1, `clean_session=False`, client id fisso `plcsim-ingest-v1`) e consegnate
+all'ingest alla riconnessione; poi la macchina nuova raggiunge davvero quel
+cycle_id e collide. La coda persistente esiste di proposito e non va tolta.
+
+**Regola operativa che ne consegue**: un run live nuovo parte da una sessione
+broker pulita — `--client-id` dedicato al run — come già parte da una
+partizione nuova e da un Node-RED riavviato. Il guard sui duplicati ha fatto
+il suo mestiere: si è fermato dicendo perché, invece di scegliere in silenzio.
+
+Rapporto: `.scratch/percorso-live/PERCORSO-LIVE-CHIUSURA-20260822.md`.
+Resta aperto solo il **Blocco C**, che è una scelta di prodotto.
+
+---
+
+## 2026-08-22, sera — ambiente riacceso e le due decisioni portate all'utente
+
+**Riavvio.** API (8123) e proxy (8078) giravano con codice vecchio: l'API era su
+dal 21/08 alle 14:20, il proxy dal 20/08 alle 16:01. Fermati e riaccesi tutti e
+due. `GET /health` → `{"status":"ok","db":true}`. Le cinque pagine rispondono 200
+e MACCHINA si disegna per intero a 1536x770.
+
+**Difetto trovato e corretto: `/alerts` non accettava il run.** `_alerts_rows`
+risolveva il run solo dal KV `current_run_id`, e la route non aveva il parametro
+`run_id` che tutte le altre hanno dal 22/08. Puntando la dashboard su una corsa
+diversa, ogni grafico seguiva la corsa chiesta e la sola fascia degli allarmi
+restava ancorata al KV: al tecnico sarebbe apparsa una macchina diversa da quella
+dei grafici accanto. Aggiunto `run_id` a `/alerts` e `/alerts/history`, con
+default invariato. Prova: sulla corsa live la fascia passa da 9 allarmi dello
+storico a 1, la valvola 5 iniettata dal vivo.
+
+**Aggiunto `--run` al proxy** (`.scratch/dashboard-v7/server_api.py`): inoltra
+`run_id` all'API e prende come istante di osservazione la fine di quella corsa.
+Serve a mettere due corse a confronto **senza toccare il KV**, che è la decisione
+dell'utente. Il KV resta su `storico_60d`.
+
+**Misure del confronto**, dalle route vere:
+
+| | `storico_60d` | `live_20260822_run7` |
+|---|---|---|
+| cicli | 36.241.832 | 17.978 |
+| durata | 21 giu → 19 ago | 28 minuti |
+| allarmi attivi | 9 | 1 (valvola 5) |
+| punti in `machine/oee/series` | 179 | 1 |
+| OEE turno | 73,9 % | non calcolabile |
+
+**Buco di navigazione misurato**, e non risolto d'ufficio: ogni pagina rimanda
+solo alle pagine nate prima di lei. MACCHINA → VALVOLE. VALVOLE → MACCHINA.
+OEE → MACCHINA, VALVOLE. TEMPO → le tre precedenti. CARTA → le quattro
+precedenti. Nessuno rimanda a CARTA.
+
+Suite `pipeline/tests` + `tests` + `edge` dopo la modifica: **567 passed**, la
+stessa base di stamattina.
+
+Le due decisioni sono davanti all'utente come pagina con indirizzi cliccabili:
+<https://claude.ai/code/artifact/3c94f521-9029-429d-b21f-8e16fa1907cb>
+
+### Menu unico sulle cinque pagine, applicato e verificato a schermo
+
+`collegaNav()` sta ora in `comune/dati.js`: riscrive l'indirizzo di ogni
+collegamento dentro `.nav-voci` aggiungendo lo scenario corrente. Prima la stessa
+cosa era scritta a mano in tre posti, nominava gli id uno per uno, e `pc/` e `k1/`
+non la facevano affatto.
+
+Tutti e cinque gli `index.html` portano lo stesso menu a cinque voci, nell'ordine
+MACCHINA, VALVOLE, OEE, TEMPO, CARTA. La pagina corrente resta senza collegamento.
+Spariti gli id vecchi `vai-valvole` e `vai-macchina` (restano solo in `v3/`, una
+variante morta di VALVOLE, lasciata com'era).
+
+**Un difetto che si è visto solo aprendo le pagine**: `a/stile.css` era l'unica
+delle cinque senza la regola `.nav-voci li a{ color:inherit; text-decoration:none }`.
+Con un collegamento solo il difetto passava quasi inosservato, con quattro il menu
+di MACCHINA è comparso blu e sottolineato, con le voci già visitate in viola.
+Regola spostata in `comune/lessico.css`, dove il menu condiviso ha il suo posto.
+
+Verifica fatta a schermo, non solo con `curl`, a 1536x770 sui dati veri: tutte e
+cinque le pagine si disegnano per intero e il menu è identico. Il giro da MACCHINA
+a CARTA con un clic vero funziona. Il worker aveva dichiarato di non aver aperto
+il browser, ed è esattamente lì che stava il difetto.
+
+Nota, non corretta perché precedente a questo lavoro: i collegamenti portano
+`?scn=a-sana`, cioè lo scenario predefinito del guscio a fixture, mentre il proxy
+serve un solo scenario e lo ignora di proposito. Innocuo, ma adesso si vede
+nell'indirizzo a ogni passaggio di pagina.
+
+### La pulizia passa a una sessione nuova
+
+Handoff in `.scratch/HANDOFF-pulizia.md`. Non è stata fatta qui perché
+cancellare non si torna indietro e i nomi nel handoff precedente erano sbagliati:
+le varianti scartate di TEMPO sono `pa/` e `pb/`, non `ta/` e `tc/`, che non sono
+mai esistite. L'utente aveva approvato leggendo i nomi sbagliati.
+
+Inventario misurato, tutto sotto `.scratch/dashboard-v7/`: da togliere `pa/`,
+`pb/` (TEMPO), `v2/`, `v3/` (VALVOLE), `b/`, `c/` (MACCHINA), che nessuno nomina.
+Restano `tb/`, nominata da `RECENT_WORK.md` e da tre `PACCHETTO-*.md`, e `k1o/`,
+`k2/`, `k3/`, che `DECISIONS.md` dichiara di tenere.
+
+Alla radice: `180` e `nul` sono file vuoti da errori di riga di comando, `e.g` è
+un pezzo di prompt finito in una redirezione, `tmp_report.txt` è una versione
+tronca di `work/m8_acceptance_report.md`, `_tmp_m9_repro/` contiene un solo
+parquet. Segnalata anche `.pi-subagents/`, **331 MB**, più di tutto il resto
+messo insieme: sono trascrizioni di run, cioè prove, e non si toccano senza
+chiedere.
+
+## 2026-08-23 — la pulizia, e la lentezza della serie OEE isolata
+
+### La pulizia
+
+Fatta con i nomi corretti, dopo che l'utente li ha confermati: l'approvazione
+precedente era stata data leggendo `ta/` e `tc/`, che non sono mai esistite.
+Tolte `pa/`, `pb/`, `v2/`, `v3/`, `b/`, `c/` da `.scratch/dashboard-v7/`, più
+`180`, `nul`, `e.g`, `tmp_report.txt`, `_tmp_m9_repro/` alla radice e
+`.playwright-mcp/`. `.pi-subagents/` resta per decisione dell'utente.
+
+Prima di cancellare: verificato che **niente fosse tracciato da git** (nessuna
+copia da cui tornare indietro), che nessun documento nominasse le sei cartelle,
+e che le cinque pagine vive rimandassero solo a `a/`, `v1/`, `oee/`, `pc/`,
+`k1/`, `comune/`. Verificato anche che `work/m8_acceptance_report.md` fosse
+intatto prima di togliere `tmp_report.txt`, che ne è una copia tronca.
+
+Dopo: cinque pagine aperte a 1536x770 sui dati veri, giro completo del menu con
+clic veri, e suite a **567 passed** su due corse. Identica alla base.
+
+### Un difetto misurato che non era dove sembrava
+
+`GET /machine/oee/series` era registrato come «senza `at` costa 3,3 s, causa non
+isolata». La causa è isolata e **non è il parametro**: è se l'istante cade su
+un'ora esatta. Allineato costa 0,58 s, non allineato da 0,9 a 6,2 s. Senza `at`
+la finestra finisce «adesso», che non è quasi mai allineato.
+
+Il tempo è tutto in `_conta_bordi`: con `at` allineato quella fase costa 0,000 s
+perché i bordi d'ora sono vuoti e non vengono chiesti; non allineato ne servono
+circa 230, cioè ~1,75 milioni di tuple d'indice.
+
+**Due strade percorse e scartate come cause**, perché è utile che non si
+ripercorrano: l'indice di copertura esiste già e il piano è `Index Only Scan`
+con `Heap Fetches: 0`; e l'indice non è gonfio, `pgstatindex` dà densità 90,05%
+e frammentazione 0,08%.
+
+**La lezione sul metodo**: la stessa chiamata ha dato 13,3 s, poi 5,3 s, poi
+0,93 s nella stessa giornata, al variare del buffer di Postgres. Avevo riportato
+«peggiorato da 3,3 a 5,3 s» prima di accorgermene, ed era falso. Su questa route
+un tempo assoluto non vuol dire niente da solo: si confronta allineato contro
+non allineato, nella stessa condizione di cache.
+
+### Il residuo `?scn=a-sana`
+
+`collegaNav` in `comune/dati.js` ora aggiunge il parametro solo se lo scenario
+non è quello predefinito. Sul proxy dei dati veri gli indirizzi tornano puliti
+(`/v1/`, `/oee/`, `/pc/`, `/k1/`); il guscio a fixture continua a portarsi
+dietro uno scenario scelto. Verificato a schermo con il giro completo del menu,
+non con `curl`.
+
+### M11
+
+L'utente ha accettato K=5/N=150 come definitiva. La domanda sulla latenza è
+chiusa in `OPEN_QUESTIONS.md`. Di M11 resta la classificazione del modello sulla
+valvola 21, che non è un problema di taratura.
+
+## 2026-08-23, secondo turno — la ripulitura delle domande aperte
+
+L'utente ha chiesto se restassero decisioni da prendere. Controllando una per
+una invece di riportare i titoli, **non ne restava nessuna** — ma il file diceva
+il contrario, e questo era il difetto vero.
+
+### Il difetto: undici sezioni mentivano nel titolo
+
+`OPEN_QUESTIONS.md` aveva undici sezioni intitolate «APERTA» o «Aperto» che
+erano state chiuse nei giorni precedenti senza che nessuno le depennasse. Chi
+leggeva il file rifaceva indagini già fatte. Ci sono cascato due volte in questa
+sessione prima di accorgermene.
+
+Ognuna è stata verificata **sulla cosa, non sull'etichetta**:
+
+| sezione | come è stata verificata |
+|---|---|
+| cronologia allarmi senza `run_id` | `\d predictions` sullo schema: la colonna c'è, con due indici per run |
+| `alerts` non distingue i run | `alerts` e `alert_transitions` hanno `run_id`, chiave unica `(run_id, valve_id, fault_type)` |
+| confronto fra valvole «decisione non presa» | **era stata presa**: è la striscia «LE 35 SULLA STESSA SCALA» in TEMPO, scelta fra tre varianti, e `LESSICO.md` era già stato corretto per ammetterla |
+| gate `validate.py` non passa | eseguito: `OK: nessun fallimento` sui sei scenari. Il difetto dei `GT_TOKENS` era già corretto con `GT_DEROGHE` |
+| carta di controllo «non ancora costruita» | è la pagina CARTA `/k1/`, accettata il 22 agosto |
+| OEE gonfiato a bordo finestra | l'API dichiara la finestra parziale, `pipeline/api.py:915` |
+| percorso live mai esercitato | chiuso il 22 agosto con un guasto iniettato dal vivo |
+| tre Blocco B e due gemelle | ognuna aveva già la propria «CHIUSA» più in basso: chi leggeva dall'alto incontrava prima quella sbagliata |
+
+Nessun testo è stato cancellato: le sezioni portano ora un riquadro
+**«SUPERATA — non rifare questa indagine»** con la prova. In testa al file c'è
+la regola che mancava: chi chiude una voce marca la sezione, non scrive solo una
+voce nuova più in basso.
+
+### Gli avvisi della suite
+
+Il progetto non aveva **nessun** file di configurazione di pytest, e i
+marcatori `slow` e `opcua` erano usati senza essere dichiarati: tre dei quattro
+avvisi erano pytest che sospettava un errore di battitura. Aggiunto `pytest.ini`
+con le due dichiarazioni. Raccolta verificata prima e dopo: 567 e 567.
+
+Il quarto avviso **resta di proposito**. È uno `StarletteDeprecationWarning` che
+nasce in `fastapi/testclient.py`, cioè in una libreria: toglierlo vuol dire
+installare `httpx2`, cioè modificare l'ambiente Python, che il 22 agosto è stato
+deciso di non toccare. Nasconderlo con un filtro sarebbe peggio che tenerlo — è
+l'unico segnale rimasto di una dipendenza che invecchia, ed è scritto dentro
+`pytest.ini` perché il prossimo che lo vede non lo silenzi per comodità.
+
+### Cosa non è stato fatto, e perché
+
+I tre difetti dei generatori di fixture (`history_extract_ef.py`,
+`predict.py::alert_rows`, `alert-history.json`) vivono solo dentro
+`.scratch/dashboard-v6/fixtures/`, superata dal 22 agosto. Correggerli non
+avrebbe effetto su niente di osservabile. Restano scritti, non corretti.
+
+La deriva lunga settimane è stata riproposta e l'utente ha risposto di no per
+adesso.

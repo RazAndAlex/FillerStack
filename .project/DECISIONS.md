@@ -1,9 +1,41 @@
 # Active decisions
 
-Updated: 2026-08-20
+Updated: 2026-08-21
 
 This file summarizes active decisions evidenced by `CONTEXT.md`, `docs/adr/`, and
 the current implementation. The ADRs remain authoritative for detail.
+
+## Alert operativi score-only K=5/N=150
+
+- L'apertura operativa usa almeno 5 punteggi `anomaly_score >= 0.5` negli ultimi
+  150 cicli della stessa valvola. `threshold_open` resta 0,5.
+- `predicted_label` non discrimina mai l'apertura. Tutti gli eventi usano la
+  lineage tecnica `score_aggregation`, anche se le label predette cambiano.
+- K=5/N=150 e' il default scelto sulla simulazione dell'intera storia: zero
+  falsi positivi, 9 guasti iniettati su 9 rilevati, valvola 21 attiva per il
+  93,0% del run e 8 aperture. K=5/N=100 dava 70,8% e 33 aperture.
+- Ground truth e scenario servono solo a valutazione e misura offline. Non
+  entrano nell'engine, nel replay, nel database operativo o nell'API.
+- Modello, feature extraction, inference e schema ML-F1 restano invariati. La
+  classificazione diagnostica e l'apertura operativa sono problemi distinti.
+- Il replay dello storico parte esclusivamente dalle predizioni persistite ed e'
+  distruttivo solo con opzioni esplicite e backup verificato. Il dump precedente
+  al replay resta in `.scratch/taratura-aggregazione/backup-2026-08-21/`.
+- Il replay N=150 ha portato il database da 11 a 12 alert e da 64.105 a 64.180
+  transizioni. Il backup e' in
+  `.scratch/taratura-aggregazione/backup-2026-08-21-n150/alerts-pre-score-replay.dump`
+  con SHA-256
+  `4443A54C4931227D424B14372D702FB28CB89103E93AD683B19885D02C006045`.
+- La misura su nove valvole mostra un peggioramento massimo di 0,4 s e un
+  miglioramento di 2.080,69 s (-34 min 40,69 s) sulla 21. N=150 legge 5.250 righe per 35 valvole
+  e ha una mediana warm di 9,811 ms, contro 7,625 ms di N=100.
+- Al riavvio inference ricostruisce le ultime N decisioni score-only delle 35
+  valvole in ordine cronologico. Esclude il lotto già persistito tramite gli
+  UUID esatti `prediction_id`. L'ordine totale usa `prediction_ts`,
+  `window_end_cycle_id`, `prediction_id`, quindi resta deterministico anche in
+  caso di parità e di identificatori di ciclo riutilizzati tra run. Il seed non
+  scrive eventi. `load_states` resta compatibile e non rende persistenti
+  cooldown o streak legacy.
 
 ## Causal simulation boundary
 
@@ -391,3 +423,228 @@ dashboard/prototype/checks/v3-branch-report.md` and `v3-p0…p6-*.md`,
   serviva due: tre ore di simulazione e una migrazione di schema per dati non
   visibili. E' la regola simmetrica a quella gia' in vigore — *prima di costruire
   una pagina, misurare se i dati la sostengono* — e vale nella direzione opposta.
+- **Il verdetto in una cella numerata sta sul bordo, non sul riempimento.** Le
+  due fasce piene che portavano il verdetto delle due carte nella striscia di
+  CARTA sono state respinte perche' comprimevano il numero della valvola:
+  *«i rettangoli un po' rendono il numero meno chiaro»*. Sostituite da una riga
+  di 5 px sotto il numero.
+- **Due valori da confrontare stanno accostati, non ai due estremi.** Fra le
+  cinque forme messe a confronto, quella con un filo in alto e uno in basso e'
+  stata scartata — *«guardare uno in alto e un altro in basso li separa un po'
+  troppo»* — a favore di una riga sola divisa a meta'. La distanza fra due segni
+  codifica quanto sono legati.
+- **Le varianti di un singolo elemento si guardano in un artefatto di
+  anteprime.** Per un elemento dentro una schermata gia' accettata non si rifa'
+  l'innesto nella pagina a ogni ipotesi: si pubblica un artefatto con tutte le
+  opzioni una sotto l'altra, a grandezza reale e con la palette vera, stessi
+  stati incolonnati. E' l'utente che ha proposto il metodo. Resta invariato il
+  processo delle tre varianti vere per una schermata strutturalmente nuova.
+- **Una finestra di OEE che comincia prima dei dati si dichiara parziale.** Fra
+  quattro opzioni — dichiarare, contare il mancante come fermo, rifiutare la
+  risposta, lasciare com'e' — l'utente ha scelto di dichiarare. L'API continua a
+  rispondere e a dare i numeri che sa dare, ma dice quanta finestra non ha storia
+  e quanta. Contare il tempo mancante come fermo e' stato scartato perche'
+  sarebbe un numero inventato: in questo progetto i dati assenti si dichiarano.
+- **`degraded` non allarga il proprio significato.** Resta «A, P o Q sono
+  nulli». Una finestra parziale produce tutti e tre i numeri, quindi non e'
+  degradata: porta un marchio proprio. Allargare `degraded` avrebbe fatto
+  sparire l'OEE dalle pagine all'inizio dello storico, che nessuno ha chiesto.
+- **Un difetto trovato dentro un artefatto secondario si segue fino alla sua
+  causa, anche se la causa sta altrove.** La contraddizione dell'OEE sembrava un
+  difetto delle sei fixture congelate; il worker ha dimostrato che le fixture
+  replicano fedelmente l'API e si e' fermato invece di correggerle. La
+  correzione e' andata dove stava la causa, e li' vale anche per le pagine vive.
+
+## 2026-08-21, identità del ciclo edge
+
+Il flow edge identifica una chiusura solo da `ValveNN.LastCycleId`.
+`Machine.DataReady` non identifica una valvola.
+
+Il builder rifiuta un envelope senza `LastCycleId`. Non usa `cycleCounter` come
+fallback.
+
+## 2026-08-21, stop della misura live del Blocco A
+
+Il deploy del flow corrente usa il contenuto letto dall'Admin API Node-RED e un
+deploy `full`, con backup della copia precedente del container. Non richiede il
+riavvio del container e non tocca il database.
+
+La prova realtime si ferma se la subscription OPC UA perde continuità. Nel
+tentativo 4 la subscription è scaduta dopo circa 30 secondi e il server ha
+emesso `BadNoSubscription`. I 269 eventi già scritti restano evidenza di
+preflight, non una misura di dieci minuti. La correzione della subscription è
+una nuova attività e non è stata tentata nel Blocco A.
+
+## 2026-08-22, la corsa che la dashboard mostra (Blocco C)
+
+La dashboard mostra **`storico_60d`**, i sessanta giorni di storico. Decisione
+dell'utente, presa dopo aver aperto le due pagine vere a confronto.
+
+Il KV `current_run_id` resta su `storico_60d` e non va spostato senza una nuova
+decisione. Le corse live restano nel database come evidenza del percorso live
+chiuso il 22 agosto, ma nessuna pagina le mostra.
+
+La ragione misurata: sulla corsa live più lunga di quel giorno
+(`live_20260822_run7`, 28 minuti, 17.978 cicli) `machine/oee/series` risponde con
+**1 punto** contro i 179 dello storico, e l'OEE del turno non è calcolabile. Le
+quattro pagine accettate sono state disegnate e giudicate su sessanta giorni.
+Puntate su una corsa appena nata si vedono mezze vuote e sembrano rotte.
+
+Il percorso funziona in tutti e due i casi. Passare al live, quando una corsa
+avrà qualche ora di dati, costa una riga di configurazione.
+
+## 2026-08-22, la pagina CARTA è chiusa
+
+L'utente ha accettato **CARTA (`/k1/`)** dopo averla usata sui dati veri:
+*«la pagina carta per me va bene cosi»*. La dashboard ha **cinque pagine
+accettate**: MACCHINA, VALVOLE, OEE, TEMPO, CARTA.
+
+`k1o/`, `k2/`, `k3/` restano su disco come varianti e origine dell'innesto.
+
+Resta aperto un solo punto, che è di navigazione e non di contenuto: nessuna
+delle altre quattro pagine rimanda a `/k1/`. Il menu è cresciuto per accumulo e
+ogni pagina rimanda solo alle pagine nate prima di lei.
+
+## 2026-08-22, `run_id` sulle route degli allarmi
+
+`/alerts` e `/alerts/history` accettano `run_id`, come tutte le altre route di
+lettura dal 22 agosto. Il default non cambia: senza il parametro, la risoluzione
+resta il KV `current_run_id`.
+
+Il motivo non è la comodità. Senza il parametro, una dashboard puntata su una
+corsa diversa mostrava i grafici di quella corsa e la fascia degli allarmi del
+KV, cioè due macchine diverse nella stessa schermata.
+
+## 2026-08-22, il guscio a fixture è superato
+
+Le sei fixture congelate in `.scratch/dashboard-v6/fixtures/` **non si
+rigenerano**. Decisione dell'utente, presa dopo la misura di chi le legge.
+
+Chi le legge oggi: solo il guscio congelato sulla porta 8077
+(`.scratch/dashboard-v7/server.py`) e alcuni script di analisi in `.scratch/`.
+Nessuna delle cinque pagine accettate le tocca, e nessun test della suite fa
+asserzioni sui loro valori. `pipeline/` le nomina solo dentro commenti.
+
+Il difetto che contava era un altro, ed è già chiuso: l'OEE gonfiato quando la
+finestra comincia prima dei dati toccava le pagine vive, e l'API ora dichiara la
+finestra parziale (`availability_detail.uncovered_s`, `source.window_partial`,
+`pipeline/api.py:915`). Le fixture ereditavano quel difetto, non lo causavano.
+
+Rigenerarle avrebbe richiesto di risimulare corse di guasto con profili di
+fermata confrontabili, cioè molte ore, per un termine di paragone che nessuna
+pagina viva usa più.
+
+## 2026-08-22, l'ambiente Python resta su questa macchina
+
+Il progetto non deve girare fuori da questa macchina. Nessun lavoro di blocco
+delle versioni.
+
+Il limite resta noto e dichiarato: la suite passa appoggiandosi ai
+`site-packages` dell'utente e all'archivio uv via `PYTHONPATH`. Chi volesse
+portare il progetto altrove deve prima bloccare l'ambiente.
+
+## 2026-08-22, un menu unico sulle cinque pagine
+
+Ogni pagina rimanda alle altre quattro, sempre nello stesso ordine: MACCHINA,
+VALVOLE, OEE, TEMPO, CARTA. Decisione dell'utente.
+
+Il menu era cresciuto per accumulo e ogni pagina rimandava solo alle pagine nate
+prima di lei. CARTA, accettata oggi, non era raggiungibile da nessuna parte.
+
+## 2026-08-23, la sensibilità di rilevamento va bene così
+
+L'utente ha accettato la taratura **K=5/N=150** come definitiva: *«quella
+sensibilità basta»*. La domanda era aperta dal 21 agosto e chiedeva se servisse
+un aggregatore con un vincolo di latenza dichiarato.
+
+Non serve. La latenza di prima apertura resta quella misurata e dichiarata: circa
+1 h 15 min sulla valvola 30, 5 h 53 min sulla 21, 9 h 36 min sulla 8, e fra
+12 h 43 min e 15 h 12 min sulle valvole 13-18. Il criterio che conta è la
+copertura, non la prontezza: K=5/N=150 trova tutti e nove i guasti iniettati
+senza falsi allarmi.
+
+Conseguenza su M11: resta la classificazione del modello, cioè il silenzio sulla
+valvola 21. **Non è più un problema di taratura.** Chi riapre M11 non deve
+rimettere in discussione K e N.
+
+## 2026-08-23, la pulizia del disco è fatta
+
+L'utente ha confermato i nomi corretti delle varianti scartate, dopo che
+l'approvazione precedente era stata data su nomi inesistenti (`ta/`, `tc/`).
+
+Tolte da `.scratch/dashboard-v7/`: `pa/` e `pb/` (TEMPO, la viva è `pc/`), `v2/`
+e `v3/` (VALVOLE, la viva è `v1/`), `b/` e `c/` (MACCHINA, la viva è `a/`).
+Tolti dalla radice: `180`, `nul`, `e.g`, `tmp_report.txt`, `_tmp_m9_repro/`.
+Tolta `.playwright-mcp/`.
+
+**`.pi-subagents/` resta**, 331 MB. Decisione dell'utente: sono le trascrizioni
+dei run degli altri agenti, cioè l'unica traccia di come sono stati ottenuti
+certi risultati, e non si rigenerano. Chi cerca spazio su disco guardi altrove.
+
+## 2026-08-23, il parametro `scn` sparisce dagli indirizzi quando non serve
+
+`collegaNav` in `comune/dati.js` aggiunge `?scn=` ai collegamenti del menu solo
+se lo scenario **non** è quello predefinito.
+
+Contro il proxy sui dati veri lo scenario è ignorato di proposito e resta sempre
+il predefinito: il parametro compariva nella barra dell'indirizzo a ogni cambio
+pagina senza significare niente. Contro il guscio a fixture, dove gli scenari
+esistono davvero, uno scenario scelto viene ancora portato di pagina in pagina.
+
+## 2026-08-23, la serie OEE resta com'è
+
+L'utente ha deciso di **non correggere** il secondo scarso che
+`GET /machine/oee/series` costa quando l'istante chiesto non cade su un'ora
+esatta: *«lascia così»*. La decisione è presa dopo che le tre strade gli sono
+state spiegate con i costi di ciascuna.
+
+Le due correzioni possibili, e perché sono state lasciate:
+
+- **Arrotondare all'ora gli istanti della serie** azzera il costo, ma il punto
+  più recente diventa vecchio fino a un'ora e soprattutto rompe la garanzia che
+  l'ultimo punto del grafico e il valore corrente in cima alla pagina siano lo
+  stesso numero, calcolato dalla stessa funzione. Quella garanzia è deliberata.
+  **Questa strada è scartata**, non solo rinviata: scambia una proprietà vera
+  con una velocità che nessuno ha chiesto.
+- **Un riepilogo a grana di minuto** non toglie niente e non cambia nessun
+  numero, ma è una tabella nuova, una migrazione su 36 milioni di righe e una
+  cosa in più da tenere aggiornata. **Resta la strada giusta** se un giorno quel
+  secondo darà fastidio davvero.
+
+Il costo accettato: circa un secondo, solo sul grafico dell'andamento, solo al
+caricamento della pagina.
+
+Quello che questa sessione lascia in eredità non è una correzione ma una
+diagnosi: la causa è l'allineamento all'ora, non il parametro `at`, e non è né
+un indice mancante né un indice gonfio. Vedi `STATE.md`, 2026-08-23. Chi
+riapre il tema non deve rimisurare da capo, e soprattutto non deve inseguire la
+differenza fra 3,3 e 5,3 secondi: è la stessa misura con la cache in due stati.
+
+## 2026-08-23, la deriva lunga settimane resta fuori
+
+Riproposta all'utente come l'unica voce in elenco che direbbe qualcosa di nuovo
+sul prodotto, e **rifiutata per adesso**: *«per adesso quello della deriva no»*.
+
+La domanda a cui risponderebbe resta senza risposta e va detta com'è: oggi il
+modello rileva ogni guasto in circa due ore — sulla valvola 8 passa da rumore a
+saturazione fra le 04:00 e le 06:00 del 3 luglio — quindi **non c'è spazio per
+misurare quanto anticipa il degrado**, e non si può affermare che serva a
+prevenire invece che solo ad accorgersi. Chi la riaprirà non deve rifare
+l'analisi: è scritta in `OPEN_QUESTIONS.md`, e manca solo la run.
+
+## 2026-08-23, i tre difetti dei generatori di fixture non si correggono
+
+`history_extract_ef.py` che scrive storici vuoti, la classe di difetto latente
+in `predict.py::alert_rows` e la voce su `alert-history.json` vivono **solo**
+dentro `.scratch/dashboard-v6/fixtures/`, cioè i generatori delle fixture
+congelate.
+
+Quelle fixture sono superate dal 22 agosto e non si rigenerano: nessuna delle
+cinque pagine accettate le legge e nessun test fa asserzioni sui loro valori.
+Correggere quei tre difetti non avrebbe effetto su niente di osservabile.
+**Restano scritti, non corretti.** Chi un giorno dovesse rimettere in vita quel
+guscio li trova documentati.
+
+Il quarto difetto della stessa lista, il gate `validate.py`, **era già stato
+corretto** e non se n'era accorto nessuno: eseguito il 2026-08-23 dà
+`OK: nessun fallimento` sui sei scenari.
