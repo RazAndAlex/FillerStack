@@ -595,3 +595,29 @@ vuoto e sembra ancora in corso. Si scrive su file e si guarda quello.
   (`inference.py:75-96` ripiega su `manifest.yaml:code_version`). Conta il giorno
   in cui si spedisse un modello nuovo.
 - Suite 567 su 567.
+
+### Come si apre la dashboard, dal 2026-08-23
+
+Alla radice ci sono `dashboard.bat` e `dashboard.ps1`. Doppio clic sul `.bat` e
+basta: accende il container Postgres se è fermo, l'API sulla 8123, il server
+delle pagine sulla 8078, aspetta che rispondano davvero e apre il browser su
+`http://127.0.0.1:8078/a/`. Chiudendo la finestra si spegne tutto.
+
+Due cose non ovvie, tutte e due trovate provando e non ragionando:
+
+- **I processi figli non muoiono da soli.** Condividere la finestra non basta:
+  uccidendo il padre di colpo, i due Python restavano vivi con le porte
+  occupate. Lo script li lega a un **Job Object** di Windows con
+  `KILL_ON_JOB_CLOSE`, e allora muoiono comunque la finestra se ne vada.
+  Verificato con `Stop-Process -Force` sul processo che tiene il job: nessuna
+  porta rimasta in ascolto.
+- **Le copie vecchie sulle porte sono la trappola nota** di questo progetto: la
+  pagina prende un 404 e sembra che la route non esista, mentre gira codice di
+  ieri. Lo script ferma quello che trova sulle due porte, ma **solo se la riga
+  di comando è la nostra**; altrimenti si ferma e lo dice.
+
+Il container Postgres si spegne solo se è stato acceso dallo script, e solo
+uscendo con Ctrl+C. Chiudendo con la croce il blocco finale non gira.
+
+Nota: sulla porta 8077 può esserci ancora `server.py`, il guscio a fixture
+avviato il 21 agosto. Non c'entra col lanciatore e non viene toccato.
