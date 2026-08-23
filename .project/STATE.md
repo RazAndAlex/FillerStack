@@ -555,3 +555,23 @@ di prodotto e va portata all'utente.**
   modello (`inference.py:75-96` ripiega su `manifest.yaml:code_version`).
 - Niente è stato toccato fuori da `.scratch/silenzio-21/`. Modello, normalizzatore,
   split, `plcsim/` e `pipeline/` sono intatti. La suite resta a 567.
+
+### La suite verificata il 2026-08-23, e come va eseguita
+
+567 su 567, un solo avviso — quello noto di `fastapi/testclient.py`. Il conto si
+compone così: `pipeline/tests` 308, `tests` 258 (di cui 9 marcati `opcua`),
+`edge/tests` 1.
+
+**In una corsa sola non arriva in fondo**: impiega circa un quarto d'ora, e i
+nove test `opcua` da soli ne prendono cinque, quindi qualunque limite di tempo la
+tronca all'80% circa senza dire perché. Va spezzata:
+
+    python -m pytest -q pipeline/tests        # 308, ~3 min
+    python -m pytest -q tests -m "not opcua"  # 249, ~6,5 min
+    python -m pytest -q -m opcua              #   9, ~5 min
+    python -m pytest -q edge/tests            #   1, immediato
+
+Due trappole costate tempo: `pytest-timeout` non e' installato, quindi
+`--timeout` fa fallire la riga di comando con codice 4; e incanalare l'uscita in
+`tail` la bufferizza fino alla fine, per cui un processo morto lascia un file
+vuoto e sembra ancora in corso. Si scrive su file e si guarda quello.
