@@ -2012,3 +2012,122 @@ avrebbe effetto su niente di osservabile. Restano scritti, non corretti.
 
 La deriva lunga settimane è stata riproposta e l'utente ha risposto di no per
 adesso.
+
+## 2026-08-23 — M11: il silenzio della valvola 21 è capito, e la correzione è stata scartata dalla verifica
+
+Il lavoro è partito dall'ultima voce rimasta di M11: il modello dice `healthy` a
+0,0029 sulla valvola 21, che lo scenario `storico_60d` guasta con un
+`opening_delay` di severità 45 dal ciclo 431.725.
+
+### Prima cosa misurata: il classificatore sbaglia una volta sola
+
+Confronto fra `/valves/{id}/score` sull'API viva e `scenarios/storico_60d.yaml`:
+valvola 8 `restriction` giusto, valvole 13-18 `pressure_instability` giuste,
+valvola 30 `restriction` giusto. **Otto guasti su nove classificati bene.** La 21
+è un caso isolato, non la punta di un problema diffuso.
+
+### La causa vera, che completa la diagnosi del 21 agosto
+
+Non è il normalizzatore. È il **set di addestramento**. Ogni finestra
+`opening_delay` in `train.parquet` sta fra z 5,65 e 24,9 sulla famiglia
+fillingtime; il guasto della valvola 21 atterra a z 3,81 / 1,95 / 0,00. La
+severità 45 è dentro l'intervallo addestrato, ma in spazio **normalizzato** il
+guasto è fuori dominio, e il confine del classificatore non ci arriva.
+
+Il segnale nei dati grezzi c'è tutto: il 90,86% delle finestre dopo l'onset
+supera il 99,9° percentile pre-onset della valvola stessa su `mean_fillingtime`.
+Non manca niente in ingresso.
+
+### Tre ipotesi abbattute con la misura
+
+- **Normalizzazione robusta (mediana/MAD)**: non muove la valvola 21 (0,085 /
+  663 / 5 contro 0,089 / 699 / 4) e distrugge il resto — argmax `restriction` da
+  100% a **0%**, `flowmeter_dropout` da 29,9% a **0%**.
+- **La guardia sigma=0 su `max_fillingtime`**: morta per un motivo fisico, non di
+  taratura. Il valore grezzo della valvola 21 è esattamente 2130,00 con sd 0,00
+  **sia prima sia dopo l'onset**. La feature non porta informazione su questa
+  valvola, e nessun riscalamento la recupera. Sostituire il sigma azzerato con la
+  mediana fra valvole ha cambiato i numeri di zero: 0,0892 / 699 / 4, identici.
+- **Il taglio del sigma senza riaddestrare**: fa dire `opening_delay` con
+  sicurezza, al prezzo del **53,6% di falsi positivi sulla finestra sana della
+  valvola stessa** e 4.941 allarmi sani sulle 35. La base larga della 21 è rumore
+  vero, non un artefatto di normalizzazione.
+
+Chiarita anche la cancellazione che era rimasta senza spiegazione:
+`mean_pulsecount` e `mean_deltapulse` sono anticorrelate a r = -1,0000 con pesi
+uguali e opposti, quindi la coppia conta due volte la stessa grandezza. Colonne
+duplicate così ce ne sono nove. Ma lo stesso segno compare sulla valvola
+portatrice dell'addestramento: è un difetto di igiene, non la causa del silenzio.
+
+### La correzione che funzionava sullo scenario, e che la verifica ha bocciato
+
+L'aumento del set di addestramento con copie attenuate delle finestre guaste
+(stesso vettore z moltiplicato per k < 1, stessa etichetta) sposta il confine
+verso il basso e **funziona sui 60 giorni**. Due punti di lavoro misurati:
+
+| | ultima finestra v21 | FP pre-onset v21 | finestre sane sulle 35 | argmax giusto post-onset |
+|---|---|---|---|---|
+| modello spedito | 0,0029 `healthy` | 0,24% | 411 | 4 / 11.962 |
+| R12 | 0,857 **`opening_delay`** | 1,79% | 828 | 8.976 |
+| R24 | 0,333 `healthy` | **0,24%** | **287** | 5.798 |
+
+Sullo scenario R24 sembrava migliore del modello spedito ovunque. **Sugli split
+`val` e `test` del progetto cade.** Macro-F1 su `val`: **0,7704 del modello
+spedito contro 0,7174 di R12 e 0,7122 di R24**, cioè 5,8 punti persi. Il costo
+sta su 147 finestre `opening_delay` e 59 `flowmeter_dropout` che il modello
+spedito indovina e i candidati no.
+
+Il rischio per cui la verifica era stata scritta — le due classi che lo scenario
+non esercita mai — **non si è materializzato**: `closing_delay` e
+`flowmeter_glitch` restano entro un punto dal riferimento su tutti e due gli
+split, perché stanno lontano dall'asse fillingtime che l'aumento allunga. Il
+danno è caduto su `flowmeter_dropout`, una classe che **lo scenario contiene** ma
+misura solo col tasso di anomalia (100% sopra 0,5 in tutti e tre i modelli), e
+che quindi lo nascondeva.
+
+### Perché non si ripara spostando il confine
+
+Nella matrice di confusione la casella fuori diagonale dominante, in tutti e tre
+i modelli e su tutti e due gli split, è **`opening_delay` contro `restriction`**.
+Le due classi stanno sullo stesso asse, z(`mean_fillingtime`), e differiscono
+**solo in ampiezza**: mediane su `val` 21,5 e 9,9, su `test` 18,4 e 11,4. Un
+aumento per classe non può separarle, perché non c'è niente da separare in quella
+direzione. **Serve una feature che discrimini, non un confine riscalato.**
+
+Due varianti selettive provate e rifiutate: recuperano `opening_delay` su `val` a
+25,9 e 27,1 e abbattono i falsi allarmi, ma fanno crollare `restriction` a 31-34
+su entrambi gli split.
+
+### Il fatto che ridimensiona tutta la voce
+
+`comune/dati.js:44-56` è l'intera superficie API della dashboard — `stato`,
+`oee`, `oeeSerie`, `valvole`, `valvola`, `valvolaKpi`, `allarmi`, `storico`,
+`pareto`. **Non c'è `score`.** Nessuna delle cinque pagine legge
+`/valves/{id}/score`, quindi `predicted_label` non arriva a schermo da nessuna
+parte. Correggere la classificazione della valvola 21, da sola, non cambierebbe
+un pixel.
+
+Quello che si vede davvero è un'altra cosa: tutti e nove gli allarmi attivi hanno
+`fault_type: "score_aggregation"`, e `a/pagina.js:632` e `v1/pagina.js:829`
+stampano quel token tale e quale. A un manutentore la dashboard scrive oggi
+«score_aggregation · da 10:02» su ogni valvola in allarme, **senza nessun nome di
+guasto**, nemmeno sulle otto che il modello classifica correttamente. La lineage
+tecnica nell'engine è una decisione presa il 21 agosto e va lasciata stare: il
+difetto è nella resa, non nel motore.
+
+### Provenienza: un rischio trovato che non era registrato
+
+`_resolve_model_version` (`pipeline/inference.py:75-96`) non trova
+`model_version` nel sidecar del modello e ripiega su `manifest.yaml:code_version`
+= `d-w4-c950bcb3f5d5`. Un modello riaddestrato senza toccare il manifest
+scriverebbe predizioni **con la stessa `model_version` delle 723k già
+persistite**, e `load_score_history` (`pipeline/alert.py:620`) partiziona solo per
+`run_id`. I due modelli si mescolerebbero dentro la stessa corsa senza lasciare
+traccia. **Chiunque spedisca un modello nuovo deve bumpare il manifest prima.**
+
+### Cosa è stato toccato
+
+Niente fuori da `.scratch/silenzio-21/`, dove restano `n1.py`..`n13.py`,
+`p1.py`..`p3.py`, `p1_results.json` e `fr_all.parquet`. `model.joblib`,
+`zstats.json`, gli split, `plcsim/` e `pipeline/` sono intatti. Il banco `n2.py`
+riproduce il riferimento registrato alla cifra: 0,0029 / 0,0892 / 699 / 4 / 0,24%.

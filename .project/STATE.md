@@ -532,3 +532,26 @@ di prodotto e va portata all'utente.**
 - **La deriva lunga settimane è stata riproposta e rifiutata per adesso.**
 - **I tre difetti dei generatori di fixture non si correggono**, perché vivono
   solo in codice superato. Vedi `DECISIONS.md`.
+
+## Stato al 2026-08-23, secondo aggiornamento — M11 indagato fino in fondo
+
+- **I quattro documenti `.project/` sono in git.** Commit
+  `docs: record the 2026-08-21/23 work and make the open questions trustworthy`.
+  Prima di questo restavano solo su disco.
+- **Il silenzio del modello sulla valvola 21 è capito e la correzione è stata
+  scartata dalla verifica.** La causa è il dominio del set di addestramento in
+  spazio normalizzato, non il normalizzatore. L'aumento del set funziona sullo
+  scenario a 60 giorni e perde 5,8 punti di macro-F1 su `val`: non si spedisce.
+  `opening_delay` e `restriction` differiscono solo in ampiezza sullo stesso
+  asse, quindi serve una feature nuova, non un confine spostato. Numeri completi
+  in `RECENT_WORK.md`.
+- **Il classificatore sbaglia una volta sola su nove.** Otto guasti su nove sono
+  etichettati correttamente sull'API viva.
+- **La dashboard non legge mai `predicted_label`.** `comune/dati.js:44-56` non ha
+  `score`. La classificazione, giusta o sbagliata, non arriva a schermo. Tutti e
+  nove gli allarmi si leggono «score_aggregation».
+- **Due domande nuove sono aperte** in `OPEN_QUESTIONS.md`, entrambe del
+  2026-08-23: quale strada prendere su M11, e la provenienza non tracciabile del
+  modello (`inference.py:75-96` ripiega su `manifest.yaml:code_version`).
+- Niente è stato toccato fuori da `.scratch/silenzio-21/`. Modello, normalizzatore,
+  split, `plcsim/` e `pipeline/` sono intatti. La suite resta a 567.

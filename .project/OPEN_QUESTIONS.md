@@ -1,6 +1,6 @@
 # Open questions
 
-Updated: 2026-08-23
+Updated: 2026-08-23 (secondo aggiornamento)
 
 > **Come si legge questo file.** Il titolo di una sezione dice il suo stato, e va
 > creduto solo se porta una data. Fino al 2026-08-23 molte sezioni sono rimaste
@@ -12,6 +12,46 @@ Updated: 2026-08-23
 > piu' in basso.** Il testo originale resta com'e' — serve a capire perche' una
 > cosa era stata considerata un problema — ma il titolo non deve mentire.
 
+
+
+## APERTA dal 2026-08-23 — M11 non si chiude riaddestrando, e serve una decisione
+
+Il silenzio del modello sulla valvola 21 e' **capito fino in fondo** e la
+correzione ovvia e' stata **misurata e scartata**. Il dettaglio completo, con i
+numeri, sta in `RECENT_WORK.md`, sezione del 2026-08-23. In breve:
+
+- La causa non e' il normalizzatore ma il set di addestramento: in spazio
+  normalizzato il guasto della 21 (z 3,81) e' fuori dal dominio addestrato
+  (z 5,65-24,9), pur avendo una severita' dentro l'intervallo.
+- L'aumento del set con copie attenuate funziona sullo scenario a 60 giorni e
+  **perde 5,8 punti di macro-F1 su `val`** (0,7704 -> 0,7122). Non si spedisce.
+- Non e' riparabile spostando il confine: `opening_delay` e `restriction` stanno
+  sullo stesso asse e differiscono solo in ampiezza. **Serve una feature che
+  discrimini**, cioe' lavoro sullo schema ML-F1, che e' congelato.
+
+**La domanda per l'utente non e' tecnica.** Oggi la valvola 21 e' gia' in allarme
+e lo e' per il 93,0% della corsa: il manutentore viene avvisato. Quello che manca
+e' il **nome** del guasto. E il nome manca comunque, per tutte e nove le valvole
+in allarme, perche' la dashboard non legge mai `predicted_label` — la sua
+superficie API in `comune/dati.js:44-56` non ha `score`. Quindi:
+
+> Vale la pena aprire lavoro nuovo sulle feature per far dire al modello
+> `opening_delay` sulla valvola 21, oppure M11 si chiude prendendo atto che
+> l'allarme funziona, e si spende invece sulla resa — mettere un nome di guasto
+> leggibile sugli allarmi, che oggi si leggono tutti «score_aggregation»?
+
+La raccomandazione e' la seconda. Le ragioni stanno in `DECISIONS.md`.
+
+## APERTA dal 2026-08-23 — la provenienza del modello non e' tracciabile
+
+`_resolve_model_version` (`pipeline/inference.py:75-96`) non trova
+`model_version` nel sidecar e ripiega su `manifest.yaml:code_version`. Un modello
+riaddestrato senza toccare il manifest scrive predizioni **indistinguibili** da
+quelle vecchie, e `load_score_history` (`pipeline/alert.py:620`) partiziona la
+cronologia K/N solo per `run_id`: i due modelli si mescolerebbero dentro la stessa
+corsa. Non e' un problema oggi, perche' nessun modello nuovo e' stato spedito. Lo
+diventa il giorno in cui se ne spedisce uno. **Va bumpato il manifest prima, o
+aggiunto `model_version` al sidecar.**
 
 ## Chiuse il 2026-08-20 — leggere qui prima delle sezioni piu' vecchie
 

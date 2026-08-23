@@ -648,3 +648,24 @@ guscio li trova documentati.
 Il quarto difetto della stessa lista, il gate `validate.py`, **era già stato
 corretto** e non se n'era accorto nessuno: eseguito il 2026-08-23 dà
 `OK: nessun fallimento` sui sei scenari.
+
+## 2026-08-23, M11 — la correzione misurata non si spedisce
+
+Il riaddestramento con set aumentato (copie attenuate delle finestre guaste)
+recupera la valvola 21 sullo scenario a 60 giorni e **perde su `val`**: macro-F1
+da 0,7704 a 0,7122, cioè 5,8 punti, su 147 finestre `opening_delay` e 59
+`flowmeter_dropout` che il modello spedito indovina. **Scartato, non rinviato.**
+
+Il motivo per cui non si ripara con un'altra taratura: `opening_delay` e
+`restriction` stanno sullo stesso asse z(`mean_fillingtime`) e differiscono solo
+in ampiezza. Nessun riscalamento del confine le separa. Chi riapre M11 non deve
+riprovare l'aumento del set né la normalizzazione robusta — sono misurati
+entrambi, i numeri stanno in `RECENT_WORK.md` del 2026-08-23.
+
+Vincolo scoperto e da rispettare: prima di spedire un modello qualsiasi va
+bumpato `manifest.yaml:code_version`, o aggiunto `model_version` al sidecar.
+Altrimenti le predizioni nuove sono indistinguibili dalle 723k vecchie e la
+cronologia K/N le mescola.
+
+Resta da decidere se aprire lavoro sulle feature o chiudere M11 sull'allarme che
+già funziona. Vedi `OPEN_QUESTIONS.md`.
