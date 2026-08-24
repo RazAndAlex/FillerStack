@@ -14,8 +14,8 @@ process → sensors → virtual PLC → KPIs → telemetry → OPC UA → Node-R
 
 Each stage knows only its input. The virtual PLC does not know which valve was
 given a fault; the model does not know either; the alert engine sees a score,
-not a cause. The simulator is the instrument, not the point — it exists so the
-diagnosis at the far end can be **scored**. It knows the fault. Nothing
+not a cause. The simulator is the instrument, not the point. It exists so you
+can score the diagnosis at the far end: it knows the fault, and nothing
 downstream does.
 
 The machine is a 35-valve carousel with 26 active filling positions.
@@ -75,11 +75,11 @@ Said plainly, because the alternative is letting someone find out.
 
 - **There is no prognosis.** The model reads 50 past cycles and labels the last
   one: the present, not the future. It answers "does this look wrong", not "how
-  long until it fails". Remaining useful life is planned for a second version.
+  long until it fails". I plan to add remaining useful life in a second version.
 - **The 7-class fault classifier is nearly decorative.** What drives the alerts
   is `1 − P(healthy)` from the same model. The class label only puts a name on
-  screen, and on one fault mode it disagrees with the alert — the dashboard
-  declares the disagreement rather than hiding it.
+  screen, and on one fault mode it disagrees with the alert. The dashboard
+  declares the disagreement instead of hiding it.
 - **Security is an accepted POC.** Plaintext broker, anonymous access, no OPC UA
   certificates. Written down as out of scope, with a stated condition for
   reopening it: the day the chain leaves a single local machine.
@@ -88,10 +88,10 @@ Said plainly, because the alternative is letting someone find out.
 
 ## Where to start reading
 
-**[Il viaggio del dato](https://razandalex.github.io/FillerStack/)** — eleven
+**[Il viaggio del dato](https://razandalex.github.io/FillerStack/)**. Eleven
 stops from the can to the screen, following one number: 2505 pulses, born
-inside a can at 10:03 and read off a screen eleven handovers later. No acronym
-is used before it is explained.
+inside a can at 10:03 and read off a screen eleven handovers later. The page
+explains every acronym before it uses one.
 
 It is in Italian, like the dashboard, because the technicians who would use it
 are.
@@ -111,8 +111,8 @@ are.
 | `.project/` | Project memory: state, decisions, open questions, recent work |
 
 The Python package is still called `plcsim`, and the containers still carry a
-`plcsim-` prefix. That is deliberate. The project was renamed once the old name
-started doing the wrong job — it named the simulator, and readers took the whole
+`plcsim-` prefix. That is deliberate. I renamed the project once the old name
+started doing the wrong job. It named the simulator, and readers took the whole
 thing for one. Internal identifiers do not have that job, and renaming them
 would touch two frozen core files and break a persistent MQTT session for
 nothing.
@@ -134,7 +134,7 @@ drawn from a distribution. Nothing of the earlier generator survives here.
 
 What does cross over is a calibration, not an implementation.
 `plcsim/valve_params.csv` holds four measured averages per valve, from which the
-physical constants of each valve are derived by inversion. It says how fast a
+code derives each valve's physical constants by inversion. It says how fast a
 healthy valve fills, not how the machine behaves. A handful of constants come
 from the same reading: the 46-cycle driver period, the per-valve phase offset,
 and the 250 ml recipe.
