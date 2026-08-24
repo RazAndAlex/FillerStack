@@ -38,6 +38,7 @@ a real detection, not a lookup.
 |---|---|
 | `plcsim/` | The simulator: plant physics, sensors, virtual PLC, validation, scenarios, OPC UA server, the ML pipeline |
 | `pipeline/` | MQTT ingestion, feature store, online inference, alert engine, PostgreSQL storage, the read-only FastAPI |
+| `dashboard/` | The five supervision pages, plus the live server and the recorded-data server |
 | `edge/` | Node-RED flows, Mosquitto and PostgreSQL compose, the live-run preflight, edge tests |
 | `docs/` | Architecture decision records (`adr/`), the IIoT roadmap, an anonymised case study |
 | `scenarios/` | Fault scenario definitions. Each fault has a severity ramp, not a switch |
@@ -66,10 +67,27 @@ python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
 ```
 
 **Open the dashboard.** Double-click `dashboard.bat` in the project root. It
-starts PostgreSQL if it is down, the API on port 8123 and the page server on
-8078, waits until both actually answer, and opens the browser. Closing the window
-shuts everything down. The child processes are bound to a Windows Job Object with
-`KILL_ON_JOB_CLOSE`, because sharing a console was not enough to kill them.
+works with nothing installed but Python.
+
+If PostgreSQL is running, it starts the API and serves live data. If it is not,
+it serves a recorded snapshot of the same API responses instead, and the
+selector at the top of the page carries the date the snapshot was taken. The
+numbers are real either way, produced by the simulator and carried through the
+whole chain; in the second case they are frozen, and the page says so rather
+than implying they are current.
+
+Five pages: MACCHINA (machine state and today's alarms), VALVOLE (all 35 valves
+as the carousel they physically are), OEE, TEMPO (trends), CARTA (control
+charts). They are in Italian, because the technicians who would use them are.
+
+Closing the window shuts everything down. The child processes are bound to a
+Windows Job Object with `KILL_ON_JOB_CLOSE`, because sharing a console was not
+enough to kill them.
+
+The snapshot lives in `dashboard/demo/` and is regenerated from a live chain;
+`dashboard/server_demo.py` documents how. Move a date range in demo mode and you
+step outside the recording: the page tells you, instead of showing a period you
+did not ask for.
 
 **Run the live chain.** Start it in order, and check the order with the preflight
 rather than from memory:
@@ -103,9 +121,10 @@ Working and measured:
   cycles and 3 predictions through all three stages.
 - The alert engine opens on 5 windows out of 150 above threshold, per valve. On a
   full-history replay it caught 9 of 9 injected faults with zero false positives.
-- The dashboard is a three-page supervision UI built for technicians, accepted
+- The dashboard is a five-page supervision UI built for technicians, accepted
   after six rejected versions. It reads only the API's GET routes, never the
-  database and never the simulator.
+  database and never the simulator. It opens without any infrastructure, on a
+  recorded snapshot of those same routes.
 
 Not here, and worth knowing before you look for it:
 

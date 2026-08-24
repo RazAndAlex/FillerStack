@@ -1,9 +1,10 @@
-// Accesso ai dati per le tre versioni della pagina MACCHINA.
+// Accesso ai dati delle cinque pagine.
 // Unica sorgente ammessa: il server locale, che rispecchia le route di
-// pipeline/api.py leggendo le fixture congelate. Nessun calcolo qui dentro
-// che il backend non farebbe, nessun valore inventato.
+// pipeline/api.py — dai dati vivi con `server_api.py`, dalla fotografia
+// registrata con `server_demo.py`. Nessun calcolo qui dentro che il backend
+// non farebbe, nessun valore inventato.
 
-export const SCENARIO_DEFAULT = 'a-sana';
+export const SCENARIO_DEFAULT = 'registrato';
 
 export function scenarioCorrente() {
   const p = new URLSearchParams(location.search).get('scn');

@@ -27,7 +27,9 @@ Regole rispettate (CLAUDE.md, HANDOFF-api-vera.md):
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -37,6 +39,9 @@ from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlparse
 
 QUI = Path(__file__).resolve().parent
+# La radice del progetto: serve a importare `pipeline`. Ricavata dalla
+# posizione di questo file, che sta in <radice>/dashboard/.
+RADICE = QUI.parent
 
 # Il database contiene UN SOLO run (work/m4_demo_dropout_1d): `cycles` ha
 # chiave (valve_id, cycle_id) senza data e ogni run rinumera da 1, quindi un
@@ -85,6 +90,25 @@ ROUTE_CON_AT = {"machine/oee", "machine/oee/series"}
 KPI_LIMIT = 400
 
 
+def chiave_file(route: str, query: str) -> str:
+    """route + query -> un nome di file stabile e valido su Windows.
+
+    La chiave comprende la query perche' le pagine chiedono intervalli
+    diversi dalla stessa route: `machine/oee/series?windows=day&from=...` non
+    e' la stessa risposta di `machine/oee/series`. Registrarle sotto la stessa
+    chiave farebbe rispondere alla demo con un periodo diverso da quello
+    chiesto, e in silenzio. Meglio un 404, che le pagine gia' dichiarano.
+    """
+    grezzo = route + (("?" + query) if query else "")
+    ripulito = re.sub(r"[^A-Za-z0-9._-]+", "_", grezzo).strip("_")
+    if len(ripulito) > 120:
+        # I nomi lunghi li accorcia, ma senza collisioni: l'impronta e' del
+        # testo intero, non della parte troncata.
+        impronta = hashlib.sha256(grezzo.encode()).hexdigest()[:12]
+        ripulito = ripulito[:100] + "-" + impronta
+    return ripulito + ".json"
+
+
 def istante_fine_run() -> tuple[datetime, str | None]:
     """Ultimo `event_ts` del RUN CORRENTE. Letto dal DB, non cablato.
 
@@ -93,7 +117,7 @@ def istante_fine_run() -> tuple[datetime, str | None]:
     in assoluto, che non e' necessariamente quello che la dashboard sta
     guardando. Il run corrente e' quello dichiarato in `machine_state`.
     """
-    sys.path.insert(0, str(QUI.parents[1]))
+    sys.path.insert(0, str(RADICE))
     from sqlalchemy import text
 
     from pipeline.cycles_storage import CyclesStorage
@@ -117,7 +141,7 @@ def fine_di_una_run(run: str) -> datetime:
     `istante_fine_run`, ma il run arriva dalla riga di comando invece che dal
     KV: serve a mettere due corse a confronto senza spostare il KV, che e' una
     decisione dell'utente e non un effetto collaterale di un confronto."""
-    sys.path.insert(0, str(QUI.parents[1]))
+    sys.path.insert(0, str(RADICE))
     from sqlalchemy import text
 
     from pipeline.storage import make_engine
@@ -141,6 +165,7 @@ def risolvi_at(spec: str) -> tuple[datetime | None, str | None]:
 class Handler(SimpleHTTPRequestHandler):
     api_base = "http://127.0.0.1:8123"
     at: datetime | None = None
+    registra: Path | None = None
     run: str | None = None
     # Quando e' valorizzato, ogni chiamata inoltrata porta `run_id`: senza,
     # l'API ricadrebbe sul KV `current_run_id` e la pagina mostrerebbe la run
@@ -213,7 +238,14 @@ class Handler(SimpleHTTPRequestHandler):
 
         try:
             with urllib.request.urlopen(url, timeout=30) as r:
-                return self._json(r.read(), r.status)
+                corpo = r.read()
+                # In registrazione si salva CIO' CHE LA PAGINA HA CHIESTO,
+                # non un elenco di route deciso a tavolino: cosi' la demo
+                # copre esattamente le viste che qualcuno ha davvero aperto.
+                if self.registra is not None and r.status == 200:
+                    self.registra.mkdir(parents=True, exist_ok=True)
+                    (self.registra / chiave_file(route, query)).write_bytes(corpo)
+                return self._json(corpo, r.status)
         except urllib.error.HTTPError as e:
             # L'errore dell'API vera arriva alla pagina tale e quale.
             return self._json(e.read(), e.code)
@@ -230,6 +262,9 @@ def main() -> None:
     ap.add_argument("--at", default="auto",
                     help="auto = fine della run letta dal DB (default) | "
                          "now = adesso vero, pagine degradate | ISO8601")
+    ap.add_argument("--registra", default=None,
+                    help="cartella in cui salvare le risposte servite, per "
+                         "costruire la modalita' demo (dashboard/demo/registrato)")
     ap.add_argument("--run", default=None,
                     help="run_id da inoltrare all'API vera, invece del KV "
                          "`current_run_id`. Con --at auto l'istante di "
@@ -246,6 +281,7 @@ def main() -> None:
     Handler.api_base = a.api.rstrip("/")
     Handler.at = at
     Handler.run = run
+    Handler.registra = Path(a.registra) if a.registra else None
 
     print(f"proxy v7 -> API vera {Handler.api_base}")
     print("istante di osservazione: "
@@ -254,6 +290,8 @@ def main() -> None:
                   "— nessun `at` iniettato, pagine degradate attese"))
     print(f"run corrente: {run or '(nessun filtro: un run solo o schema legacy)'}")
     print(f"scenari serviti: {[s for s, _ in SCENARI]}")
+    if Handler.registra:
+        print(f"REGISTRAZIONE attiva -> {Handler.registra}")
     print(f"http://127.0.0.1:{a.port}/   (Ctrl-C per fermare)", flush=True)
     # Concorrente, non seriale: la pagina apre otto chiamate insieme e una
     # sola di esse (`machine/oee/series`) costa ~8 s. Su un server a una
