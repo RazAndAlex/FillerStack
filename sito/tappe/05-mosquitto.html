@@ -1,0 +1,157 @@
+<title>Mosquitto e i topic · FillerStack</title>
+
+<div class="foglio">
+
+<div class="testata">
+  <p class="eyebrow"><a href="../">FillerStack</a> · Guida · tappa 5 di 8</p>
+  <h1>Mosquitto e i topic</h1>
+  <p class="guida">La tappa precedente ha spiegato il modo di parlare. Adesso serve qualcuno che
+  stia in mezzo e faccia il lavoro. Mosquitto è <b>il programma che riceve i messaggi e li smista</b>,
+  e in questo progetto gira dentro un container che occupa pochi megabyte.</p>
+  <p class="min">Cinque domande, nell'ordine in cui vengono in mente.</p>
+</div>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 1 <span class="per">· che cos'è, concretamente?</span></h2>
+  <div class="box-corpo">
+    <h2>Un programma che ascolta su una porta e tiene un elenco di iscritti</h2>
+    <p>Mosquitto è un broker MQTT open source, uno dei più usati nei reparti. Il suo mestiere sta
+    in quattro cose: accetta connessioni, tiene l'elenco di chi è iscritto a cosa, inoltra ogni
+    messaggio a chi lo aspetta, e conserva quelli che qualcuno deve ancora ricevere.</p>
+
+    <div style="margin:2px 0"><svg viewBox="0 0 640 180" style="width:100%;height:auto"
+      role="img" aria-label="Il broker in mezzo: Node-RED pubblica sulla porta 1883, il broker tiene la tabella degli iscritti e inoltra al consumatore Python, che scrive nei file Parquet.">
+      <g font-family="Segoe UI, system-ui, sans-serif" font-size="10.5">
+        <rect x="8" y="66" width="86" height="34" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>
+        <text x="51" y="86" text-anchor="middle" fill="var(--ink)">Node-RED</text>
+        <path d="M94 83 H182" stroke="var(--dato)" stroke-width="1.5"></path>
+        <text x="138" y="76" text-anchor="middle" fill="var(--muto)">pubblica</text>
+        <rect x="182" y="46" width="150" height="74" rx="2" fill="var(--sup-2)" stroke="var(--attenz)"></rect>
+        <text x="257" y="66" text-anchor="middle" fill="var(--ink)" font-weight="600">mosquitto</text>
+        <text x="257" y="82" text-anchor="middle" fill="var(--muto)">porta 1883</text>
+        <text x="257" y="96" text-anchor="middle" fill="var(--muto)">tabella degli iscritti</text>
+        <text x="257" y="110" text-anchor="middle" fill="var(--muto)">coda dei non consegnati</text>
+        <path d="M332 83 H420" stroke="var(--dato)" stroke-width="1.5"></path>
+        <text x="376" y="76" text-anchor="middle" fill="var(--muto)">inoltra</text>
+        <rect x="420" y="66" width="100" height="34" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="470" y="86" text-anchor="middle" fill="var(--ink)">consumatore</text>
+        <path d="M520 83 H556" stroke="var(--dato)" stroke-width="1.5"></path>
+        <rect x="556" y="66" width="76" height="34" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="594" y="86" text-anchor="middle" fill="var(--ink)">Parquet</text>
+        <text x="8" y="150" fill="var(--muto)">I due estremi non si conoscono. Il broker non guarda dentro i messaggi:</text>
+        <text x="8" y="166" fill="var(--muto)">per lui sono stringhe con sopra un'etichetta.</text>
+      </g>
+    </svg></div>
+    <p>Il broker <b>non guarda dentro</b> il messaggio. Per lui il ciclo 417
+    della valvola 29 è una stringa di byte con sopra un'etichetta. Tutto il significato sta
+    nell'accordo fra chi pubblica e chi legge.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 2 <span class="per">· come si configura?</span></h2>
+  <div class="box-corpo">
+    <h2>Con sei righe, versionate insieme al resto del progetto</h2>
+    <div class="terminale">
+      <span class="pr">#</span> edge/mosquitto/config/mosquitto.conf<br><br>
+      listener 1883 0.0.0.0<br>
+      allow_anonymous true<br><br>
+      persistence true<br>
+      persistence_location /mosquitto/data/<br><br>
+      log_dest stdout
+    </div>
+    <p>La prima riga apre la porta. La seconda dice che chiunque può collegarsi senza credenziali,
+    ed è una scelta dichiarata per un banco di prova su una macchina sola. Le due righe sulla
+    persistenza fanno sì che i messaggi in attesa sopravvivano al riavvio del broker. L'ultima
+    manda i log a schermo, dove il container li raccoglie.</p>
+    <div class="riquadro">
+      <h3>Il file si scrive a mano e si versiona</h3>
+      <p>Il file è versionato e non viene mai generato al volo. Una configurazione scritta a
+      runtime è una configurazione che nessuno può rileggere il giorno in cui qualcosa non
+      funziona.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 3 <span class="per">· chi ascolta, in questo progetto?</span></h2>
+  <div class="box-corpo">
+    <h2>Un programma Python che scrive lo storico</h2>
+    <p>Si chiama consumer e si avvia da riga di comando. Si iscrive ai topic, controlla ogni
+    messaggio contro lo schema, toglie i doppioni e scrive su file.</p>
+    <div class="terminale">
+      <span class="pr">$</span> python -m pipeline.ingest<br>
+      <span style="color:#8f9aa4">iscritto a plant/filler01/telemetry/valve · QoS 1 · client plcsim-ingest-v1</span>
+    </div>
+
+    <div class="cod-blocco" data-cod="cod-a">
+      <div>
+        <p class="cod-file">pipeline/ingest.py · la catena di controllo, dal commento di testa</p>
+<pre class="cod" id="cod-a"><span class="r" data-r="1">wire v1.0/v1.2 valido? --no--> scarta e conta</span><span class="r" data-r="1">      | si'</span><span class="r" data-r="0">      v</span><span class="r" data-r="2">inject_ingest_ts(payload, now_utc)</span><span class="r" data-r="2">      (1.0 -> 1.1,  1.2 -> 1.3)</span><span class="r" data-r="0">      v</span><span class="r" data-r="3">stored v1.1/v1.3 valido? --no--> scarta, MAI scrivere</span><span class="r" data-r="0">      v</span><span class="r" data-r="4">dedup su event_id -> Parquet partizionato</span></pre>
+      </div>
+      <div class="note">
+        <p class="micro-tit">Clicca per accendere la riga</p>
+        <button class="nota" type="button" data-r="1">
+          <span class="n-tit">Prima di tutto, è valido?</span>
+          <span class="n-txt">Un messaggio che non rispetta lo schema viene scartato e contato, invece di entrare nello storico e rompere qualcosa più avanti, dove nessuno risalirebbe fin qui.</span></button>
+        <button class="nota" type="button" data-r="2">
+          <span class="n-tit">Il timbro di arrivo</span>
+          <span class="n-txt">Il consumer aggiunge l'istante in cui ha ricevuto il messaggio e alza il numero di versione. Da qui in poi ogni riga porta tre tempi: quando è successo, quando è stato pubblicato, quando è stato salvato.</span></button>
+        <button class="nota" type="button" data-r="3">
+          <span class="n-tit">Ricontrolla dopo aver modificato</span>
+          <span class="n-txt">Il commento nel codice lo chiama guardia. Se dopo l'aggiunta il messaggio non è più valido, è un difetto del consumer, e in quel caso non si scrive niente.</span></button>
+        <button class="nota" type="button" data-r="4">
+          <span class="n-tit">Il doppione muore qui</span>
+          <span class="n-txt">Il QoS 1 della tappa precedente può consegnare due volte. Il consumer tiene l'elenco degli <code>event_id</code> già visti e butta il secondo arrivo.</span></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 4 <span class="per">· cosa succede se il consumatore va giù?</span></h2>
+  <div class="box-corpo">
+    <h2>Il broker accoda, e al ritorno consegna l'arretrato</h2>
+    <p>Il consumer si presenta sempre con lo stesso nome, <code>plcsim-ingest-v1</code>, e chiede
+    al broker di non dimenticarlo quando si scollega. È quello che si chiama sessione persistente.</p>
+    <p>Mentre è fermo, i cicli continuano ad arrivare e il broker li mette in coda al posto suo.
+    Quando torna, li riceve tutti. Se non si riesce a collegare, riprova con attese che crescono da
+    un secondo a un minuto, con un pizzico di casualità per non ripartire tutti insieme dopo un
+    guasto di rete.</p>
+    <div class="riquadro">
+      <h3>Il limite, dichiarato</h3>
+      <p>Se il consumer viene ucciso di colpo, si perdono i record che il consumatore ha già
+      confermato al broker ma non ha ancora scritto su disco. La chiusura ordinata invece svuota tutto prima di uscire.
+      È scritto nel commento del file, invece di essere scoperto sul campo.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 5 <span class="per">· dove finiscono i cicli?</span></h2>
+  <div class="box-corpo">
+    <h2>In file Parquet, una cartella per macchina e una per giorno</h2>
+    <div class="terminale">
+      data/raw/machine=filler01/date=2026-08-21/valve_cycles.parquet<br>
+      data/raw/machine=filler01/date=2026-08-22/valve_cycles.parquet&nbsp;&nbsp;<span style="color:#8f9aa4">18 511 righe</span>
+    </div>
+    <p>Il nome delle cartelle non è decorativo. Chi legge un mese di dati apre solo le cartelle dei
+    giorni che gli servono, senza scorrere il resto. La data viene dall'istante in cui il ciclo è
+    successo sulla macchina, non da quando è stato salvato: un ciclo consegnato in ritardo finisce
+    comunque nel suo giorno.</p>
+    <p>La scrittura è atomica: il consumer prepara un file temporaneo e poi lo rinomina. Chi sta
+    leggendo trova o il file vecchio o quello nuovo, mai uno a metà.</p>
+    <div class="riquadro">
+      <h3>Niente utente e niente password</h3>
+      <p>Niente utente, niente password, niente cifratura. Su una rete di reparto questa
+      configurazione non si usa: è un banco di prova su una macchina sola, ed è dichiarato nel
+      file di configurazione con un commento.</p>
+    </div>
+    <div class="avanti">
+      <span>Tre programmi diversi che devono girare insieme. Come si accendono?</span>
+      <span style="color:var(--ink);font-weight:600">Tappa 6 · Docker →</span>
+    </div>
+  </div>
+</section>
+
+</div>

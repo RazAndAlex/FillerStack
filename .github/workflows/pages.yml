@@ -1,0 +1,66 @@
+name: sito
+
+# Il sito si monta qui, non nel repository. Le pagine nascono da `sito/tappe/`
+# e `sito/viaggio/tappe/`, e i tre script che le montano girano gia' in locale:
+# tenerne anche l'esito committato vorrebbe dire avere due volte le stesse
+# pagine, e prima o poi una delle due resta indietro.
+#
+# Il deploy da ramo non basta: offre solo la radice o `/docs`, e la cartella
+# pubblicabile non e' nessuna delle due.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sito/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Una pubblicazione alla volta, e senza annullare quella gia' in corso: a
+# meta' deploy il sito resterebbe con dentro meta' delle pagine.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  costruisci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Monta le pagine
+        run: |
+          python sito/costruisci.py
+          python sito/viaggio/costruisci.py
+
+      - name: Controlla prima di pubblicare
+        # verifica.py esce con codice diverso da zero se una pagina non passa.
+        # Le regole che applica sono quelle di sito/GRAMMATICA.md, e ognuna
+        # corrisponde a un difetto che e' gia' costato una bocciatura.
+        run: python sito/verifica.py
+
+      - name: Raccogli in una cartella sola
+        run: python sito/pubblica.py
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: sito/pubblica
+
+  pubblica:
+    needs: costruisci
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

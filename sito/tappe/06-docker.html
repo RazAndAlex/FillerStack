@@ -1,0 +1,146 @@
+<title>Docker · FillerStack</title>
+
+<div class="foglio">
+
+<div class="testata">
+  <p class="eyebrow"><a href="../">FillerStack</a> · Guida · tappa 6 di 8</p>
+  <h1>Docker</h1>
+  <p class="guida">Fin qui abbiamo acceso a mano tre programmi diversi: uno scritto in JavaScript,
+  uno in C, uno che è un database. Ognuno ha la sua versione, le sue cartelle e le sue porte.
+  Docker è <b>il modo di accenderli tutti con un comando</b> e di ritrovarli identici domani.</p>
+  <p class="min">Quattro domande, nell'ordine in cui vengono in mente.</p>
+</div>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 1 <span class="per">· che cos'è un container?</span></h2>
+  <div class="box-corpo">
+    <h2>Un programma impacchettato con tutto quello che gli serve per girare</h2>
+    <p>Installare Node-RED sul proprio computer vuol dire installare anche una certa versione di
+    Node.js, certe librerie, certe cartelle di configurazione. Sul computer del collega quelle cose
+    sono diverse, e il programma si comporta diversamente.</p>
+    <p>Un'immagine risolve la cosa alla radice: contiene il programma <b>e</b> il suo contorno. Chi
+    la scarica ottiene esattamente quello che aveva chi l'ha costruita. Un container è
+    un'immagine che sta girando.</p>
+    <div class="riquadro">
+      <h3>Condivide il nucleo del sistema che lo ospita</h3>
+      <p>Una macchina virtuale porta con sé un sistema operativo intero e si misura in gigabyte.
+      Un container condivide il nucleo del sistema che lo ospita e si misura in decine di
+      megabyte. Per questo tre container si accendono in pochi secondi.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 2 <span class="per">· cosa gira, in questo progetto?</span></h2>
+  <div class="box-corpo">
+    <h2>Tre servizi, ognuno con il suo mestiere e la sua porta</h2>
+    <div style="margin:2px 0"><svg viewBox="0 0 640 200" style="width:100%;height:auto"
+      role="img" aria-label="Tre container: Node-RED sulla porta 1880, mosquitto sulla 1883, Postgres sulla 5432. Fuori restano il simulatore e il consumatore Python.">
+      <g font-family="Segoe UI, system-ui, sans-serif" font-size="10.5">
+        <rect x="150" y="8" width="480" height="128" rx="3" fill="none" stroke="var(--bordo)" stroke-dasharray="4 3"></rect>
+        <text x="160" y="24" fill="var(--muto)" letter-spacing="1.1">DOCKER COMPOSE</text>
+        <rect x="166" y="36" width="140" height="80" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>
+        <text x="236" y="58" text-anchor="middle" fill="var(--ink)" font-weight="600">nodered</text>
+        <text x="236" y="74" text-anchor="middle" fill="var(--muto)">4.0.9 + palette OPC UA</text>
+        <text x="236" y="90" text-anchor="middle" fill="var(--muto)">porta 1880</text>
+        <text x="236" y="106" text-anchor="middle" fill="var(--muto)">costruito qui</text>
+        <rect x="320" y="36" width="140" height="80" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>
+        <text x="390" y="58" text-anchor="middle" fill="var(--ink)" font-weight="600">mosquitto</text>
+        <text x="390" y="74" text-anchor="middle" fill="var(--muto)">eclipse-mosquitto:2</text>
+        <text x="390" y="90" text-anchor="middle" fill="var(--muto)">porta 1883</text>
+        <text x="390" y="106" text-anchor="middle" fill="var(--muto)">immagine pronta</text>
+        <rect x="474" y="36" width="140" height="80" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>
+        <text x="544" y="58" text-anchor="middle" fill="var(--ink)" font-weight="600">postgres</text>
+        <text x="544" y="74" text-anchor="middle" fill="var(--muto)">postgres:17</text>
+        <text x="544" y="90" text-anchor="middle" fill="var(--muto)">porta 5432</text>
+        <text x="544" y="106" text-anchor="middle" fill="var(--muto)">immagine pronta</text>
+        <rect x="8" y="36" width="122" height="36" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="69" y="52" text-anchor="middle" fill="var(--ink)">simulatore</text>
+        <text x="69" y="65" text-anchor="middle" fill="var(--muto)">fuori, a mano</text>
+        <rect x="8" y="82" width="122" height="36" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="69" y="98" text-anchor="middle" fill="var(--ink)">consumatore</text>
+        <text x="69" y="111" text-anchor="middle" fill="var(--muto)">fuori, a mano</text>
+        <path d="M130 54 H166" stroke="var(--dato)" stroke-width="1.2" fill="none"></path><path d="M130 100 V128 H390 V116" stroke="var(--dato)" stroke-width="1.2" stroke-dasharray="3 3" fill="none"></path>
+        <text x="8" y="166" fill="var(--muto)">I due Python restano fuori dai container: si riavviano di continuo mentre</text>
+        <text x="8" y="182" fill="var(--muto)">si lavora, e ricostruire un'immagine ogni volta costerebbe più di quanto rende.</text>
+      </g>
+    </svg></div>
+    <p>I tre servizi sono descritti in un file solo, <code>edge/docker-compose.yml</code>. Ogni
+    voce dice quale immagine usare, quali porte aprire e quali cartelle condividere con il
+    computer che li ospita.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 3 <span class="per">· cosa c'è scritto dentro?</span></h2>
+  <div class="box-corpo">
+    <h2>Immagini con la versione fissata, porte, e cartelle condivise</h2>
+    <div class="cod-blocco" data-cod="cod-a">
+      <div>
+        <p class="cod-file">edge/docker-compose.yml · servizio mosquitto, accorciato</p>
+<pre class="cod" id="cod-a"><span class="r" data-r="1">  mosquitto:</span><span class="r" data-r="2">    image: eclipse-mosquitto:2</span><span class="r" data-r="3">    container_name: plcsim-mosquitto</span><span class="r" data-r="4">    restart: unless-stopped</span><span class="r" data-r="5">    ports:</span><span class="r" data-r="5">      - <span class="st">"1883:1883"</span></span><span class="r" data-r="6">    volumes:</span><span class="r" data-r="6">      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro</span><span class="r" data-r="6">      - ./mosquitto/data:/mosquitto/data</span><span class="r" data-r="6">      - ./mosquitto/log:/mosquitto/log</span></pre>
+      </div>
+      <div class="note">
+        <p class="micro-tit">Clicca per accendere la riga</p>
+        <button class="nota" type="button" data-r="2">
+          <span class="n-tit">La versione è fissata</span>
+          <span class="n-txt">Non <code>latest</code>, che cambia da solo. Un collaudo fatto oggi deve poter essere ripetuto fra sei mesi con lo stesso esito.</span></button>
+        <button class="nota" type="button" data-r="3">
+          <span class="n-tit">Un nome che si riconosce</span>
+          <span class="n-txt">Senza, Docker ne inventa uno buffo e diverso a ogni avvio. Con <code>plcsim-mosquitto</code> i comandi di diagnosi si scrivono a memoria.</span></button>
+        <button class="nota" type="button" data-r="4">
+          <span class="n-tit">Si riaccende da solo</span>
+          <span class="n-txt">Se il programma cade, Docker lo rialza. Se sei stato tu a fermarlo, resta fermo: è la differenza fra un guasto e una decisione.</span></button>
+        <button class="nota" type="button" data-r="5">
+          <span class="n-tit">La porta esce</span>
+          <span class="n-txt">La 1883 del container diventa la 1883 del computer. Senza questa riga il broker gira e non lo raggiunge nessuno.</span></button>
+        <button class="nota" type="button" data-r="6">
+          <span class="n-tit">Le cartelle condivise</span>
+          <span class="n-txt">La configurazione entra in sola lettura, i dati e i log escono. È il motivo per cui la coda dei messaggi sopravvive a un riavvio del container.</span></button>
+      </div>
+    </div>
+    <p>Node-RED è l'unico servizio costruito qui invece che scaricato pronto, perché ha bisogno
+    della palette che parla OPC UA. Il file che lo costruisce è di due righe.</p>
+    <div class="terminale">
+      <span class="pr">#</span> edge/Dockerfile<br>
+      FROM nodered/node-red:4.0.9<br>
+      RUN npm install node-red-contrib-opcua@0.2.354 --no-audit --no-fund
+    </div>
+    <p class="min">Anche qui le versioni sono fissate. La palette installata a mano
+    dall'interfaccia sparirebbe alla prima ricreazione del container, e il flow smetterebbe di
+    funzionare senza spiegazioni.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 4 <span class="per">· come si accende e cosa resta dopo?</span></h2>
+  <div class="box-corpo">
+    <h2>Un comando per accendere, e i dati restano sul disco</h2>
+    <div class="terminale">
+      <span class="pr">$</span> cd edge &amp;&amp; docker compose up -d<br>
+      <span style="color:#8f9aa4">Creating plcsim-nodered … done</span><br>
+      <span style="color:#8f9aa4">Creating plcsim-mosquitto … done</span><br>
+      <span style="color:#8f9aa4">Creating plcsim-postgres … done</span><br><br>
+      <span class="pr">$</span> docker compose down<br>
+      <span style="color:#8f9aa4">i tre container spariscono, le cartelle condivise no</span>
+    </div>
+    <p>Lo storico di Postgres vive in <code>edge/postgres/data</code>, sul computer, non dentro il
+    container. Spegnere e riaccendere non perde niente. Cancellare quella cartella sì, ed è
+    l'unica maniera per farlo.</p>
+    <p>Postgres dichiara anche come si capisce che è pronto: Docker gli chiede
+    <code>pg_isready</code> ogni cinque secondi finché non risponde. Serve perché un database
+    acceso da due secondi accetta connessioni ma non è ancora in grado di lavorare.</p>
+    <div class="riquadro">
+      <h3>Password in chiaro dentro il file</h3>
+      <p>Utente, password e nome del database sono scritti in chiaro nel file, e il broker accetta
+      chiunque. È dichiarato come banco di prova su una macchina sola, con l'irrobustimento
+      previsto come tappa a sé.</p>
+    </div>
+    <div class="avanti">
+      <span>Lo storico si riempie di cicli. Come si insegna a un programma cosa è normale?</span>
+      <span style="color:var(--ink);font-weight:600">Tappa 7 · Machine learning →</span>
+    </div>
+  </div>
+</section>
+
+</div>

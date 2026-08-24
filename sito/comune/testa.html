@@ -1,0 +1,172 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Tinte e grammatica ereditate da dashboard-v7/comune/lessico.css. */
+:root{
+  color-scheme: light;
+  --pagina:#e9ebee; --sup:#ffffff; --sup-2:#f4f6f7; --bordo:#b9c0c8;
+  --barra:#2f3640; --barra-t:#f2f5f7; --barra-muto:#aab3bc;
+  --ink:#16191d; --muto:#79818a; --dato:#4a545e;
+  --traccia:#e3e7ea; --banda:#cfd5db; --rif:#5d666f;
+  --attenz:#b9880f; --grave:#8f2418; --su-att:#ffffff;
+  --cod-f:#2f3640; --cod-t:#dfe5ea; --cod-acc:#4a4230; --cod-acc-t:#ffe6a8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --pagina:#14171a; --sup:#1c2126; --sup-2:#232a30; --bordo:#333c45;
+    --barra:#0f1418; --barra-t:#dfe5ea; --barra-muto:#aab3bc;
+    --ink:#e8ecef; --muto:#8a939c; --dato:#9aa6b1;
+    --traccia:#2a3138; --banda:#3a434c; --rif:#98a2ab;
+    --attenz:#d9a227; --grave:#d9604a; --su-att:#1a1408;
+    --cod-f:#0d1114; --cod-t:#dfe5ea; --cod-acc:#463d27; --cod-acc-t:#ffe6a8;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --pagina:#14171a; --sup:#1c2126; --sup-2:#232a30; --bordo:#333c45;
+  --barra:#0f1418; --barra-t:#dfe5ea; --barra-muto:#aab3bc;
+  --ink:#e8ecef; --muto:#8a939c; --dato:#9aa6b1;
+  --traccia:#2a3138; --banda:#3a434c; --rif:#98a2ab;
+  --attenz:#d9a227; --grave:#d9604a; --su-att:#1a1408;
+  --cod-f:#0d1114; --cod-t:#dfe5ea; --cod-acc:#463d27; --cod-acc-t:#ffe6a8;
+}
+
+*{ box-sizing:border-box; }
+body{
+  margin:0; background:var(--pagina); color:var(--ink);
+  font:15px/1.6 "Segoe UI", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+code, .mono, pre{ font-family:"JetBrains Mono", ui-monospace, Consolas, monospace; }
+
+/* ---------- barra di navigazione ---------- */
+.nav{ display:flex; align-items:stretch; background:var(--barra); color:var(--barra-t);
+      height:46px; position:sticky; top:0; z-index:8; }
+.nav-marca{ display:flex; align-items:center; padding:0 18px; font-size:13px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--barra-muto);
+  border-right:1px solid #454e59; }
+.nav-voci{ display:flex; list-style:none; margin:0; padding:0; }
+.nav-voci li{ display:flex; align-items:center; padding:0 20px; font-size:12.5px;
+  letter-spacing:.11em; color:#c3cbd3; cursor:default; }
+.nav-voci li.attiva{ background:var(--sup); color:var(--ink); font-weight:600; }
+.nav-dx{ margin-left:auto; display:flex; align-items:center; gap:10px; padding:0 14px; }
+.btn-tema{ font:12px "Segoe UI", system-ui, sans-serif; padding:4px 8px; cursor:pointer;
+  background:#454e59; color:#e7ebef; border:1px solid #5c656f; border-radius:2px;
+  letter-spacing:.06em; min-width:66px; }
+.btn-tema:hover{ background:#5a646f; }
+
+/* I link non esistevano: queste pagine nascono come artefatti separati, ognuno
+   al proprio indirizzo. Su un sito servono, e devono vestire la lingua della
+   pagina invece del blu di sistema. Nessun colore nuovo: solo quelli gia' qui. */
+a{ color:inherit; text-decoration:underline; text-underline-offset:3px;
+   text-decoration-color:var(--bordo); text-decoration-thickness:1px; }
+a:hover{ text-decoration-color:currentColor; }
+a:focus-visible{ outline:2px solid var(--attenz); outline-offset:2px; border-radius:2px; }
+.mappa-in a{ text-decoration:none; cursor:pointer; }
+.btn-tema:focus-visible{ outline:2px solid #9fb4c8; outline-offset:1px; }
+
+/* ---------- mappa dell'impianto, incollata sotto la barra (scelta A3) ---------- */
+.mappa{ position:sticky; top:46px; z-index:7; background:var(--sup-2);
+        border-bottom:1px solid var(--bordo); }
+.mappa-in{ max-width:1060px; margin:0 auto; padding:0 8px; }
+.mappa svg{ display:block; width:100%; height:56px; }
+.mappa-n{ cursor:pointer; }
+.mappa-n:focus{ outline:none; }
+.mappa-n:focus-visible rect{ stroke:var(--rif); stroke-width:2; }
+
+/* ---------- impianto della pagina ---------- */
+.foglio{ max-width:1060px; margin:0 auto; padding:22px 16px 90px;
+         display:flex; flex-direction:column; gap:18px; }
+.testata{ padding:4px 2px 0; }
+.eyebrow{ font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+          color:var(--muto); margin:0 0 6px; }
+h1{ margin:0 0 10px; font-size:29px; line-height:1.2; font-weight:600;
+    text-wrap:balance; letter-spacing:-.01em; }
+h2{ margin:0; font-size:20px; font-weight:600; text-wrap:balance; }
+p{ margin:0 0 12px; max-width:68ch; }
+p.guida{ font-size:16.5px; color:var(--ink); max-width:64ch; }
+p.min{ font-size:13px; color:var(--muto); }
+.foglio > section > p:last-child{ margin-bottom:0; }
+
+.box{ background:var(--sup); border:1px solid var(--bordo); border-radius:3px;
+      display:flex; flex-direction:column; }
+.box-tit{ margin:0; background:var(--barra); color:var(--barra-t);
+  font-size:11.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+  padding:5px 11px; border-radius:2px 2px 0 0; align-self:flex-start; }
+.box-tit .per{ font-weight:400; color:var(--barra-muto); letter-spacing:.06em; }
+.box-corpo{ padding:14px 16px 18px; display:flex; flex-direction:column; gap:12px; }
+.micro-tit{ font-size:10.5px; letter-spacing:.11em; text-transform:uppercase;
+            color:var(--muto); margin:0; }
+
+/* ---------- codice vero annotato (scelta B1) ---------- */
+.cod-blocco{ display:grid; grid-template-columns:1fr; gap:10px; }
+@media (min-width:900px){ .cod-blocco{ grid-template-columns:1.35fr .95fr; } }
+pre.cod{ margin:0; background:var(--cod-f); color:var(--cod-t); border-radius:3px;
+  font-size:12.5px; line-height:1.65; padding:10px 4px; overflow-x:auto; }
+pre.cod .r{ display:block; padding:0 10px; border-radius:2px; white-space:pre; }
+pre.cod .r.acc{ background:var(--cod-acc); color:var(--cod-acc-t); }
+pre.cod .cm{ color:#8f9aa4; } pre.cod .kw{ color:#9fc5e8; }
+pre.cod .st{ color:#e0b47a; } pre.cod .fn{ color:#c6d8a0; }
+.cod-file{ font-size:11px; color:var(--muto); margin:0 0 5px; letter-spacing:.04em; }
+.note{ display:flex; flex-direction:column; gap:7px; }
+.nota{ text-align:left; background:var(--sup-2); border:1px solid var(--bordo);
+  border-radius:3px; padding:8px 11px; cursor:pointer; font:inherit; font-size:13.5px;
+  color:var(--ink); border-left:3px solid var(--bordo); }
+.nota:hover{ background:var(--traccia); }
+.nota:focus-visible{ outline:2px solid var(--rif); outline-offset:1px; }
+.nota.on{ border-left-color:var(--attenz); background:var(--sup-2); }
+.nota .n-tit{ display:block; font-weight:600; font-size:13px; margin-bottom:2px; }
+.nota .n-txt{ display:block; color:var(--muto); font-size:12.5px; line-height:1.5; }
+.nota.on .n-txt{ color:var(--ink); }
+
+/* ---------- pezzi ricorrenti ---------- */
+.duo{ display:grid; gap:14px; grid-template-columns:1fr; }
+@media (min-width:840px){ .duo{ grid-template-columns:1fr 1fr; } }
+.riquadro{ border:1px solid var(--bordo); border-radius:3px; background:var(--sup-2);
+           padding:11px 13px; }
+.riquadro h3{ margin:0 0 6px; font-size:13px; }
+.riquadro p{ margin:0; font-size:13.5px; color:var(--muto); }
+.terminale{ background:var(--cod-f); color:var(--cod-t); border-radius:3px;
+  padding:10px 12px; font-size:12.5px; line-height:1.7; overflow-x:auto; }
+.terminale .pr{ color:#8f9aa4; }
+.scheda-dato{ display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr));
+  gap:1px; background:var(--bordo); border:1px solid var(--bordo); border-radius:3px;
+  overflow:hidden; }
+.cella{ background:var(--sup); padding:7px 9px; }
+.cella .k{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muto);
+           display:block; }
+.cella .v{ font-size:17px; font-weight:600; }
+.cella.att{ box-shadow:inset 3px 0 0 var(--attenz); }
+table.tab{ border-collapse:collapse; width:100%; font-size:13px; }
+table.tab th{ text-align:left; font-size:10.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muto); font-weight:600;
+  border-bottom:1px solid var(--bordo); padding:5px 8px 5px 0; }
+table.tab td{ padding:6px 8px 6px 0; border-bottom:1px solid var(--traccia);
+              vertical-align:top; }
+table.tab td.mono{ font-size:12px; color:var(--dato); }
+.scorre{ overflow-x:auto; }
+.chiave{ display:inline-block; background:var(--sup-2); border:1px solid var(--bordo);
+  border-radius:2px; padding:0 5px; font-size:12.5px; }
+.avanti{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+  border-top:1px solid var(--bordo); padding-top:14px; margin-top:4px; color:var(--muto);
+  font-size:13.5px; }
+@media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+
+<nav class="nav">
+  <a class="nav-marca" href="../">filler01</a>
+  <ul class="nav-voci">
+    <li class="attiva" aria-current="page">GUIDA</li>
+    <li><a href="../">VIAGGIO DEL DATO</a></li>
+    <li><a href="08-dashboard.html">DASHBOARD</a></li>
+  </ul>
+  <span class="nav-dx">
+    <button id="tema" type="button" class="btn-tema" aria-label="Tema chiaro o scuro">SCURO</button>
+  </span>
+</nav>
+
+<div class="mappa">
+  <div class="mappa-in"><svg id="mappa" viewBox="0 0 1040 56" preserveAspectRatio="xMidYMid meet" role="img" aria-label="La catena: simulatore, OPC UA, Node-RED, MQTT, Mosquitto, Docker, machine learning, dashboard. Sei alla tappa __NOME__."></svg></div>
+</div>

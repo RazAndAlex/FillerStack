@@ -1,0 +1,84 @@
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- interruttore del tema ---------- */
+  var btn = document.getElementById('tema');
+  function scuroOra(){
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function etichetta(){ btn.textContent = scuroOra() ? 'CHIARO' : 'SCURO'; }
+  btn.addEventListener('click', function(){
+    document.documentElement.setAttribute('data-theme', scuroOra() ? 'light' : 'dark');
+    etichetta();
+  });
+  etichetta();
+
+  /* ---------- la mappa dell'impianto ----------
+     Otto tappe, la seconda accesa. E' la stessa catena che il progetto ha
+     davvero: plcsim -> opcua_server -> Node-RED -> mosquitto -> Parquet/Postgres
+     -> modello -> pipeline/api.py -> dashboard. */
+  var TAPPE = [
+    ['Simulatore','il processo fisico, in Python'],
+    ['OPC UA','la macchina si fa interrogare'],
+    ['Node-RED','chi legge e mette in ordine'],
+    ['MQTT','come viaggiano i messaggi'],
+    ['Mosquitto','chi smista i messaggi'],
+    ['Docker','tutto acceso con un comando'],
+    ['Machine learning','la previsione'],
+    ['API e dashboard','quello che vede il tecnico']
+  ];
+  /* I nomi dei file, nello stesso ordine di TAPPE. La mappa era gia' marcata
+     role="button" e tabindex: mostrava dove sei ma non ci portava. Su un sito
+     serve, e renderla cliccabile non aggiunge un elemento nuovo. */
+  var FILE = ['01-simulatore','02-opcua','03-nodered','04-mqtt',
+              '05-mosquitto','06-docker','07-ml','08-dashboard'];
+  var QUI = __QUI__;   /* sostituito da costruisci.py */
+  var svg = document.getElementById('mappa');
+  var L = 1040, passo = L / TAPPE.length;
+  var h = '';
+  h += '<line x1="'+(passo/2)+'" y1="28" x2="'+(L-passo/2)+'" y2="28" stroke="var(--banda)" stroke-width="1.5"></line>';
+  TAPPE.forEach(function(t, j){
+    var x = passo/2 + j*passo, qui = (j === QUI), fatta = (j < QUI);
+    var lar = Math.min(passo - 12, 118);
+    /* La tappa in cui sei non e' un link a se stessa. */
+    if (!qui) h += '<a href="'+FILE[j]+'.html" aria-label="'+t[0]+', '+t[1]+'">';
+    h += '<g class="mappa-n"'+(qui?' aria-current="page"':'')+'>';
+    h += '<rect x="'+(x-lar/2)+'" y="14" width="'+lar+'" height="28" rx="2" '+
+         'fill="'+(qui?'var(--barra)':'var(--sup)')+'" '+
+         'stroke="'+(qui?'var(--barra)':'var(--bordo)')+'"></rect>';
+    h += '<text x="'+x+'" y="32" text-anchor="middle" font-size="11.5" '+
+         'font-family="Segoe UI, system-ui, sans-serif" '+
+         'fill="'+(qui?'var(--barra-t)':(fatta?'var(--dato)':'var(--muto)'))+'" '+
+         'font-weight="'+(qui?'600':'400')+'">'+t[0]+'</text>';
+    h += '<title>'+t[0]+', '+t[1]+'</title></g>';
+    if (!qui) h += '</a>';
+  });
+  h += '<text x="'+(passo/2 + QUI*passo)+'" y="52" text-anchor="middle" font-size="9.5" '+
+       'letter-spacing="1.4" font-family="Segoe UI, system-ui, sans-serif" '+
+       'fill="var(--attenz)">SEI QUI</text>';
+  svg.innerHTML = h;
+
+  /* ---------- note che accendono la riga di codice ---------- */
+  document.querySelectorAll('[data-cod]').forEach(function(gruppo){
+    var pre = document.getElementById(gruppo.getAttribute('data-cod'));
+    if (!pre) return;
+    function accendi(righe){
+      var set = righe.split(',');
+      pre.querySelectorAll('.r').forEach(function(el){
+        el.classList.toggle('acc', set.indexOf(el.getAttribute('data-r')) >= 0);
+      });
+    }
+    gruppo.querySelectorAll('.nota').forEach(function(b){
+      b.addEventListener('click', function(){
+        gruppo.querySelectorAll('.nota').forEach(function(o){ o.classList.remove('on'); });
+        b.classList.add('on'); accendi(b.getAttribute('data-r'));
+      });
+    });
+    var primo = gruppo.querySelector('.nota');
+    if (primo){ primo.classList.add('on'); accendi(primo.getAttribute('data-r')); }
+  });
+})();
+</script>

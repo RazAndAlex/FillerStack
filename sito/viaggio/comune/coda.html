@@ -1,0 +1,251 @@
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- interruttore del tema ---------- */
+  var btn = document.getElementById('tema');
+  function scuroOra(){
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function etichetta(){ btn.textContent = scuroOra() ? 'CHIARO' : 'SCURO'; }
+  btn.addEventListener('click', function(){
+    document.documentElement.setAttribute('data-theme', scuroOra() ? 'light' : 'dark');
+    etichetta(); disegna();
+  });
+  etichetta();
+
+  var svg = document.getElementById('scena');
+  var piede = document.getElementById('scena-dato');
+  var fermo = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var stato = 0, ang = 0;
+
+  var F = 'font-family="Segoe UI, system-ui, sans-serif"';
+
+  /* ---------- le dieci scene ----------
+     Sempre lo stesso dato, il ciclo 417 della valvola 29, che cambia forma. */
+
+  function giostra(evidenzia){
+    var cx=210, cy=150, R=104, h='';
+    h += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(R+16)+'" fill="var(--sup-2)" stroke="var(--bordo)"></circle>';
+    for (var j=0;j<35;j++){
+      var a = ang + j*2*Math.PI/35;
+      var x = cx + R*Math.cos(a), y = cy + R*Math.sin(a);
+      var norm = ((a % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+      var morta = (norm > 5.24 || norm < 0.56);
+      var sta = evidenzia && (Math.abs(norm - 3.14) < 0.2);
+      h += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(sta?8:5)+
+           '" fill="'+(sta?'var(--attenz)':(morta?'var(--banda)':'var(--dato)'))+'"></circle>';
+    }
+    h += '<circle cx="'+cx+'" cy="'+cy+'" r="30" fill="var(--sup)" stroke="var(--bordo)"></circle>';
+    h += '<text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" font-size="14" '+F+' fill="var(--muto)">35</text>';
+    h += '<text x="16" y="24" font-size="12" '+F+' fill="var(--muto)">un giro in 3,2 secondi</text>';
+    h += '<text x="16" y="290" font-size="12" '+F+' fill="var(--muto)">in grigio chiaro le 9 posizioni che non riempiono</text>';
+    return h;
+  }
+
+  function valvola(quanto){
+    var h = '';
+    h += '<rect x="140" y="18" width="140" height="34" rx="3" fill="var(--sup-2)" stroke="var(--bordo)"></rect>';
+    h += '<text x="210" y="40" text-anchor="middle" font-size="12" '+F+' fill="var(--muto)">il serbatoio, tenuto in pressione</text>';
+    h += '<rect x="196" y="52" width="28" height="40" fill="var(--banda)"></rect>';
+    h += '<rect x="182" y="92" width="56" height="20" rx="2" fill="var(--dato)"></rect>';
+    h += '<text x="250" y="107" font-size="12" '+F+' fill="var(--muto)">il rubinetto</text>';
+    h += '<rect x="190" y="112" width="40" height="26" fill="var(--banda)"></rect>';
+    h += '<path d="M176 138 h68 v120 h-68 z" fill="var(--sup-2)" stroke="var(--bordo)"></path>';
+    var hh = Math.round(112 * quanto);
+    h += '<rect x="178" y="'+(256-hh)+'" width="64" height="'+hh+'" fill="var(--traccia)"></rect>';
+    h += '<text x="210" y="278" text-anchor="middle" font-size="12" '+F+' fill="var(--muto)">la lattina</text>';
+    h += '<circle cx="210" cy="126" r="5" fill="var(--attenz)"><animate attributeName="cy" values="60;180;60" dur="2.4s" repeatCount="indefinite"></animate></circle>';
+    h += '<text x="290" y="150" font-size="26" '+F+' fill="var(--ink)" font-weight="600">'+Math.round(2505*quanto)+'</text>';
+    h += '<text x="290" y="168" font-size="11.5" '+F+' fill="var(--muto)">scatti contati</text>';
+    h += '<text x="290" y="188" font-size="11.5" '+F+' fill="var(--muto)">uno scatto vale 0,1 ml</text>';
+    return h;
+  }
+
+  function riga(){
+    var v = [['tempo','1980 ms'],['impulsi','2505'],['bersaglio','2500'],
+             ['in piu','+5'],['punto del giro','25'],['esito','buono']];
+    var h = '<text x="16" y="24" font-size="12" '+F+' fill="var(--muto)">la riga che nasce alla fine del riempimento</text>';
+    v.forEach(function(r,i){
+      var x = 16 + (i%3)*136, y = 52 + Math.floor(i/3)*84;
+      h += '<rect x="'+x+'" y="'+y+'" width="126" height="70" rx="2" fill="var(--sup-2)" stroke="'+
+           (i===3?'var(--attenz)':'var(--bordo)')+'"></rect>';
+      h += '<text x="'+(x+12)+'" y="'+(y+22)+'" font-size="10.5" '+F+' fill="var(--muto)" letter-spacing="1">'+r[0].toUpperCase()+'</text>';
+      h += '<text x="'+(x+12)+'" y="'+(y+52)+'" font-size="21" '+F+' fill="var(--ink)" font-weight="600">'+r[1]+'</text>';
+    });
+    h += '<text x="16" y="240" font-size="12" '+F+' fill="var(--muto)">valvola 29 · ciclo 417 · 22 agosto, 10:03</text>';
+    h += '<text x="16" y="262" font-size="12" '+F+' fill="var(--muto)">cinque impulsi in più del bersaglio, mezzo millilitro</text>';
+    return h;
+  }
+
+  function albero(){
+    var h = '<text x="16" y="24" font-size="12" '+F+' fill="var(--muto)">la macchina si fa sfogliare come delle cartelle</text>';
+    h += '<text x="20" y="60" font-size="14" '+F+' fill="var(--ink)" font-weight="600">Filler01</text>';
+    h += '<path d="M28 68 V232" stroke="var(--banda)"></path>';
+    h += '<path d="M28 88 h16 M28 118 h16 M28 148 h16 M28 228 h16" stroke="var(--banda)"></path>';
+    h += '<text x="52" y="93" font-size="13" '+F+' fill="var(--dato)">Machine</text>';
+    h += '<text x="52" y="123" font-size="13" '+F+' fill="var(--dato)">Valve01</text>';
+    h += '<text x="52" y="153" font-size="13" '+F+' fill="var(--ink)" font-weight="600">Valve29</text>';
+    h += '<path d="M66 158 V222" stroke="var(--attenz)"></path>';
+    h += '<path d="M66 174 h16 M66 196 h16 M66 218 h16" stroke="var(--attenz)"></path>';
+    h += '<text x="90" y="179" font-size="12.5" '+F+' fill="var(--ink)">FillingTime</text><text x="240" y="179" font-size="12.5" '+F+' fill="var(--dato)">1980</text>';
+    h += '<text x="90" y="201" font-size="12.5" '+F+' fill="var(--ink)">PulseCount</text><text x="240" y="201" font-size="12.5" '+F+' fill="var(--dato)">2505</text>';
+    h += '<text x="90" y="223" font-size="12.5" '+F+' fill="var(--ink)">DeltaPulse</text><text x="240" y="223" font-size="12.5" '+F+' fill="var(--dato)">-5</text>';
+    h += '<text x="52" y="233" font-size="13" '+F+' fill="var(--muto)">SimulationControl</text>';
+    h += '<text x="16" y="272" font-size="12" '+F+' fill="var(--muto)">567 indirizzi. DeltaPulse vale meno 5 perche conta</text>' + '<text x="16" y="288" font-size="12" '+F+' fill="var(--muto)">quanto manca al bersaglio, e qui e stato superato</text>';
+    return h;
+  }
+
+  function busta(){
+    var righe = ['{', '  "event_id": "409263a2-...",', '  "machine_id": "filler01",',
+                 '  "cycle_id": 417,', '  "valve_id": 29,',
+                 '  "data": {', '    "filling_time_ms": 1980,',
+                 '    "pulse_count": 2505', '  }', '}'];
+    var h = '<text x="16" y="24" font-size="12" '+F+' fill="var(--muto)">la stessa riga, chiusa in una busta con un nome sopra</text>';
+    h += '<rect x="16" y="38" width="388" height="216" rx="3" fill="var(--cod-f)"></rect>';
+    righe.forEach(function(r,i){
+      h += '<text x="30" y="'+(62+i*20)+'" font-size="12.5" font-family="JetBrains Mono, monospace" fill="var(--cod-t)">'+
+           r.replace(/</g,'&lt;')+'</text>';
+    });
+    h += '<text x="16" y="278" font-size="12" '+F+' fill="var(--muto)">l\'identificatore in cima serve a non contarla due volte</text>';
+    return h;
+  }
+
+  function broker(){
+    var h = '<text x="16" y="24" font-size="12" '+F+' fill="var(--muto)">la busta viene consegnata a uno smistatore</text>';
+    h += '<rect x="16" y="120" width="94" height="40" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>';
+    h += '<text x="63" y="145" text-anchor="middle" font-size="12" '+F+' fill="var(--ink)">la macchina</text>';
+    h += '<path d="M110 140 H164" stroke="var(--dato)" stroke-width="1.5"></path>';
+    h += '<rect x="164" y="108" width="104" height="64" rx="2" fill="var(--sup-2)" stroke="var(--attenz)"></rect>';
+    h += '<text x="216" y="132" text-anchor="middle" font-size="13" '+F+' fill="var(--ink)" font-weight="600">smistatore</text>';
+    h += '<text x="216" y="150" text-anchor="middle" font-size="11" '+F+' fill="var(--muto)">un solo nome</text>';
+    h += '<text x="216" y="164" text-anchor="middle" font-size="11" '+F+' fill="var(--muto)">per tutti</text>';
+    h += '<path d="M268 140 H300 M300 140 V80 H340 M300 140 H340 M300 140 V200 H340" stroke="var(--dato)" stroke-width="1.5" fill="none"></path>';
+    [['archivio',68],['allarmi',128],['cruscotto',188]].forEach(function(r){
+      h += '<rect x="340" y="'+r[1]+'" width="72" height="26" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>';
+      h += '<text x="376" y="'+(r[1]+18)+'" text-anchor="middle" font-size="11" '+F+' fill="var(--muto)">'+r[0]+'</text>';
+    });
+    h += '<circle cx="120" cy="140" r="5" fill="var(--attenz)"><animate attributeName="cx" values="120;330;120" dur="4s" repeatCount="indefinite"></animate></circle>';
+    h += '<text x="16" y="272" font-size="12" '+F+' fill="var(--muto)">chi consegna non sa chi legge, e viceversa</text>';
+    return h;
+  }
+
+  function archivio(){
+    var h = '<text x="16" y="24" font-size="12" '+F+' fill="var(--muto)">i cicli si posano in cassetti, uno per giorno</text>';
+    var g = ['20 ago','21 ago','22 ago'];
+    g.forEach(function(n,i){
+      var x = 16 + i*132;
+      h += '<rect x="'+x+'" y="60" width="120" height="150" rx="3" fill="var(--sup-2)" stroke="'+
+           (i===2?'var(--attenz)':'var(--bordo)')+'"></rect>';
+      h += '<text x="'+(x+60)+'" y="86" text-anchor="middle" font-size="12.5" '+F+' fill="var(--ink)">'+n+'</text>';
+      for (var k=0;k<7;k++){
+        h += '<rect x="'+(x+14)+'" y="'+(98+k*14)+'" width="92" height="7" fill="var(--traccia)"></rect>';
+      }
+    });
+    h += '<text x="280" y="232" text-anchor="middle" font-size="12" '+F+' fill="var(--attenz)">18 511 righe</text>';
+    h += '<text x="16" y="266" font-size="12" '+F+' fill="var(--muto)">chi cerca un giorno apre un cassetto solo</text>';
+    return h;
+  }
+
+  function modello(){
+    var h = '<text x="16" y="24" font-size="12" '+F+' fill="var(--muto)">il programma guarda cinquanta righe alla volta</text>';
+    for (var k=0;k<10;k++){
+      h += '<rect x="16" y="'+(48+k*15)+'" width="120" height="9" fill="'+(k===8?'var(--attenz)':'var(--traccia)')+'"></rect>';
+    }
+    h += '<text x="16" y="216" font-size="11.5" '+F+' fill="var(--muto)">50 cicli di fila</text>';
+    h += '<path d="M144 120 H184 m-8 -6 l8 6 l-8 6" stroke="var(--banda)" fill="none" stroke-width="1.5"></path>';
+    h += '<rect x="192" y="90" width="104" height="60" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>';
+    h += '<text x="244" y="115" text-anchor="middle" font-size="13" '+F+' fill="var(--ink)">43 misure</text>';
+    h += '<text x="244" y="133" text-anchor="middle" font-size="11" '+F+' fill="var(--muto)">media, pendenza…</text>';
+    h += '<path d="M300 120 H340 m-8 -6 l8 6 l-8 6" stroke="var(--banda)" fill="none" stroke-width="1.5"></path>';
+    h += '<rect x="346" y="96" width="62" height="48" rx="2" fill="var(--sup-2)" stroke="var(--attenz)"></rect>';
+    h += '<text x="377" y="118" text-anchor="middle" font-size="12.5" '+F+' fill="var(--ink)">sana</text>';
+    h += '<text x="377" y="134" text-anchor="middle" font-size="11" '+F+' fill="var(--muto)">87%</text>';
+    h += '<text x="16" y="262" font-size="12" '+F+' fill="var(--muto)">è un\'ipotesi, con la sua probabilità</text>';
+    return h;
+  }
+
+  function schermata(){
+    var h = '<text x="16" y="16" font-size="12" '+F+' fill="var(--muto)">la schermata vera, con dentro il nostro riempimento</text>';
+    // la finestra, con la barra scura e le cinque voci della dashboard vera
+    h += '<rect x="10" y="26" width="404" height="206" rx="3" fill="var(--sup-2)" stroke="var(--bordo)"></rect>';
+    h += '<rect x="10" y="26" width="404" height="24" fill="var(--barra)"></rect>';
+    var voci = ['MACCHINA','VALVOLE','OEE','TEMPO','CARTA'];
+    voci.forEach(function(n,i){
+      var x = 20 + i*78;
+      if (i === 1) h += '<rect x="'+(x-7)+'" y="26" width="70" height="24" fill="var(--sup)"></rect>';
+      h += '<text x="'+x+'" y="42" font-size="9" letter-spacing="0.7" '+F+' fill="'+
+           (i===1 ? 'var(--ink)' : 'var(--barra-muto)')+'">'+n+'</text>';
+    });
+    // i 35 rubinetti, come li dispone la pagina VALVOLE
+    for (var k=0;k<35;k++){
+      var x = 20 + (k%7)*55, y = 60 + Math.floor(k/7)*20;
+      var att = (k === 28);
+      h += '<rect x="'+x+'" y="'+y+'" width="48" height="16" rx="2" fill="var(--sup)" stroke="'+
+           (att?'var(--attenz)':'var(--bordo)')+'" stroke-width="'+(att?'2':'1')+'"></rect>';
+      h += '<text x="'+(x+24)+'" y="'+(y+12)+'" text-anchor="middle" font-size="9.5" '+F+
+           ' fill="'+(att?'var(--ink)':'var(--muto)')+'">'+(k+1)+'</text>';
+    }
+    // il pannello che si apre cliccando: qui finisce il viaggio del nostro dato
+    h += '<rect x="20" y="166" width="384" height="56" rx="2" fill="var(--sup)" stroke="var(--attenz)"></rect>';
+    h += '<text x="30" y="181" font-size="9.5" letter-spacing="0.8" '+F+' fill="var(--muto)">RUBINETTO 29</text>';
+    h += '<text x="150" y="181" font-size="9.5" '+F+' fill="var(--muto)">22 agosto, 10:03</text>';
+    var celle = [['durata','1980 ms'],['scatti','2505'],['in piu','+5'],['giudizio','sana 87%']];
+    celle.forEach(function(c,i){
+      var x = 30 + i*94;
+      h += '<text x="'+x+'" y="197" font-size="8.5" letter-spacing="0.6" '+F+' fill="var(--muto)">'+
+           c[0].toUpperCase()+'</text>';
+      h += '<text x="'+x+'" y="214" font-size="14" '+F+' fill="var(--ink)" font-weight="600">'+c[1]+'</text>';
+    });
+    h += '<text x="16" y="252" font-size="12" '+F+' fill="var(--muto)">gli altri 34 restano grigi: il colore va solo dove serve</text>';
+    h += '<text x="16" y="270" font-size="12" '+F+' fill="var(--muto)">OEE, nella barra, vuol dire quanto rende la linea</text>';
+    return h;
+  }
+
+  var SCENE = [
+    { d: function(){ return giostra(false); }, dato: 'la giostra gira · 35 rubinetti' },
+    { d: function(){ return giostra(true); },  dato: 'il rubinetto 29 entra nella zona di riempimento' },
+    { d: function(){ return valvola(0.62); },  dato: 'scatti in arrivo · uno scatto = 0,1 ml' },
+    { d: function(){ return valvola(1); },     dato: '2505 scatti · il rubinetto si chiude' },
+    { d: riga,      dato: '1980 ms · 2505 scatti · 5 in piu del bersaglio' },
+    { d: albero,    dato: 'ns=2;s=Filler01.Valve29.PulseCount' },
+    { d: busta,     dato: '{"cycle_id":417,"valve_id":29,…}' },
+    { d: broker,    dato: 'plant/filler01/telemetry/valve' },
+    { d: archivio,  dato: 'data/raw/machine=filler01/date=2026-08-22/' },
+    { d: modello,   dato: 'giudizio: sana · 87%' },
+    { d: schermata, dato: 'rubinetto 29 · 1980 ms · 2505 scatti · sana 87%' }
+  ];
+
+  function disegna(){
+    var s = SCENE[Math.min(stato, SCENE.length-1)];
+    svg.innerHTML = s.d();
+    piede.textContent = s.dato;
+  }
+
+  /* ---------- quale tappa sta leggendo ---------- */
+  var tappe = Array.prototype.slice.call(document.querySelectorAll('.tappa'));
+  var filo = document.getElementById('filo');
+  function aggiorna(){
+    var meta = window.innerHeight * 0.45, nuovo = 0;
+    for (var i=0;i<tappe.length;i++){
+      if (tappe[i].getBoundingClientRect().top <= meta) nuovo = i;
+    }
+    if (nuovo !== stato){ stato = nuovo; disegna(); }
+    var h = document.documentElement;
+    var p = h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight);
+    filo.style.width = Math.round(p*100) + '%';
+  }
+  window.addEventListener('scroll', aggiorna, { passive:true });
+  window.addEventListener('resize', aggiorna);
+
+  disegna();
+  aggiorna();
+  if (!fermo){
+    setInterval(function(){
+      if (stato <= 1){ ang += 2*Math.PI/35/18; disegna(); }
+    }, 100);
+  }
+})();
+</script>

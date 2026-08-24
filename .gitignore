@@ -16,6 +16,14 @@ work/
 # Uscita del flow Node-RED: si rigenera a ogni corsa.
 edge/out/*.jsonl
 
+# --- Il sito, montato ------------------------------------------------------
+# Si rifa' con: python sito/costruisci.py && python sito/viaggio/costruisci.py
+#               && python sito/verifica.py && python sito/pubblica.py
+# Tenerlo dentro vorrebbe dire avere due volte le stesse pagine.
+sito/build/
+sito/viaggio/build/
+sito/pubblica/
+
 # --- Stato dei servizi al bordo -------------------------------------------
 # Volumi e persistenza dei container: stato di esecuzione, non sorgente.
 edge/postgres/data/

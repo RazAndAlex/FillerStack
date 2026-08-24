@@ -1,0 +1,189 @@
+<title>Il viaggio del dato · FillerStack</title>
+
+<div class="copertina">
+  <h1>Un numero parte da una lattina e arriva su uno schermo</h1>
+  <p>Questa pagina segue un numero solo, dall'istante in cui nasce dentro una macchina fino al
+  momento in cui un tecnico lo guarda. Il numero è <b>2505</b>, ed è la quantità di bevanda finita
+  in una lattina il 22 agosto alle 10:03.</p>
+  <p>Non serve sapere niente in anticipo. Nessuna sigla viene usata prima di essere spiegata.</p>
+  <p class="min">A destra c'è una scena che cambia man mano che scorri. È sempre lo stesso numero,
+  che cambia forma.</p>
+  <p class="giu">Scorri per partire ↓</p>
+</div>
+
+<div class="percorso">
+
+<div class="colonna-scena">
+  <div class="scena">
+    <svg id="scena" viewBox="0 0 424 300" role="img"
+      aria-label="Scena che cambia mentre si scorre: la giostra della riempitrice, una valvola che riempie, la riga di dati, l'albero degli indirizzi, la busta, lo smistatore, l'archivio, il modello e la schermata finale."></svg>
+    <div class="scena-piede">
+      <span class="k">il dato, adesso</span>
+      <span class="v" id="scena-dato"></span>
+    </div>
+  </div>
+</div>
+
+<div class="colonna-testo">
+
+<section class="tappa">
+  <p class="conta">Tappa 1 di 11</p>
+  <h2>C'è una giostra, e gira</h2>
+  <p>La macchina di cui parliamo si chiama riempitrice. Riempie lattine di bevanda, e lo fa
+  mentre gira: una giostra porta in tondo trentacinque rubinetti, e sotto ogni rubinetto passa una
+  lattina.</p>
+  <p>Un giro completo dura tre secondi e due decimi. In quel tempo tutte e trentacinque le
+  postazioni fanno il loro lavoro, una dopo l'altra.</p>
+  <p class="min">Nove postazioni su trentacinque non riempiono mai: in quel tratto di giro la
+  lattina entra o esce, e il rubinetto resta chiuso. Sono quelle grigio chiaro nel disegno.</p>
+</section>
+
+<section class="tappa">
+  <p class="conta">Tappa 2 di 11</p>
+  <h2>Seguiamo la numero 29</h2>
+  <p>Le postazioni sono numerate. Prendiamo la ventinovesima e teniamola d'occhio: adesso è
+  entrata nel tratto di giro in cui può riempire.</p>
+  <p>Sotto di lei c'è una lattina vuota. Ha poco più di due secondi per riempirla, poi la giostra
+  la porta oltre e il rubinetto deve essere già chiuso.</p>
+  <div class="nota-lat">
+    <h3>Perché il tempo conta</h3>
+    <p>Se una postazione fatica e ci mette più del solito, finisce di riempire sempre più tardi
+    nel giro. Quando ci mette troppo, la lattina esce prima di essere piena. È il primo sintomo
+    che si impara a riconoscere.</p>
+  </div>
+</section>
+
+<section class="tappa">
+  <p class="conta">Tappa 3 di 11</p>
+  <h2>Il rubinetto si apre, e qualcuno conta</h2>
+  <p>La bevanda scende. Lungo il tubo c'è uno strumento che conta il passaggio del liquido a
+  piccoli scatti: ogni scatto vale un decimo di millilitro.</p>
+  <p>Nessuno pesa la lattina e nessuno la guarda. La macchina sa quanto ha versato solo perché
+  <b>conta gli scatti</b>, e questo dettaglio tornerà utile più avanti.</p>
+</section>
+
+<section class="tappa">
+  <p class="conta">Tappa 4 di 11</p>
+  <h2>Duemilacinquecentocinque</h2>
+  <p>Il conto arriva a 2505 e il rubinetto si chiude. La ricetta ne chiedeva 2500, che fanno 250
+  millilitri esatti.</p>
+  <p>Cinque scatti in più vuol dire mezzo millilitro in più. È dentro la tolleranza, quindi il
+  ciclo è buono. Ma quel <b>+5</b> è nato, ed è un numero che qualcuno conserverà.</p>
+</section>
+
+<section class="tappa">
+  <p class="conta">Tappa 5 di 11</p>
+  <h2>Nasce una riga</h2>
+  <p>Alla chiusura il computer scrive una riga con tutto quello che ha visto. Sei cose: quanto è
+  durato, quanti scatti, quanti ne chiedeva la ricetta, di quanto ha sbagliato, in che punto del
+  giro ha finito, se è andato bene.</p>
+  <p>Da qui in avanti quella riga non cambia più. Ed è quella che viaggerà fino allo schermo.</p>
+  <div class="nota-lat">
+    <h3>Il computer della macchina</h3>
+    <p>Si chiama PLC. È un computer semplice e robusto che sta dentro il quadro elettrico, legge i
+    sensori e comanda le valvole. Non ragiona sui dati. Esegue e registra.</p>
+  </div>
+</section>
+
+<section class="tappa">
+  <p class="conta">Tappa 6 di 11</p>
+  <h2>La macchina si fa interrogare</h2>
+  <p>Quella riga esiste, ma solo dentro la macchina. Perché serva a qualcosa qualcuno da fuori
+  deve poterla chiedere.</p>
+  <p>Le macchine industriali espongono i propri numeri come una specie di cartelle da sfogliare:
+  si apre la macchina, dentro c'è la postazione 29, dentro ci sono i suoi valori. Chiunque conosca
+  questo modo di chiedere può leggere, senza sapere niente di come è fatta la macchina dentro.</p>
+  <p class="min">Il nome di questo modo di chiedere è OPC UA. In questa macchina gli indirizzi
+  leggibili sono 567.</p>
+</section>
+
+<section class="tappa">
+  <p class="conta">Tappa 7 di 11</p>
+  <h2>Qualcuno legge e mette tutto in una busta</h2>
+  <p>Un programma sta collegato alla macchina e aspetta. Quando si accorge che la postazione 29 ha
+  chiuso un ciclo, raccoglie i valori e li chiude in una busta.</p>
+  <p>Sulla busta scrive anche un codice che non si ripete mai. Serve a una cosa sola: se per
+  qualche motivo la stessa busta arrivasse due volte, chi la riceve se ne accorge e butta la
+  seconda.</p>
+</section>
+
+<section class="tappa">
+  <p class="conta">Tappa 8 di 11</p>
+  <h2>La busta va a uno smistatore</h2>
+  <p>Il programma non consegna a un destinatario preciso. Consegna a uno smistatore, dicendo solo
+  di che genere di busta si tratta.</p>
+  <p>Chi vuole quelle buste si iscrive allo smistatore e le riceve. Oggi le riceve l'archivio;
+  domani si può aggiungere un cruscotto in reparto, e chi consegna non deve cambiare niente. Non
+  si conoscono e non si aspettano.</p>
+  <div class="nota-lat">
+    <h3>I nomi che sentirai</h3>
+    <p>Il modo di consegnare si chiama MQTT: un linguaggio pensato per messaggi piccoli e tanti,
+    su reti che ogni tanto cadono. Lo smistatore usato qui si chiama Mosquitto. Il genere di busta
+    si chiama topic, e in questo caso è <code>plant/filler01/telemetry/valve</code>.</p>
+  </div>
+</section>
+
+<section class="tappa">
+  <p class="conta">Tappa 9 di 11</p>
+  <h2>La riga si posa in archivio</h2>
+  <p>Chi riceve la busta la controlla, verifica di non averla già vista, e la scrive in un file.
+  I file sono divisi per giorno, come i cassetti di uno schedario.</p>
+  <p>Nel cassetto del 22 agosto ci sono 18 511 righe. Una di quelle è la nostra.</p>
+  <p class="min">Dividere per giorno serve a chi cerca. Per guardare un giorno si apre un cassetto
+  solo, invece di scorrere due mesi.</p>
+</section>
+
+<section class="tappa">
+  <p class="conta">Tappa 10 di 11</p>
+  <h2>Un programma guarda cinquanta righe insieme</h2>
+  <p>Una riga da sola dice poco. Anche una postazione perfetta ogni tanto sbaglia di qualche
+  scatto, ed è normale.</p>
+  <p>Quindi le righe si guardano a gruppi di cinquanta, e di ogni gruppo si calcolano
+  quarantatré misure: la media dei tempi, quanto ballano, e soprattutto <b>se stanno crescendo</b>.
+  Un tempo che sale piano piano è il segnale che qualcosa si sta consumando, e si vede prima che
+  la lattina esca male.</p>
+  <p>Il programma confronta quelle misure con migliaia di gruppi che ha già visto e dice cosa gli
+  somiglia di più. Per il nostro gruppo dice «sana», con una fiducia dell'87 per cento.</p>
+  <div class="nota-lat">
+    <h3>Un'ipotesi, e chi decide è il tecnico</h3>
+    <p>La risposta arriva sempre con la sua percentuale di fiducia, e nella schermata è presentata
+    come un'ipotesi. Chi decide se fermare la macchina è il tecnico.</p>
+  </div>
+</section>
+
+<section class="tappa">
+  <p class="conta">Tappa 11 di 11</p>
+  <h2>Il tecnico apre lo schermo</h2>
+  <p>Il viaggio finisce qui, ed è la schermata vera del progetto: le cinque pagine in alto, e sotto
+  le trentacinque postazioni in fila. Il colore compare solo dove c'è qualcosa che non va, quindi
+  una sola occhiata basta a capire dove guardare.</p>
+  <p>Clicca la postazione 29 e si apre il riquadro in basso. Lì dentro c'è il nostro riempimento,
+  arrivato in fondo: <b>1980 ms</b> di durata, <b>2505</b> scatti, <b>cinque in più</b> del
+  bersaglio, e il giudizio del programma, <b>sana all'87 per cento</b>.</p>
+  <p class="min">È lo stesso numero della prima schermata di questa pagina. Ha attraversato undici
+  passaggi e adesso vale una riga sola davanti a una persona che deve decidere se fermare la
+  macchina.</p>
+</section>
+
+</div>
+</div>
+
+<div class="chiusura">
+  <h2>Undici passaggi, dalla lattina allo schermo</h2>
+  <p>Il numero 2505 è nato dentro una lattina, è diventato una riga, poi una busta, poi un file,
+  poi una misura in mezzo ad altre quarantadue, poi un giudizio, poi un rettangolo su uno schermo.
+  A ogni passaggio ha cambiato forma e ha perso qualcosa: alla fine il tecnico non vede più
+  duemilacinquecentocinque, vede che la postazione 29 sta bene.</p>
+  <div class="riepilogo">
+    <div><span class="k">Postazioni</span><span class="v">35</span></div>
+    <div><span class="k">Giro</span><span class="v">3,2 s</span></div>
+    <div><span class="k">Uno scatto</span><span class="v">0,1 ml</span></div>
+    <div><span class="k">Righe quel giorno</span><span class="v">18 511</span></div>
+    <div><span class="k">Misure per gruppo</span><span class="v">43</span></div>
+  </div>
+  <p class="min">Tutti i numeri di questa pagina vengono dal progetto vero. Il ciclo 417 della
+  postazione 29 esiste, ed è registrato nell'archivio del 22 agosto 2026.</p>
+  <p>Se a questo punto vuoi sapere <b>come</b> ognuno di quei passaggi è fatto davvero, la
+  guida tecnica ripercorre la stessa catena in otto tappe, con i comandi e i contratti veri:
+  <a href="guida/01-simulatore.html">si comincia dal simulatore</a>.</p>
+</div>

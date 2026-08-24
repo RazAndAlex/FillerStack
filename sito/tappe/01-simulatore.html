@@ -1,0 +1,195 @@
+<title>Il simulatore · FillerStack</title>
+
+<div class="foglio">
+
+<div class="testata">
+  <p class="eyebrow"><a href="../">FillerStack</a> · Guida · tappa 1 di 8</p>
+  <h1>Il simulatore</h1>
+  <p class="guida">Tutta la catena che segue, dal server OPC UA fino alla dashboard, lavora su
+  dati che nascono qui. Non sono registrazioni di una macchina vera: sono il risultato di un
+  programma che <b>si comporta come una macchina</b>, e la differenza fra le due cose è il
+  contenuto di questa tappa.</p>
+  <p class="min">Cinque domande, nell'ordine in cui vengono in mente.</p>
+</div>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 1 <span class="per">· perché simulare invece di misurare?</span></h2>
+  <div class="box-corpo">
+    <h2>Perché servono i guasti, e i guasti veri non si ordinano</h2>
+    <p>Il fine del progetto è accorgersi che una valvola si sta rovinando prima che produca
+    scarto. Per insegnarlo a un modello servono esempi di valvole che si rovinano, con la data
+    esatta in cui hanno cominciato. Su una linea vera quegli esempi sono rari, non etichettati e
+    arrivano quando capita.</p>
+    <p>Un simulatore causale li produce a comando: sei tipi di guasto, con la loro gravità e il
+    loro momento di inizio, ripetibili quante volte serve. Il guasto non entra nei numeri finali.
+    Entra <b>nella fisica</b>, e i numeri peggiorano da soli.</p>
+    <div class="riquadro">
+      <h3>I sei guasti che il progetto sa produrre</h3>
+      <p><code>restriction</code> (una strozzatura nel passaggio), <code>closing_delay</code> e
+      <code>opening_delay</code> (la valvola risponde tardi al comando), <code>pressure_instability</code>
+      (la pressione del serbatoio balla), <code>flowmeter_dropout</code> e
+      <code>flowmeter_glitch</code> (il contatore di volume perde impulsi o ne inventa). Più lo
+      stato <code>healthy</code>, sono le sette classi su cui lavora il modello della tappa 7.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 2 <span class="per">· come fa un programma a comportarsi come una macchina?</span></h2>
+  <div class="box-corpo">
+    <h2>Sei strati, e nessuno vede le cause di quello sopra</h2>
+    <p>La regola che tiene in piedi tutto: uno strato vede solo l'uscita dello strato precedente,
+    mai le sue cause. È il motivo per cui i numeri finali sono credibili invece di essere
+    inventati con del rumore addosso.</p>
+
+    <div style="margin:2px 0"><svg viewBox="0 0 660 250" style="width:100%;height:auto"
+      role="img" aria-label="Sei strati in colonna: scenario e guasti, processo fisico, sensori virtuali, PLC virtuale, convalida del ciclo, telemetria. La verità nascosta esce solo di lato, verso le etichette.">
+      <g font-family="Segoe UI, system-ui, sans-serif">
+        <rect x="10" y="8" width="300" height="30" rx="2" fill="var(--sup-2)" stroke="var(--attenz)"></rect>
+        <text x="22" y="28" font-size="12" fill="var(--ink)" font-weight="600">1. Scenario e guasti</text>
+        <text x="298" y="28" text-anchor="end" font-size="10.5" fill="var(--muto)">la verità nascosta</text>
+        <rect x="10" y="46" width="300" height="30" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="22" y="66" font-size="12" fill="var(--ink)">2. Processo fisico</text>
+        <text x="298" y="66" text-anchor="end" font-size="10.5" fill="var(--muto)">pressione, portata, volume</text>
+        <rect x="10" y="84" width="300" height="30" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="22" y="104" font-size="12" fill="var(--ink)">3. Sensori virtuali</text>
+        <text x="298" y="104" text-anchor="end" font-size="10.5" fill="var(--muto)">impulsi, encoder, presenza</text>
+        <rect x="10" y="122" width="300" height="30" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="22" y="142" font-size="12" fill="var(--ink)">4. PLC virtuale</text>
+        <text x="298" y="142" text-anchor="end" font-size="10.5" fill="var(--muto)">stati, timer, contatori</text>
+        <rect x="10" y="160" width="300" height="30" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="22" y="180" font-size="12" fill="var(--ink)">5. Convalida del ciclo</text>
+        <text x="298" y="180" text-anchor="end" font-size="10.5" fill="var(--muto)">il record si chiude</text>
+        <rect x="10" y="198" width="300" height="30" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="22" y="218" font-size="12" fill="var(--ink)">6. Telemetria</text>
+        <text x="298" y="218" text-anchor="end" font-size="10.5" fill="var(--muto)">quello che esce</text>
+        <path d="M160 38 V46 M160 76 V84 M160 114 V122 M160 152 V160 M160 190 V198"
+              stroke="var(--dato)" stroke-width="1.5"></path>
+        <path d="M310 23 H420 V218" stroke="var(--attenz)" stroke-dasharray="4 3" fill="none"></path>
+        <rect x="430" y="205" width="150" height="26" rx="2" fill="var(--sup-2)" stroke="var(--attenz)"></rect>
+        <text x="440" y="222" font-size="11" fill="var(--ink)">solo per le etichette</text>
+        <text x="430" y="120" font-size="11" fill="var(--attenz)">la verità non scende</text>
+        <text x="430" y="136" font-size="11" fill="var(--attenz)">lungo la catena</text>
+      </g>
+    </svg></div>
+
+    <p>Il guasto entra allo strato 2, sulla fisica. Lo strato 4 è il PLC, cioè il controllore
+    programmabile che governa la macchina dal quadro elettrico. Non riceve mai
+    l'informazione «questa valvola è strozzata»: riceve impulsi che arrivano più lenti, e ne trae
+    le sue conclusioni come farebbe un PLC vero.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 3 <span class="per">· la giostra gira davvero?</span></h2>
+  <div class="box-corpo">
+    <h2>Gira in 3,2 secondi, e da lì escono passo, finestra e limite di camma</h2>
+    <p>Le 35 valvole sono montate su una giostra che compie un giro completo in 3200 ms. Da questo unico
+    numero discendono quasi tutti i vincoli della macchina.</p>
+
+    <div class="duo">
+      <div style="display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 200 190" style="width:100%;max-width:230px;height:auto" id="giostra"
+          role="img" aria-label="Giostra vista dall'alto: 35 valvole in cerchio, 26 nella zona utile, 9 nella zona morta.">
+        </svg>
+      </div>
+      <div>
+        <div class="scheda-dato">
+          <div class="cella"><span class="k">Giro</span><span class="v">3200 ms</span></div>
+          <div class="cella"><span class="k">Passo</span><span class="v">91,4 ms</span></div>
+          <div class="cella"><span class="k">Zona utile</span><span class="v">26</span></div>
+          <div class="cella att"><span class="k">Zona morta</span><span class="v">9</span></div>
+        </div>
+        <p style="margin-top:10px;font-size:13.5px">Il passo fra una valvola e l'altra è
+        3200 diviso 35, cioè 91,4 ms. La zona utile dura 26 passi, circa 2377 ms: è la finestra
+        entro cui una valvola deve avere finito di riempire. Nelle altre 9 posizioni la camma
+        tiene chiuso e non succede niente.</p>
+        <p class="min">Da qui nasce un indicatore di ciclo, in gergo KPI: <b>Filling Step Out</b>, cioè in quale slot il
+        riempimento si è chiuso. Vicino a 26 vuol dire che si è finito sul filo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 4 <span class="per">· lo stesso comando dà lo stesso giorno?</span></h2>
+  <div class="box-corpo">
+    <h2>Sì, ciclo per ciclo e impulso per impulso</h2>
+    <p>Uno scenario è un file YAML: dice quali guasti iniettare, su quali valvole, con che gravità
+    e da quale ciclo. Insieme al seed del generatore casuale fissa la giornata intera.</p>
+    <div class="terminale">
+      <span class="pr">$</span> python -m plcsim.run --scenario scenarios/ml_faults_train_a.yaml --seed 42<br>
+      <span class="pr">$</span> python -m plcsim.run --scenario scenarios/ml_faults_train_a.yaml --seed 42<br>
+      <span style="color:#8f9aa4">i due run producono lo stesso identico storico, ciclo per ciclo</span>
+    </div>
+    <p>Un guasto che sfugge si rivede quante volte serve. Due modelli si confrontano sulla stessa
+    giornata invece che su due giornate simili. E quando un numero cambia, sappiamo che è cambiato
+    il codice.</p>
+    <div class="riquadro">
+      <h3>Perché il caso è diviso in canali separati</h3>
+      <p>Il rumore dei sensori, il jitter meccanico e i guasti pescano da generatori distinti.
+      Così accendere un guasto sul flussimetro non sposta di un impulso la baseline sana: le due
+      giornate restano confrontabili, ed è l'unico modo per dire che una differenza è del guasto.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 5 <span class="per">· cosa esce, alla fine?</span></h2>
+  <div class="box-corpo">
+    <h2>Una riga per ogni lattina riempita</h2>
+    <p>Il PLC, cioè il controllore programmabile che governa la macchina dal quadro elettrico,
+    quando chiude un ciclo cristallizza un record e non lo tocca più. È la riga
+    che nella tappa 2 diventerà leggibile da fuori, e che alla fine del percorso arriverà in
+    dashboard.</p>
+    <div class="scheda-dato">
+      <div class="cella"><span class="k">Filling time</span><span class="v">1980</span></div>
+      <div class="cella"><span class="k">Pulse count</span><span class="v">2505</span></div>
+      <div class="cella"><span class="k">Target</span><span class="v">2500</span></div>
+      <div class="cella att"><span class="k">Delta pulse</span><span class="v">−5</span></div>
+      <div class="cella"><span class="k">Step out</span><span class="v">25</span></div>
+      <div class="cella"><span class="k">Filling ok</span><span class="v">sì</span></div>
+    </div>
+    <p class="min">Riga vera del 22 agosto, valvola 29, ciclo 417. Un impulso è 0,1 ml, quindi
+    2505 impulsi sono 250,5 ml contro i 250 richiesti. Cinque impulsi di troppo, mezzo
+    millilitro, ciclo dato per buono.</p>
+    <p>Il record porta 19 colonne fra tempi, conteggi e flag. Non porta il guasto: quello resta
+    dallo strato 1 e non scende. Chi guarda questa riga vede quello che vedrebbe in reparto.</p>
+    <div class="avanti">
+      <span>Il numero esiste, ma solo dentro un processo Python. Come esce dalla macchina?</span>
+      <span style="color:var(--ink);font-weight:600">Tappa 2 · OPC UA →</span>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  var el = document.getElementById('giostra');
+  if (!el) return;
+  var ang = 0;
+  var lento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function disegna(){
+    var cx=100, cy=95, R=68, h='';
+    h += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(R+10)+'" fill="var(--sup-2)" stroke="var(--bordo)"></circle>';
+    for (var j=0;j<35;j++){
+      var a = ang + j*2*Math.PI/35;
+      var x = cx + R*Math.cos(a), y = cy + R*Math.sin(a);
+      var norm = ((a % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+      var morta = (norm > 5.24 || norm < 0.56);
+      var sta = (Math.abs(norm - 3.14) < 0.2);
+      h += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(sta?5.4:3.6)+
+           '" fill="'+(sta?'var(--attenz)':(morta?'var(--banda)':'var(--dato)'))+'"></circle>';
+    }
+    h += '<circle cx="'+cx+'" cy="'+cy+'" r="20" fill="var(--sup)" stroke="var(--bordo)"></circle>';
+    h += '<text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" font-size="10" '+
+         'font-family="Segoe UI, sans-serif" fill="var(--muto)">35</text>';
+    h += '<text x="'+cx+'" y="184" text-anchor="middle" font-size="10" '+
+         'font-family="Segoe UI, sans-serif" fill="var(--muto)">in grigio chiaro la zona morta</text>';
+    el.innerHTML = h;
+  }
+  disegna();
+  if (!lento) setInterval(function(){ ang += 2*Math.PI/35/16; disegna(); }, 95);
+})();
+</script>

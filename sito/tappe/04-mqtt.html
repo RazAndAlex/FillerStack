@@ -1,0 +1,144 @@
+<title>MQTT · FillerStack</title>
+
+<div class="foglio">
+
+<div class="testata">
+  <p class="eyebrow"><a href="../">FillerStack</a> · Guida · tappa 4 di 8</p>
+  <h1>MQTT</h1>
+  <p class="guida">Node-RED ha in mano un messaggio pronto: il ciclo 417 della valvola 29. Adesso
+  deve consegnarlo. Potrebbe scriverlo dritto nel database, e sarebbe la strada più corta.
+  MQTT esiste perché <b>quella strada lega insieme due cose che devono restare separate</b>.</p>
+  <p class="min">Quattro domande, nell'ordine in cui vengono in mente.</p>
+</div>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 1 <span class="per">· perché non scrivere direttamente nel database?</span></h2>
+  <div class="box-corpo">
+    <h2>Perché il database diventerebbe un pezzo della macchina</h2>
+    <p>Con la scrittura diretta, Node-RED deve conoscere l'indirizzo del database, la sua password
+    e la forma delle sue tabelle. Se il database è fermo per manutenzione, i cicli si perdono. Se
+    domani serve anche un secondo consumatore, per esempio un cruscotto di reparto, bisogna
+    riaprire il flow e aggiungere un altro collegamento.</p>
+    <p>MQTT rovescia il rapporto. Chi produce consegna a un intermediario e non sa chi leggerà.
+    Chi consuma si iscrive e non sa chi ha prodotto. I due non si conoscono e non si aspettano.</p>
+
+    <div style="margin:2px 0"><svg viewBox="0 0 660 190" style="width:100%;height:auto"
+      role="img" aria-label="A sinistra la scrittura diretta collega Node-RED al database. A destra il broker sta in mezzo e tre consumatori diversi si iscrivono senza che chi pubblica lo sappia.">
+      <g font-family="Segoe UI, system-ui, sans-serif" font-size="10.5">
+        <text x="8" y="14" letter-spacing="1.2" fill="var(--muto)">SCRITTURA DIRETTA</text>
+        <rect x="8" y="70" width="80" height="30" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>
+        <text x="48" y="89" text-anchor="middle" fill="var(--ink)">Node-RED</text>
+        <path d="M88 85 H180" stroke="var(--dato)" stroke-width="1.5"></path>
+        <text x="134" y="78" text-anchor="middle" fill="var(--muto)">indirizzo, password</text>
+        <rect x="180" y="70" width="80" height="30" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="220" y="89" text-anchor="middle" fill="var(--ink)">database</text>
+        <text x="8" y="130" fill="var(--muto)">Il database fermo blocca la raccolta.</text>
+        <text x="8" y="146" fill="var(--muto)">Un secondo lettore richiede</text>
+        <text x="8" y="162" fill="var(--muto)">di riaprire il flow.</text>
+
+        <line x1="300" y1="10" x2="300" y2="175" stroke="var(--bordo)" stroke-dasharray="3 4"></line>
+
+        <text x="326" y="14" letter-spacing="1.2" fill="var(--muto)">CON UN BROKER IN MEZZO</text>
+        <rect x="326" y="70" width="80" height="30" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>
+        <text x="366" y="89" text-anchor="middle" fill="var(--ink)">Node-RED</text>
+        <path d="M406 85 H452" stroke="var(--dato)" stroke-width="1.5"></path>
+        <rect x="452" y="66" width="76" height="38" rx="2" fill="var(--sup-2)" stroke="var(--attenz)"></rect>
+        <text x="490" y="82" text-anchor="middle" fill="var(--ink)" font-weight="600">broker</text>
+        <text x="490" y="95" text-anchor="middle" fill="var(--muto)">un topic</text>
+        <path d="M528 85 H556 M556 85 V50 H590 M556 85 H590 M556 85 V120 H590"
+              stroke="var(--dato)" stroke-width="1.5" fill="none"></path>
+        <rect x="590" y="38" width="62" height="24" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="621" y="54" text-anchor="middle" fill="var(--muto)">storico</text>
+        <rect x="590" y="73" width="62" height="24" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="621" y="89" text-anchor="middle" fill="var(--muto)">allarmi</text>
+        <rect x="590" y="108" width="62" height="24" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="621" y="124" text-anchor="middle" fill="var(--muto)">cruscotto</text>
+        <text x="326" y="152" fill="var(--muto)">Chi pubblica non sa chi legge.</text>
+        <text x="326" y="168" fill="var(--muto)">Un lettore in più non tocca il flow.</text>
+      </g>
+    </svg></div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 2 <span class="per">· come si chiama il posto dove finisce il messaggio?</span></h2>
+  <div class="box-corpo">
+    <h2>Si chiama topic, ed è un percorso con le barre</h2>
+    <p>Un topic assomiglia a un percorso di cartelle. Chi pubblica lo scrive per intero; chi
+    ascolta può chiedere un ramo intero usando i caratteri jolly.</p>
+    <div class="terminale">
+      plant / filler01 / telemetry / valve<br>
+      <span style="color:#8f9aa4">&nbsp;&#9474;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9474;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9474;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9492;&#9472; che genere di evento</span><br>
+      <span style="color:#8f9aa4">&nbsp;&#9474;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9474;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9492;&#9472; categoria</span><br>
+      <span style="color:#8f9aa4">&nbsp;&#9474;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9492;&#9472; quale macchina</span><br>
+      <span style="color:#8f9aa4">&nbsp;&#9492;&#9472; l&#39;impianto</span>
+    </div>
+    <p>Il progetto ne ha congelati tre, e la scelta di cosa <b>non</b> mettere nel topic è
+    deliberata: il numero di valvola sta dentro il messaggio, non nel percorso. Con 35 topic
+    separati un lettore dovrebbe iscriversi 35 volte e conoscere in anticipo quante valvole ha la
+    macchina.</p>
+    <div class="scorre"><table class="tab">
+      <tr><th>Topic</th><th>Cosa porta</th><th>Garanzia (QoS)</th><th>Trattenuto</th></tr>
+      <tr><td class="mono">plant/filler01/telemetry/valve</td><td>un ciclo di riempimento</td><td>1</td><td>no</td></tr>
+      <tr><td class="mono">plant/filler01/state</td><td>lo stato corrente della macchina</td><td>1</td><td>sì</td></tr>
+      <tr><td class="mono">plant/filler01/alarm</td><td>riservato, ancora vuoto</td><td>1</td><td>no</td></tr>
+    </table></div>
+    <p class="min">Nei nomi non compare la parola <i>sim</i>, come già nella tappa 2. Il topic
+    descrive una macchina, non il programma che ci sta dietro.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 3 <span class="per">· cosa vuol dire quel numero 1?</span></h2>
+  <div class="box-corpo">
+    <h2>È quante volte il messaggio può arrivare</h2>
+    <p>MQTT offre tre livelli di garanzia, e ognuno ha un prezzo diverso.</p>
+    <div class="duo">
+      <div class="riquadro">
+        <h3>QoS 0 · al massimo una volta</h3>
+        <p>Spedisci e non controlli. Veloce e leggero. Un messaggio può sparire senza che nessuno
+        se ne accorga. Per un ciclo di riempimento vuol dire una lattina che non è mai esistita
+        nello storico, e non c'è modo di recuperarla dopo.</p>
+      </div>
+      <div class="riquadro">
+        <h3>QoS 2 · esattamente una volta</h3>
+        <p>Quattro scambi di conferma per ogni messaggio. Garantisce di più e costa di più in
+        latenza e in traffico.</p>
+      </div>
+    </div>
+    <div class="riquadro" style="border-left:3px solid var(--attenz)">
+      <h3>QoS 1 · almeno una volta, ed è quello scelto</h3>
+      <p>Il messaggio viene ritrasmesso finché il broker non conferma. Non si perde niente, ma lo
+      stesso ciclo può arrivare due volte. Il progetto accetta il doppione e lo elimina dopo, con
+      l'<code>event_id</code> che Node-RED ha generato nella tappa precedente: se quell'identificatore
+      è già nello storico, il messaggio si butta.</p>
+    </div>
+    <p>Il risultato pratico è lo stesso del QoS 2, cioè un ciclo salvato una volta sola, al costo
+    del QoS 1. La differenza è chi fa il lavoro: non il protocollo, ma chi scrive nello storico.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 4 <span class="per">· e quel «trattenuto» sul secondo topic?</span></h2>
+  <div class="box-corpo">
+    <h2>Il broker tiene da parte l'ultimo messaggio e lo dà a chi arriva dopo</h2>
+    <p>Un messaggio marcato come trattenuto resta sul broker. Chi si iscrive dopo lo riceve
+    subito, senza aspettare il prossimo.</p>
+    <p>Sullo stato della macchina serve: un cruscotto che si accende alle nove deve sapere subito
+    se la linea sta girando, invece di restare bianco fino al primo cambio di stato. Su un ciclo di
+    riempimento farebbe danno, perché ogni nuovo iscritto riceverebbe un vecchio riempimento come
+    se fosse appena successo, e lo conterebbe.</p>
+    <div class="riquadro">
+      <h3>Un messaggio, un ciclo</h3>
+      <p>Il progetto vieta anche di raggruppare più cicli in un messaggio solo. Il volume è
+      dell'ordine dei megabyte al giorno e non lo richiede, mentre un gruppo complicherebbe la
+      rimozione dei doppioni: l'identificatore andrebbe controllato elemento per elemento.</p>
+    </div>
+    <div class="avanti">
+      <span>Il protocollo è chiaro. Ma chi è, concretamente, questo broker?</span>
+      <span style="color:var(--ink);font-weight:600">Tappa 5 · Mosquitto →</span>
+    </div>
+  </div>
+</section>
+
+</div>

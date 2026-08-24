@@ -1,0 +1,171 @@
+<title>Node-RED · FillerStack</title>
+
+<div class="foglio">
+
+<div class="testata">
+  <p class="eyebrow"><a href="../">FillerStack</a> · Guida · tappa 3 di 8</p>
+  <h1>Node-RED</h1>
+  <p class="guida">Il server OPC UA della tappa precedente espone 567 indirizzi e aspetta. Non manda
+  niente a nessuno. Node-RED è <b>chi si siede davanti e legge</b>, e trasforma quelle letture
+  sparse in un messaggio per ogni lattina riempita.</p>
+  <p class="min">Cinque domande, nell'ordine in cui vengono in mente.</p>
+</div>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 1 <span class="per">· che cos'è, in una frase</span></h2>
+  <div class="box-corpo">
+    <h2>Un programma che si scrive collegando scatole</h2>
+    <p>Invece di scrivere un file di codice, si trascinano dei nodi su una tela e si tirano dei
+    fili fra loro. Ogni nodo fa una cosa sola e passa il risultato al successivo. Il programma
+    completo si chiama <i>flow</i>, e si guarda invece di leggerlo.</p>
+    <p>Serve nei reparti perché chi collega una macchina di solito non è uno sviluppatore. Un
+    manutentore riesce a capire dove si è fermato il dato guardando la tela, cosa che con
+    quattrocento righe di Python non succede.</p>
+
+    <div style="margin:4px 0"><svg viewBox="0 0 700 130" style="width:100%;height:auto"
+      role="img" aria-label="Il flow: il nodo di avvio carica il mapping, imposta le sottoscrizioni OPC UA, il watermark decide quando un ciclo e' completo, il costruttore fa l'envelope e il nodo MQTT lo pubblica.">
+      <g font-family="Segoe UI, system-ui, sans-serif" font-size="10.5">
+        <rect x="6" y="46" width="86" height="34" rx="4" fill="var(--sup-2)" stroke="var(--bordo)"></rect>
+        <text x="49" y="61" text-anchor="middle" fill="var(--ink)">avvio</text>
+        <text x="49" y="73" text-anchor="middle" fill="var(--muto)">inject</text>
+        <rect x="112" y="46" width="96" height="34" rx="4" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="160" y="61" text-anchor="middle" fill="var(--ink)">mapping</text>
+        <text x="160" y="73" text-anchor="middle" fill="var(--muto)">567 NodeId</text>
+        <rect x="228" y="46" width="104" height="34" rx="4" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="280" y="61" text-anchor="middle" fill="var(--ink)">sottoscrizioni</text>
+        <text x="280" y="73" text-anchor="middle" fill="var(--muto)">OPC UA client</text>
+        <rect x="352" y="46" width="98" height="34" rx="4" fill="var(--sup-2)" stroke="var(--attenz)"></rect>
+        <text x="401" y="61" text-anchor="middle" fill="var(--ink)" font-weight="600">watermark</text>
+        <text x="401" y="73" text-anchor="middle" fill="var(--muto)">ciclo nuovo?</text>
+        <rect x="470" y="46" width="98" height="34" rx="4" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="519" y="61" text-anchor="middle" fill="var(--ink)">envelope</text>
+        <text x="519" y="73" text-anchor="middle" fill="var(--muto)">v1.2</text>
+        <rect x="588" y="46" width="98" height="34" rx="4" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="637" y="61" text-anchor="middle" fill="var(--ink)">MQTT out</text>
+        <text x="637" y="73" text-anchor="middle" fill="var(--muto)">publish</text>
+        <path d="M92 63 H112 M208 63 H228 M332 63 H352 M450 63 H470 M568 63 H588"
+              stroke="var(--dato)" stroke-width="1.5"></path>
+        <text x="401" y="34" text-anchor="middle" fill="var(--muto)">qui si decide se il messaggio esce</text>
+        <path d="M401 38 V46" stroke="var(--banda)"></path>
+      </g>
+    </svg></div>
+    <p class="min">Il flow vero di questo progetto ha quindici elementi, di cui quattro sono nodi
+    con dentro del codice. Sta in <code>edge/flows/main.json</code> e viene versionato come
+    qualsiasi altro sorgente.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 2 <span class="per">· e i 567 indirizzi, se li ricorda a memoria?</span></h2>
+  <div class="box-corpo">
+    <h2>No. Nei file del flow non compare un solo indirizzo</h2>
+    <p>Il primo nodo carica la lista da un file generato, e da lì in poi tutti gli altri nodi
+    parlano per nome logico: <code>valve29.pulse_count</code> invece di
+    <code>ns=2;s=Filler01.Valve29.PulseCount</code>.</p>
+    <div class="terminale">
+      <span class="pr">#</span> unica fonte del mapping<br>
+      edge/tag-mapping.yaml&nbsp;&nbsp;<span style="color:#8f9aa4">567 voci, generate dal server OPC UA</span><br>
+      <span class="pr">$</span> python edge/scripts/build_tag_mapping.py<br>
+      edge/tag-mapping.js&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#8f9aa4">generato, montato nel container, mai editato</span>
+    </div>
+    <p>Il motivo è concreto. Se un indirizzo cambia sulla macchina, si corregge in un file solo e
+    si rigenera. Con gli indirizzi copiati dentro i nodi bisognerebbe aprirli uno per uno, e prima
+    o poi uno resterebbe indietro senza che nessuno se ne accorga.</p>
+    <div class="riquadro">
+      <h3>La regola, per esteso</h3>
+      <p>Nessuna stringa <code>ns=2;s=</code> deve comparire nei file JSON del flow. È scritta nei
+      criteri di accettazione del progetto e si controlla cercandola.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 3 <span class="per">· come fa a sapere che un ciclo è finito?</span></h2>
+  <div class="box-corpo">
+    <h2>Guarda un contatore che la macchina incrementa a ogni ciclo chiuso</h2>
+    <p>È il pezzo che rende difficile questa tappa. Il server aggiorna i tag in continuazione;
+    leggere ogni tanto e impacchettare quello che c'è produrrebbe cicli a metà e cicli contati due
+    volte. Il flow usa invece un numero che la macchina incrementa a ogni ciclo chiuso.</p>
+
+    <div class="cod-blocco" data-cod="cod-a">
+      <div>
+        <p class="cod-file">edge/flows/main.json · nodo watermark-acquisition, accorciato</p>
+<pre class="cod" id="cod-a"><span class="r" data-r="1">var logical = index[msg.topic];</span><span class="r" data-r="1"><span class="kw">if</span> (!logical) { node.warn(<span class="st">'nodeId non nel mapping'</span>); <span class="kw">return</span> null; }</span><span class="r" data-r="0"></span><span class="r" data-r="2">store[logical] = { v: val, ts: serverMs, good: good };</span><span class="r" data-r="2">flow.set(<span class="st">'m7.tagStore'</span>, store);</span><span class="r" data-r="0"></span><span class="r" data-r="3"><span class="kw">var</span> triggerMatch = /^valve(\d{2})\.last_cycle_id$/.<span class="fn">exec</span>(logical);</span><span class="r" data-r="3"><span class="kw">if</span> (!triggerMatch || val === null) { <span class="kw">return</span> null; }</span><span class="r" data-r="0"></span><span class="r" data-r="4"><span class="kw">var</span> state = watermarks[valveGroup];</span><span class="r" data-r="4"><span class="kw">if</span> (!state) {</span><span class="r" data-r="4">    watermarks[valveGroup] = { watermark: cycleId, initCycleId: cycleId };</span><span class="r" data-r="4">}</span></pre>
+      </div>
+      <div class="note">
+        <p class="micro-tit">Clicca per accendere la riga</p>
+        <button class="nota" type="button" data-r="1">
+          <span class="n-tit">Dall'indirizzo al nome</span>
+          <span class="n-txt">Arriva un aggiornamento identificato da un NodeId. La prima cosa che il nodo fa è tradurlo nel nome logico del mapping. Se non lo conosce, avvisa e si ferma.</span></button>
+        <button class="nota" type="button" data-r="2">
+          <span class="n-tit">Tutto va in dispensa</span>
+          <span class="n-txt">Ogni tag aggiornato viene messo da parte con il suo valore e il suo istante. Serve dopo: quando un ciclo si chiude, i sedici valori devono essere già lì.</span></button>
+        <button class="nota" type="button" data-r="3">
+          <span class="n-tit">Un solo tag fa scattare tutto</span>
+          <span class="n-txt">Fra i 567, l'unico che conta come segnale è <code>valveNN.last_cycle_id</code>. Quando quel numero cambia, un ciclo si è chiuso davvero. Gli altri 532 aggiornano solo la dispensa.</span></button>
+        <button class="nota" type="button" data-r="4">
+          <span class="n-tit">Un segnaposto per ogni valvola</span>
+          <span class="n-txt">Ogni valvola ha il suo watermark indipendente. Alla prima notifica il flow prende nota di dove si trova e non emette niente. Non sa cosa è successo prima di lui e non lo inventa.</span></button>
+      </div>
+    </div>
+    <p>Trentacinque valvole, trentacinque segnaposto. Una valvola ferma non blocca le altre, e una
+    che riparte non fa uscire tutto lo storico in una raffica.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 4 <span class="per">· cosa produce, esattamente?</span></h2>
+  <div class="box-corpo">
+    <h2>Una busta con dentro il ciclo e sopra i dati per gestirla</h2>
+    <p>Il quarto nodo mette insieme i valori raccolti e li chiude in un oggetto JSON con una forma
+    fissa, chiamata envelope. La forma è congelata e validata da uno schema.</p>
+    <div class="terminale">
+{<br>
+&nbsp;&nbsp;"schema_version": "1.2",<br>
+&nbsp;&nbsp;"event_id": "409263a2-8cb3-40c6-867c-50606a73c9e9",<br>
+&nbsp;&nbsp;"event_type": "valve_cycle",<br>
+&nbsp;&nbsp;"event_ts": "2026-08-22T10:03:45.517Z",<br>
+&nbsp;&nbsp;"source_ts": "2026-08-22T10:03:45.484Z",<br>
+&nbsp;&nbsp;"machine_id": "filler01",<br>
+&nbsp;&nbsp;"cycle_id": 417,<br>
+&nbsp;&nbsp;"valve_id": 29,<br>
+&nbsp;&nbsp;"data": { "filling_time_ms": 1980, "pulse_count": 2505, <span style="color:#8f9aa4">…</span> },<br>
+&nbsp;&nbsp;"quality": { "valid": true, "completeness": "complete" }<br>
+}
+    </div>
+    <p><code>event_id</code> è un identificatore unico generato qui e
+    servirà nella tappa 4 per non salvare due volte lo stesso ciclo. <code>source_ts</code> viene
+    dalla macchina, <code>event_ts</code> da Node-RED: tenerli separati permette di misurare il
+    ritardo della catena. E <code>quality</code> dichiara se il messaggio è completo, invece di
+    lasciarlo indovinare a chi lo riceve.</p>
+    <p class="min">Il nodo non decide niente sul processo. Il commento in testa lo dice:
+    «nessuna logica di business, normalizzazione e impacchettamento».</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 5 <span class="per">· come lo provo?</span></h2>
+  <div class="box-corpo">
+    <h2>Si apre in un browser, e si guarda il dato passare</h2>
+    <div class="terminale">
+      <span class="pr">$</span> cd edge &amp;&amp; docker compose up -d<br>
+      <span class="pr">#</span> poi apri http://localhost:1880<br>
+      <span style="color:#8f9aa4">la tela con i quindici nodi, e il pannello di debug sulla destra</span>
+    </div>
+    <p>Ogni nodo ha sotto un pallino che si accende quando lavora, e il pannello di destra mostra i
+    messaggi che passano. Un guasto di integrazione si vede a occhio: il dato arriva fino a un
+    nodo e lì si ferma.</p>
+    <div class="riquadro">
+      <h3>La palette è fissata alla versione 0.2.354</h3>
+      <p>La palette che parla OPC UA è fissata a quella versione e installata dentro
+      l'immagine, non a mano dall'interfaccia. Installata a mano sparisce ogni volta che si
+      ricrea il container, e il flow smette di funzionare senza spiegazioni.</p>
+    </div>
+    <div class="avanti">
+      <span>Il messaggio è pronto. Perché non lo scrive direttamente nel database?</span>
+      <span style="color:var(--ink);font-weight:600">Tappa 4 · MQTT →</span>
+    </div>
+  </div>
+</section>
+
+</div>

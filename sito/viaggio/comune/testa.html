@@ -1,0 +1,138 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Tinte ereditate da dashboard-v7/comune/lessico.css: i due artefatti e la
+   dashboard devono sembrare lo stesso prodotto. */
+:root{
+  color-scheme: light;
+  --pagina:#e9ebee; --sup:#ffffff; --sup-2:#f4f6f7; --bordo:#b9c0c8;
+  --barra:#2f3640; --barra-t:#f2f5f7; --barra-muto:#aab3bc;
+  --ink:#16191d; --muto:#79818a; --dato:#4a545e;
+  --traccia:#e3e7ea; --banda:#cfd5db; --rif:#5d666f;
+  --attenz:#b9880f; --grave:#8f2418; --su-att:#ffffff;
+  --cod-f:#2f3640; --cod-t:#dfe5ea;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --pagina:#14171a; --sup:#1c2126; --sup-2:#232a30; --bordo:#333c45;
+    --barra:#0f1418; --barra-t:#dfe5ea; --barra-muto:#aab3bc;
+    --ink:#e8ecef; --muto:#8a939c; --dato:#9aa6b1;
+    --traccia:#2a3138; --banda:#3a434c; --rif:#98a2ab;
+    --attenz:#d9a227; --grave:#d9604a; --su-att:#1a1408;
+    --cod-f:#0d1114; --cod-t:#dfe5ea;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --pagina:#14171a; --sup:#1c2126; --sup-2:#232a30; --bordo:#333c45;
+  --barra:#0f1418; --barra-t:#dfe5ea; --barra-muto:#aab3bc;
+  --ink:#e8ecef; --muto:#8a939c; --dato:#9aa6b1;
+  --traccia:#2a3138; --banda:#3a434c; --rif:#98a2ab;
+  --attenz:#d9a227; --grave:#d9604a; --su-att:#1a1408;
+  --cod-f:#0d1114; --cod-t:#dfe5ea;
+}
+
+*{ box-sizing:border-box; }
+body{
+  margin:0; background:var(--pagina); color:var(--ink);
+  font:16px/1.65 "Segoe UI", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+code, .mono{ font-family:"JetBrains Mono", ui-monospace, Consolas, monospace; }
+
+/* ---------- barra in cima, con il filo del percorso ---------- */
+.nav{ position:sticky; top:0; z-index:8; background:var(--barra); color:var(--barra-t); }
+.nav-riga{ display:flex; align-items:center; height:46px; padding:0 16px; gap:16px; }
+.nav-marca{ font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+            color:var(--barra-muto); }
+.nav-tit{ font-size:13px; letter-spacing:.06em; }
+.btn-tema{ margin-left:auto; font:12px "Segoe UI", system-ui, sans-serif;
+  padding:4px 8px; cursor:pointer; background:#454e59; color:#e7ebef;
+  border:1px solid #5c656f; border-radius:2px; letter-spacing:.06em; min-width:66px; }
+.btn-tema:hover{ background:#5a646f; }
+
+/* I link non esistevano: queste pagine nascono come artefatti separati, ognuno
+   al proprio indirizzo. Su un sito servono, e devono vestire la lingua della
+   pagina invece del blu di sistema. Nessun colore nuovo: solo quelli gia' qui. */
+a{ color:inherit; text-decoration:underline; text-underline-offset:3px;
+   text-decoration-color:var(--bordo); text-decoration-thickness:1px; }
+a:hover{ text-decoration-color:currentColor; }
+a:focus-visible{ outline:2px solid var(--attenz); outline-offset:2px; border-radius:2px; }
+.mappa-in a{ text-decoration:none; cursor:pointer; }
+.btn-tema:focus-visible{ outline:2px solid #9fb4c8; outline-offset:1px; }
+.filo{ height:3px; background:var(--traccia); }
+.filo i{ display:block; height:3px; width:0; background:var(--attenz);
+         transition:width .2s linear; }
+
+/* ---------- copertina ---------- */
+.copertina{ max-width:760px; margin:0 auto; padding:64px 20px 40px; }
+.copertina h1{ margin:0 0 16px; font-size:38px; line-height:1.15; font-weight:600;
+               letter-spacing:-.015em; text-wrap:balance; }
+.copertina p{ margin:0 0 14px; font-size:18px; max-width:60ch; }
+.copertina p.min{ font-size:14px; color:var(--muto); }
+.giu{ margin-top:26px; font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+      color:var(--muto); }
+
+/* ---------- impianto a due colonne: testo che scorre, scena ferma ---------- */
+.percorso{ max-width:1180px; margin:0 auto; padding:0 20px 40px;
+           display:grid; gap:28px; grid-template-columns:1fr; }
+@media (min-width:900px){ .percorso{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); } }
+
+.colonna-testo{ min-width:0; }
+.tappa{ min-height:80vh; display:flex; flex-direction:column; justify-content:center;
+        padding:24px 0; }
+.tappa .conta{ font-size:12px; letter-spacing:.16em; text-transform:uppercase;
+               color:var(--muto); margin:0 0 8px; }
+.tappa h2{ margin:0 0 12px; font-size:26px; line-height:1.25; font-weight:600;
+           text-wrap:balance; }
+.tappa p{ margin:0 0 12px; max-width:52ch; }
+.tappa p.min{ font-size:14px; color:var(--muto); }
+
+.colonna-scena{ min-width:0; }
+.scena{ position:sticky; top:70px; background:var(--sup); border:1px solid var(--bordo);
+        border-radius:3px; padding:10px; }
+.scena svg{ display:block; width:100%; height:auto; }
+.scena-piede{ display:flex; align-items:baseline; gap:8px; padding:8px 4px 2px;
+              border-top:1px solid var(--traccia); margin-top:8px; }
+.scena-piede .k{ font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+                 color:var(--muto); }
+.scena-piede .v{ font-family:"JetBrains Mono", monospace; font-size:12.5px;
+                 color:var(--ink); word-break:break-all; }
+@media (max-width:899px){
+  .scena{ position:sticky; top:52px; }
+  .tappa{ min-height:auto; padding:16px 0 28px; }
+  .colonna-scena{ order:-1; }
+}
+
+/* ---------- riquadri di appoggio ---------- */
+.nota-lat{ border-left:3px solid var(--bordo); background:var(--sup-2);
+           padding:10px 14px; border-radius:0 3px 3px 0; margin:4px 0 12px; }
+.nota-lat h3{ margin:0 0 5px; font-size:13.5px; }
+.nota-lat p{ margin:0; font-size:14px; color:var(--muto); }
+.gergo{ border-bottom:1px dotted var(--muto); cursor:help; }
+
+/* ---------- chiusura ---------- */
+.chiusura{ max-width:760px; margin:0 auto; padding:40px 20px 100px; }
+.chiusura h2{ margin:0 0 14px; font-size:28px; font-weight:600; text-wrap:balance; }
+.chiusura p{ margin:0 0 12px; max-width:60ch; }
+.riepilogo{ display:grid; gap:1px; background:var(--bordo); border:1px solid var(--bordo);
+            border-radius:3px; overflow:hidden; margin:18px 0;
+            grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); }
+.riepilogo div{ background:var(--sup); padding:9px 11px; }
+.riepilogo .k{ display:block; font-size:10px; letter-spacing:.09em;
+               text-transform:uppercase; color:var(--muto); }
+.riepilogo .v{ font-size:16px; font-weight:600; }
+
+@media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+
+<nav class="nav">
+  <div class="nav-riga">
+    <span class="nav-marca">filler01</span>
+    <span class="nav-tit">Il viaggio del dato</span>
+    <button id="tema" type="button" class="btn-tema" aria-label="Tema chiaro o scuro">SCURO</button>
+  </div>
+  <div class="filo"><i id="filo"></i></div>
+</nav>

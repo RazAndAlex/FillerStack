@@ -1,0 +1,162 @@
+<title>Machine learning · FillerStack</title>
+
+<div class="foglio">
+
+<div class="testata">
+  <p class="eyebrow"><a href="../">FillerStack</a> · Guida · tappa 7 di 8</p>
+  <h1>Il machine learning</h1>
+  <p class="guida">Nello storico ci sono milioni di cicli e un tecnico non li guarda. Il modello
+  serve a dire, valvola per valvola, <b>questa si sta comportando come si è sempre comportata
+  oppure no</b>. Ed è un file Python di poche righe, appoggiato su una libreria che esiste da
+  vent'anni.</p>
+  <p class="min">Cinque domande, nell'ordine in cui vengono in mente.</p>
+</div>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 1 <span class="per">· cosa guarda il modello?</span></h2>
+  <div class="box-corpo">
+    <h2>Cinquanta cicli di fila per valvola</h2>
+    <p>Un ciclo da solo dice poco. Una lattina riempita male capita anche a una valvola sana. Un
+    guasto si vede nell'andamento, quindi i cicli vengono raggruppati in finestre da 50 per
+    valvola, in ordine di numero di ciclo.</p>
+    <div class="terminale">
+      window_idx = (cycle_id − 1) // 50<br><br>
+      cicli 1…50&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8594; finestra 0<br>
+      cicli 51…100&nbsp;&nbsp;&nbsp;&#8594; finestra 1<br>
+      cicli 401…417&nbsp;&nbsp;<span style="color:#8f9aa4">scartati: la finestra non è piena</span>
+    </div>
+    <p>Le finestre incomplete vengono buttate. Una finestra da 17 cicli avrebbe medie più
+    ballerine delle altre e il modello imparerebbe a riconoscere la fine del turno invece di un
+    guasto.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 2 <span class="per">· e di ogni finestra cosa misura?</span></h2>
+  <div class="box-corpo">
+    <h2>Quarantatré numeri, congelati e sempre gli stessi</h2>
+    <p>Ogni finestra viene ridotta a 43 numeri, che sono quello che il modello vede davvero. Il
+    grosso sono cinque statistiche calcolate sui sei indicatori di ciclo, in gergo KPI.</p>
+
+    <div class="duo">
+      <div>
+        <p class="micro-tit" style="margin-bottom:7px">30 numeri · statistiche sugli indicatori di ciclo</p>
+        <div class="scorre"><table class="tab">
+          <tr><th>Statistica</th><th>Su quali indicatori di ciclo (KPI)</th></tr>
+          <tr><td>media</td><td rowspan="5" style="vertical-align:middle">tempo di riempimento,
+            tempo di coda, impulsi di coda, impulsi totali, scarto dal bersaglio, slot di
+            chiusura</td></tr>
+          <tr><td>deviazione</td></tr>
+          <tr><td>minimo</td></tr>
+          <tr><td>massimo</td></tr>
+          <tr><td>pendenza</td></tr>
+        </table></div>
+        <p class="min" style="margin-top:8px">La pendenza è quella che vede il degrado: un tempo
+        di riempimento che cresce piano dentro la finestra ha media ancora normale e pendenza
+        già positiva.</p>
+      </div>
+      <div>
+        <p class="micro-tit" style="margin-bottom:7px">13 numeri · quanto spesso succede</p>
+        <div class="scorre"><table class="tab">
+          <tr><th>Gruppo</th><th>Quanti</th></tr>
+          <tr><td>tassi dei flag di ciclo</td><td>6</td></tr>
+          <tr><td>tasso di cicli marcati sospetti</td><td>1</td></tr>
+          <tr><td>tassi dei motivi di chiusura</td><td>4</td></tr>
+          <tr><td>impulsi in ritardo, conteggio e tasso</td><td>2</td></tr>
+        </table></div>
+        <p class="min" style="margin-top:8px">I motivi di chiusura dicono <i>perché</i> la valvola
+        si è chiusa: bersaglio raggiunto, limite dell'encoder, timeout di sicurezza, fine coda.
+        Una valvola che smette di chiudersi sul bersaglio sta cambiando comportamento.</p>
+      </div>
+    </div>
+    <p>L'elenco è congelato: 43, né uno di più né uno di meno, con un controllo nel codice che
+    fallisce se cambia. Un modello addestrato su 43 numeri e usato su 44 darebbe risposte senza
+    lamentarsi, e sarebbero sbagliate.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 3 <span class="per">· quindi è un codice Python?</span></h2>
+  <div class="box-corpo">
+    <h2>Sì, e la parte che decide sta in cinque righe</h2>
+    <p>Il progetto usa scikit-learn, una libreria standard. Le righe che seguono sono quelle vere
+    che costruiscono il classificatore.</p>
+
+    <div class="cod-blocco" data-cod="cod-a">
+      <div>
+        <p class="cod-file">plcsim/ml_model.py · righe 98-110, accorciate</p>
+<pre class="cod" id="cod-a"><span class="r" data-r="1"><span class="kw">if</span> kind == <span class="st">"logistic"</span>:</span><span class="r" data-r="2">    kwargs = <span class="fn">dict</span>(</span><span class="r" data-r="2">        solver=<span class="st">"lbfgs"</span>, class_weight=class_weight,</span><span class="r" data-r="3">        random_state=random_state, max_iter=max_iter,</span><span class="r" data-r="2">    )</span><span class="r" data-r="2">    self._clf = <span class="fn">LogisticRegression</span>(**kwargs)</span><span class="r" data-r="4"><span class="kw">else</span>:</span><span class="r" data-r="4">    kwargs = <span class="fn">dict</span>(random_state=random_state, max_iter=max_iter)</span><span class="r" data-r="4">    self._clf = <span class="fn">HistGradientBoostingClassifier</span>(**kwargs)</span></pre>
+      </div>
+      <div class="note">
+        <p class="micro-tit">Clicca per accendere la riga</p>
+        <button class="nota" type="button" data-r="1">
+          <span class="n-tit">Due modelli a confronto</span>
+          <span class="n-txt">Il progetto ne tiene due e li confronta. Il primo è semplice e si spiega; il secondo è più bravo ma più difficile da giustificare a un tecnico. Averli entrambi permette di misurare quanto costa la semplicità.</span></button>
+        <button class="nota" type="button" data-r="2">
+          <span class="n-tit">Il peso delle classi</span>
+          <span class="n-txt">Le finestre sane sono la stragrande maggioranza. Senza riequilibrio il modello imparerebbe a rispondere sempre «sana» e avrebbe ragione quasi sempre, restando inutile.</span></button>
+        <button class="nota" type="button" data-r="3">
+          <span class="n-tit">Il seme fisso</span>
+          <span class="n-txt">Stesso dato e stesso seme danno lo stesso modello. Senza, due addestramenti dello stesso pomeriggio darebbero risultati diversi e non si saprebbe a cosa attribuirlo.</span></button>
+        <button class="nota" type="button" data-r="4">
+          <span class="n-tit">L'altro modello, ad alberi decisionali</span>
+          <span class="n-txt">Un insieme di alberi decisionali. Coglie relazioni che il primo modello non vede, al prezzo di non poter più mostrare un coefficiente per feature.</span></button>
+      </div>
+    </div>
+    <p>Addestrare vuol dire chiamare <code>fit</code> passando le finestre e le loro etichette.
+    Usare il modello vuol dire chiamare <code>predict</code> su finestre nuove. Tutto il resto del
+    file serve a salvare il modello su disco insieme alla sua versione.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 4 <span class="per">· da dove vengono le etichette?</span></h2>
+  <div class="box-corpo">
+    <h2>Dalla verità nascosta della tappa 1, e solo per l'addestramento</h2>
+    <p>Qui torna utile il simulatore. Ogni finestra porta l'etichetta di quello che stava
+    davvero succedendo: sana, oppure uno dei sei guasti.</p>
+    <div class="scheda-dato">
+      <div class="cella"><span class="k">healthy</span><span class="v">sana</span></div>
+      <div class="cella"><span class="k">restriction</span><span class="v">strozzata</span></div>
+      <div class="cella"><span class="k">closing_delay</span><span class="v">chiude tardi</span></div>
+      <div class="cella"><span class="k">opening_delay</span><span class="v">apre tardi</span></div>
+      <div class="cella"><span class="k">pressure_inst.</span><span class="v">pressione</span></div>
+      <div class="cella"><span class="k">flowmeter_dropout</span><span class="v">perde</span></div>
+      <div class="cella"><span class="k">flowmeter_glitch</span><span class="v">inventa</span></div>
+    </div>
+    <p>L'etichetta entra solo nell'addestramento e nella valutazione. Non è una delle 43 feature, e sui dati nuovi non esiste. Se fosse tra le feature
+    il modello darebbe risposte perfette in prova e inutili in reparto.</p>
+    <div class="riquadro">
+      <h3>Giornate diverse per addestrare e per giudicare</h3>
+      <p>Il modello si addestra su alcuni scenari e si giudica su altri, generati con semi diversi.
+      Un modello provato sulle stesse giornate su cui ha imparato non sta rispondendo: sta
+      ricordando.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 5 <span class="per">· come si dice se funziona?</span></h2>
+  <div class="box-corpo">
+    <h2>Guardando la classe che il modello riconosce peggio</h2>
+    <p>La percentuale di risposte giuste è una misura ingannevole qui. Con la stragrande
+    maggioranza delle finestre sane, un modello che dicesse sempre «sana» segnerebbe una
+    percentuale altissima senza trovare un solo guasto.</p>
+    <p>La misura scelta è invece <b>la peggiore delle sette classi</b>: per ognuna si guarda quanti
+    dei suoi casi il modello ha riconosciuto, e si prende il minimo. Il criterio di accettazione
+    chiede almeno 0,60 su quel minimo. Basta una classe trattata male perché il numero crolli, ed
+    è esattamente l'effetto voluto.</p>
+    <div class="riquadro">
+      <h3>Un'ipotesi, e chi decide è il tecnico</h3>
+      <p>Quello che esce è una classe con la sua probabilità, e la dashboard la mostra come
+      ipotesi con la versione del modello a fianco. L'allarme resta una decisione separata, e
+      quando i due non concordano la dashboard lo dichiara invece di nasconderlo.</p>
+    </div>
+    <div class="avanti">
+      <span>Previsioni, allarmi e KPI sono nel database. Come arrivano davanti al tecnico?</span>
+      <span style="color:var(--ink);font-weight:600">Tappa 8 · API e dashboard →</span>
+    </div>
+  </div>
+</section>
+
+</div>

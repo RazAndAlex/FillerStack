@@ -1,0 +1,138 @@
+<title>API e dashboard · FillerStack</title>
+
+<div class="foglio">
+
+<div class="testata">
+  <p class="eyebrow"><a href="../">FillerStack</a> · Guida · tappa 8 di 8</p>
+  <h1>API e dashboard</h1>
+  <p class="guida">Nel database ci sono cicli, indicatori di ciclo, previsioni del modello e allarmi. Mancano le
+  ultime due cose: qualcuno che li serva su richiesta, e una schermata che il tecnico possa
+  guardare <b>senza sapere niente di tutto quello che c'è dietro</b>.</p>
+  <p class="min">Quattro domande, nell'ordine in cui vengono in mente.</p>
+</div>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 1 <span class="per">· cos'è un'API, qui?</span></h2>
+  <div class="box-corpo">
+    <h2>Quattordici indirizzi web che rispondono con dei dati</h2>
+    <p>Un programma Python, costruito con FastAPI, resta in ascolto e risponde a richieste. Chi
+    chiede riceve JSON. Risponde solo con dati, senza pagine e senza grafica.</p>
+    <div class="terminale">
+      <span class="pr">$</span> python -m uvicorn pipeline.api:app --port 8123<br><br>
+      <span class="pr">$</span> curl localhost:8123/valves/29<br>
+      {"valve_id":29,<br>
+      &nbsp;"last_prediction":{"predicted_label":"healthy",<br>
+      &nbsp;&nbsp;"probabilities":{"healthy":0.87,"restriction":0.05,…},<br>
+      &nbsp;&nbsp;"model_version":"m9-logistic-v1"},<br>
+      &nbsp;"active_alerts":[]}
+    </div>
+    <div class="scorre"><table class="tab">
+      <tr><th>Indirizzo</th><th>Cosa risponde</th></tr>
+      <tr><td class="mono">/machine/state</td><td>lo stato corrente della macchina</td></tr>
+      <tr><td class="mono">/machine/oee</td><td>disponibilità, prestazione, qualità su turno o giorno</td></tr>
+      <tr><td class="mono">/machine/oee/series</td><td>lo stesso, ma come andamento nel tempo</td></tr>
+      <tr><td class="mono">/valves</td><td>tutte e trentacinque in un colpo</td></tr>
+      <tr><td class="mono">/valves/{id}/kpi</td><td>gli indicatori di ciclo di una valvola</td></tr>
+      <tr><td class="mono">/alerts</td><td>gli allarmi aperti</td></tr>
+    </table></div>
+    <p class="min">Sono sei delle quattordici. Tutte in sola lettura. Nessuna consente di
+    modificare niente.</p>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 2 <span class="per">· perché mettere di mezzo un'API?</span></h2>
+  <div class="box-corpo">
+    <h2>Perché la dashboard non deve sapere com'è fatto il database</h2>
+    <p>La regola del progetto è secca: la dashboard legge <b>solo</b> da questi indirizzi. Non
+    apre il database, non legge i file Parquet, non parla con il simulatore.</p>
+
+    <div style="margin:2px 0"><svg viewBox="0 0 640 150" style="width:100%;height:auto"
+      role="img" aria-label="La dashboard parla solo con l'API. Database, Parquet e simulatore restano dietro l'API e non sono raggiungibili direttamente.">
+      <g font-family="Segoe UI, system-ui, sans-serif" font-size="10.5">
+        <rect x="8" y="52" width="104" height="40" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>
+        <text x="60" y="76" text-anchor="middle" fill="var(--ink)">dashboard</text>
+        <path d="M112 72 H186" stroke="var(--dato)" stroke-width="1.5"></path>
+        <text x="149" y="64" text-anchor="middle" fill="var(--muto)">GET</text>
+        <rect x="186" y="46" width="104" height="52" rx="2" fill="var(--sup-2)" stroke="var(--attenz)"></rect>
+        <text x="238" y="68" text-anchor="middle" fill="var(--ink)" font-weight="600">API</text>
+        <text x="238" y="84" text-anchor="middle" fill="var(--muto)">sola lettura</text>
+        <line x1="330" y1="14" x2="330" y2="140" stroke="var(--bordo)" stroke-dasharray="3 4"></line>
+        <text x="344" y="24" fill="var(--muto)" letter-spacing="1.1">DIETRO, E IRRAGGIUNGIBILE</text>
+        <path d="M290 72 H360" stroke="var(--dato)" stroke-width="1.5"></path>
+        <rect x="360" y="34" width="104" height="28" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="412" y="52" text-anchor="middle" fill="var(--muto)">Postgres</text>
+        <rect x="360" y="68" width="104" height="28" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="412" y="86" text-anchor="middle" fill="var(--muto)">Parquet</text>
+        <rect x="360" y="102" width="104" height="28" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+        <text x="412" y="120" text-anchor="middle" fill="var(--muto)">simulatore</text>
+        <path d="M464 48 H520 M464 82 H520 M464 116 H520" stroke="var(--banda)" stroke-dasharray="3 3"></path>
+        <path d="M496 40 L512 56 M512 40 L496 56" stroke="var(--grave)" stroke-width="1.5"></path>
+        <path d="M496 74 L512 90 M512 74 L496 90" stroke="var(--grave)" stroke-width="1.5"></path>
+        <path d="M496 108 L512 124 M512 108 L496 124" stroke="var(--grave)" stroke-width="1.5"></path>
+        <text x="530" y="86" fill="var(--muto)">nessuna</text>
+        <text x="530" y="100" fill="var(--muto)">scorciatoia</text>
+      </g>
+    </svg></div>
+
+    <p>Il vantaggio si vede il giorno in cui il database cambia forma: si aggiorna l'API e la
+    dashboard non se ne accorge. È lo stesso confine della tappa 2, spostato all'altro capo della
+    catena.</p>
+    <div class="riquadro">
+      <h3>Dati mancanti, e cosa risponde</h3>
+      <p>Quando i dati non bastano per calcolare un indicatore, l'API risponde comunque, con il
+      valore degradato e il motivo scritto dentro. Un errore secco costringerebbe la dashboard a
+      indovinare se il problema è la macchina o la raccolta dati, e sono due cose che un tecnico
+      non deve confondere.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 3 <span class="per">· e la dashboard com'è fatta?</span></h2>
+  <div class="box-corpo">
+    <h2>Cinque pagine, e su ognuna una cosa sola che comanda</h2>
+    <div class="scheda-dato">
+      <div class="cella"><span class="k">Macchina</span><span class="v">come va</span></div>
+      <div class="cella"><span class="k">Valvole</span><span class="v">quale</span></div>
+      <div class="cella"><span class="k">OEE</span><span class="v">quanto rende</span></div>
+      <div class="cella"><span class="k">Tempo</span><span class="v">da quando</span></div>
+      <div class="cella"><span class="k">Carta</span><span class="v">quanto fuori</span></div>
+    </div>
+    <p>La regola che ha guidato il disegno è che ogni schermata risponde a una domanda sola. La
+    lamentela ricorrente delle versioni bocciate era sempre la stessa, <i>non so a cosa
+    guardare</i>, e non era un problema di colori: era che ogni schermata voleva dire cinque cose
+    insieme.</p>
+    <div class="riquadro">
+      <h3>Il colore è riservato alla gravità</h3>
+      <p>Un valore che sta bene resta grigio. Il giallo e il rosso compaiono soltanto dove c'è
+      qualcosa che merita attenzione, quindi la loro presenza si nota da lontano invece di
+      confondersi in una schermata già piena di colore.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 4 <span class="per">· cosa succede se il modello e l'allarme non concordano?</span></h2>
+  <div class="box-corpo">
+    <h2>La dashboard lo scrive</h2>
+    <p>Il modello della tappa 7 e il motore degli allarmi sono due strumenti separati che guardano
+    gli stessi dati. Ogni tanto danno risposte diverse: una valvola in allarme che il modello
+    considera sana.</p>
+    <p>La riga che la descrive dice esattamente questo, <i>il modello la dice sana</i>, invece di
+    scegliere uno dei due e nascondere l'altro. Chi decide è il tecnico, e per decidere ha bisogno
+    di sapere che i due strumenti non sono d'accordo.</p>
+    <div class="riquadro">
+      <h3>Come si accende, alla fine di tutto</h3>
+      <p>Un doppio clic su <code>dashboard.bat</code>. Accende il database se è spento, avvia
+      l'API e il server delle pagine, apre il browser. Chiudendo la finestra si spegne tutto
+      quello che è stato acceso.</p>
+    </div>
+    <div class="avanti">
+      <span>Fine della guida. Dal ciclo 417 della valvola 29 alla schermata di reparto.</span>
+      <span style="color:var(--ink);font-weight:600">Otto tappe</span>
+    </div>
+  </div>
+</section>
+
+</div>

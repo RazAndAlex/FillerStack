@@ -1,0 +1,205 @@
+<title>OPC UA · FillerStack</title>
+
+<div class="foglio">
+
+<div class="testata">
+  <p class="eyebrow"><a href="../">FillerStack</a> · Guida · tappa 2 di 8</p>
+  <h1>OPC UA</h1>
+  <p class="guida">Il simulatore, alla tappa precedente, calcola un riempimento e sa tutto:
+  quanti impulsi sono passati, quanto è durato, se è andato bene. Ma lo sa solo lui, dentro il
+  proprio processo Python. OPC UA è il passo che rende quei numeri <b>interrogabili da fuori</b>.</p>
+  <p class="min">Questa tappa risponde a cinque domande, nell'ordine in cui vengono in mente.</p>
+</div>
+
+<!-- 1 -->
+<section class="box">
+  <h2 class="box-tit">Domanda 1 <span class="per">· che cos'è, in una frase</span></h2>
+  <div class="box-corpo">
+    <h2>Una presa standard sul fianco della macchina</h2>
+    <p>Senza OPC UA, ogni programma che vuole i dati della riempitrice deve conoscere il modo
+    privato in cui quella riempitrice li tiene: dove sta il contatore, come si chiama il campo,
+    quale formato ha. Cambia macchina e cambia tutto.</p>
+    <p>OPC UA è un accordo su come si chiede. La macchina espone i propri numeri come un
+    <b>albero di indirizzi</b>; chiunque parli il protocollo si collega, sfoglia l'albero e legge.
+    Non deve sapere niente di cosa c'è dietro.</p>
+
+    <div style="margin:4px 0 2px"><svg viewBox="0 0 640 190" style="width:100%;max-width:640px;height:auto"
+      role="img" aria-label="Prima: tre programmi con tre collegamenti diversi alla macchina. Dopo: tre programmi e un'unica presa OPC UA.">
+      <text x="8" y="14" font-size="10.5" letter-spacing="1.2" font-family="Segoe UI, sans-serif" fill="var(--muto)">SENZA</text>
+      <rect x="8" y="26" width="86" height="120" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>
+      <text x="51" y="90" text-anchor="middle" font-size="11" font-family="Segoe UI, sans-serif" fill="var(--dato)">macchina</text>
+      <path d="M94 52 H196" stroke="var(--banda)" stroke-width="1.5"></path>
+      <path d="M94 86 H196" stroke="var(--banda)" stroke-width="1.5" stroke-dasharray="4 3"></path>
+      <path d="M94 120 H196" stroke="var(--banda)" stroke-width="1.5" stroke-dasharray="1 3"></path>
+      <text x="145" y="46" text-anchor="middle" font-size="9" font-family="Segoe UI, sans-serif" fill="var(--muto)">dialetto 1</text>
+      <text x="145" y="80" text-anchor="middle" font-size="9" font-family="Segoe UI, sans-serif" fill="var(--muto)">dialetto 2</text>
+      <text x="145" y="114" text-anchor="middle" font-size="9" font-family="Segoe UI, sans-serif" fill="var(--muto)">dialetto 3</text>
+      <rect x="196" y="40" width="72" height="24" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+      <rect x="196" y="74" width="72" height="24" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+      <rect x="196" y="108" width="72" height="24" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+      <text x="232" y="56" text-anchor="middle" font-size="10" font-family="Segoe UI, sans-serif" fill="var(--muto)">storico</text>
+      <text x="232" y="90" text-anchor="middle" font-size="10" font-family="Segoe UI, sans-serif" fill="var(--muto)">grafici</text>
+      <text x="232" y="124" text-anchor="middle" font-size="10" font-family="Segoe UI, sans-serif" fill="var(--muto)">allarmi</text>
+
+      <line x1="320" y1="20" x2="320" y2="160" stroke="var(--bordo)" stroke-dasharray="3 4"></line>
+
+      <text x="356" y="14" font-size="10.5" letter-spacing="1.2" font-family="Segoe UI, sans-serif" fill="var(--muto)">CON OPC UA</text>
+      <rect x="356" y="26" width="86" height="120" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>
+      <text x="399" y="90" text-anchor="middle" font-size="11" font-family="Segoe UI, sans-serif" fill="var(--dato)">macchina</text>
+      <rect x="442" y="70" width="16" height="32" fill="var(--attenz)"></rect>
+      <text x="450" y="118" text-anchor="middle" font-size="9" font-family="Segoe UI, sans-serif" fill="var(--muto)">presa</text>
+      <path d="M458 86 H520 M520 86 V52 H544 M520 86 H544 M520 86 V120 H544" stroke="var(--dato)" stroke-width="1.5" fill="none"></path>
+      <rect x="544" y="40" width="72" height="24" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+      <rect x="544" y="74" width="72" height="24" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+      <rect x="544" y="108" width="72" height="24" rx="2" fill="var(--sup)" stroke="var(--bordo)"></rect>
+      <text x="580" y="56" text-anchor="middle" font-size="10" font-family="Segoe UI, sans-serif" fill="var(--muto)">storico</text>
+      <text x="580" y="90" text-anchor="middle" font-size="10" font-family="Segoe UI, sans-serif" fill="var(--muto)">grafici</text>
+      <text x="580" y="124" text-anchor="middle" font-size="10" font-family="Segoe UI, sans-serif" fill="var(--muto)">allarmi</text>
+      <text x="8" y="176" font-size="11" font-family="Segoe UI, sans-serif" fill="var(--muto)">Tre integrazioni da mantenere</text>
+      <text x="356" y="176" font-size="11" font-family="Segoe UI, sans-serif" fill="var(--muto)">Una presa, tre clienti</text>
+    </svg></div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="box">
+  <h2 class="box-tit">Domanda 2 <span class="per">· quindi è un file Python?</span></h2>
+  <div class="box-corpo">
+    <h2>Il protocollo no. Il server che lo parla, qui, sì</h2>
+    <p>OPC UA è una specifica: esiste su PLC Siemens, su gateway commerciali, su qualunque cosa
+    la implementi. In questo progetto la implementa un file Python di 573 righe,
+    <span class="chiave">plcsim/opcua_server.py</span>, che usa la libreria
+    <span class="chiave">asyncua</span>. Sono queste righe, vere, prese dal repo.</p>
+
+    <div class="cod-blocco" data-cod="cod-a">
+      <div>
+        <p class="cod-file">plcsim/opcua_server.py · righe 302-311 e 344-368, accorciate</p>
+<pre class="cod" id="cod-a"><span class="r" data-r="1">server = <span class="fn">Server</span>()</span><span class="r" data-r="1">server.<span class="fn">set_endpoint</span>(<span class="st">"opc.tcp://localhost:4840/filler01/"</span>)</span><span class="r" data-r="2"><span class="kw">await</span> server.<span class="fn">init</span>()</span><span class="r" data-r="2">ns = <span class="kw">await</span> server.<span class="fn">register_namespace</span>(NAMESPACE_URI)</span><span class="r" data-r="0"></span><span class="r" data-r="3">root = <span class="kw">await</span> server.nodes.objects.<span class="fn">add_object</span>(</span><span class="r" data-r="3">    ua.<span class="fn">NodeId</span>(<span class="st">"Filler01"</span>, ns), <span class="st">"Filler01"</span>)</span><span class="r" data-r="0"></span><span class="r" data-r="4"><span class="kw">for</span> v <span class="kw">in</span> self._sim.snapshot.exposed_valves:</span><span class="r" data-r="4">    group = <span class="st">f"Valve{v:02d}"</span></span><span class="r" data-r="4">    obj = <span class="kw">await</span> root.<span class="fn">add_object</span>(</span><span class="r" data-r="4">        ua.<span class="fn">NodeId</span>(<span class="st">f"Filler01.{group}"</span>, ns), group)</span><span class="r" data-r="5">    <span class="kw">for</span> tag, vtype <span class="kw">in</span> VALVE_TAGS:</span><span class="r" data-r="5">        node = <span class="kw">await</span> obj.<span class="fn">add_variable</span>(</span><span class="r" data-r="5">            ua.<span class="fn">NodeId</span>(<span class="st">f"Filler01.{group}.{tag}"</span>, ns), tag,</span><span class="r" data-r="5">            init[group].<span class="fn">get</span>(tag), varianttype=vtype)</span><span class="r" data-r="6">        <span class="kw">await</span> node.<span class="fn">set_writable</span>(<span class="kw">False</span>)</span></pre>
+      </div>
+      <div class="note">
+        <p class="micro-tit">Clicca per accendere la riga</p>
+        <button class="nota" type="button" data-r="1">
+          <span class="n-tit">L'indirizzo di casa</span>
+          <span class="n-txt">Il server sceglie una porta e un URL. Da qui in poi chiunque sulla rete sa dove bussare: <code>opc.tcp://localhost:4840/filler01/</code>.</span></button>
+        <button class="nota" type="button" data-r="2">
+          <span class="n-tit">Il cognome dei tag</span>
+          <span class="n-txt">Il namespace separa i nomi di questa macchina da quelli standard. È il motivo per cui ogni indirizzo poi comincia con <code>ns=2</code>.</span></button>
+        <button class="nota" type="button" data-r="3">
+          <span class="n-tit">La radice dell'albero</span>
+          <span class="n-txt">Un oggetto vuoto chiamato <code>Filler01</code>: la cartella dentro cui finirà tutto il resto.</span></button>
+        <button class="nota" type="button" data-r="4">
+          <span class="n-tit">Una cartella per valvola</span>
+          <span class="n-txt">Il ciclo gira sulle valvole esposte dal contratto e crea <code>Valve01</code>…<code>Valve35</code>. L'albero elenca le valvole che il contratto espone.</span></button>
+        <button class="nota" type="button" data-r="5">
+          <span class="n-tit">La foglia: qui c'è il numero</span>
+          <span class="n-txt">Sedici tag per ogni valvola. <code>add_variable</code> è il punto in cui un valore interno del simulatore diventa leggibile da fuori, con il suo tipo dichiarato.</span></button>
+        <button class="nota" type="button" data-r="6">
+          <span class="n-tit">Sola lettura, e non per gentilezza</span>
+          <span class="n-txt">Nessun cliente può scrivere un indicatore di ciclo. Chi legge osserva; comandare la macchina è un'altra cosa e vive in un ramo separato.</span></button>
+      </div>
+    </div>
+
+    <div class="riquadro">
+      <h3>Il numero che conta: 567</h3>
+      <p>Sono i tag che l'albero espone: 7 di macchina più 16 per ognuna delle 35 valvole.
+      Non li scrive nessuno a mano. Nascono dal ciclo che vedi sopra, e l'elenco vive in un
+      solo file, <code>edge/tag-mapping.yaml</code>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="box">
+  <h2 class="box-tit">Domanda 3 <span class="per">· cosa trova chi si collega?</span></h2>
+  <div class="box-corpo">
+    <h2>Un albero di cartelle, e in fondo dei numeri</h2>
+    <p class="min">Un <b>tag</b> è una singola grandezza esposta con un nome, un indirizzo e un
+    tipo. Un numero solo, che chiunque può leggere.</p>
+    <p>Chi apre un client OPC UA vede una struttura da esplorare, come le cartelle di un disco.
+    L'ultimo pezzo del percorso è il valore.</p>
+
+    <div class="duo">
+      <div><svg viewBox="0 0 320 210" style="width:100%;height:auto"
+        role="img" aria-label="Albero: Filler01 contiene Machine, Valve01 fino a Valve35, e SimulationControl. Valve29 è aperta e mostra FillingTime, PulseCount, DeltaPulse, FillingOk.">
+        <g font-family="Segoe UI, system-ui, sans-serif" font-size="11.5">
+          <text x="6" y="16" fill="var(--ink)" font-weight="600">Filler01</text>
+          <path d="M12 22 V190" stroke="var(--banda)"></path>
+          <path d="M12 40 h12 M12 64 h12 M12 88 h12 M12 136 h12 M12 184 h12" stroke="var(--banda)"></path>
+          <text x="28" y="44" fill="var(--dato)">Machine</text>
+          <text x="96" y="44" fill="var(--muto)" font-size="10">7 tag</text>
+          <text x="28" y="68" fill="var(--dato)">Valve01</text>
+          <text x="28" y="92" fill="var(--ink)" font-weight="600">Valve29</text>
+          <path d="M40 96 V178" stroke="var(--attenz)"></path>
+          <path d="M40 112 h12 M40 130 h12 M40 148 h12 M40 166 h12" stroke="var(--attenz)"></path>
+          <text x="56" y="116" fill="var(--ink)">FillingTime</text>
+          <text x="188" y="116" fill="var(--dato)" font-size="11">1980</text>
+          <text x="56" y="134" fill="var(--ink)">PulseCount</text>
+          <text x="188" y="134" fill="var(--dato)" font-size="11">2505</text>
+          <text x="56" y="152" fill="var(--ink)">DeltaPulse</text>
+          <text x="188" y="152" fill="var(--dato)" font-size="11">−5</text>
+          <text x="56" y="170" fill="var(--ink)">FillingOk</text>
+          <text x="188" y="170" fill="var(--dato)" font-size="11">true</text>
+          <text x="28" y="188" fill="var(--muto)">SimulationControl</text>
+        </g>
+      </svg></div>
+      <div>
+        <p class="micro-tit" style="margin-bottom:7px">Gli indirizzi veri, da tag-mapping.yaml</p>
+        <div class="scorre"><table class="tab">
+          <tr><th>Nome logico</th><th>NodeId</th><th>Tipo</th></tr>
+          <tr><td>machine.state</td><td class="mono">ns=2;s=Filler01.Machine.State</td><td>Int32</td></tr>
+          <tr><td>machine.bottle_counter</td><td class="mono">ns=2;s=Filler01.Machine.BottleCounter</td><td>Int64</td></tr>
+          <tr><td>valve29.filling_time</td><td class="mono">ns=2;s=Filler01.Valve29.FillingTime</td><td>Int32</td></tr>
+          <tr><td>valve29.pulse_count</td><td class="mono">ns=2;s=Filler01.Valve29.PulseCount</td><td>Int32</td></tr>
+        </table></div>
+        <p class="min" style="margin-top:9px"><code>ns=2</code> è il namespace registrato prima,
+        <code>s=</code> dice che l'identificatore è una stringa leggibile. Nessun codice numerico da
+        tradurre. L'indirizzo si legge ad alta voce.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="box">
+  <h2 class="box-tit">Domanda 4 <span class="per">· come lo provo?</span></h2>
+  <div class="box-corpo">
+    <h2>Due comandi e un client gratuito</h2>
+    <p>Il server si accende da riga di comando. Poi ci si collega con un client OPC UA qualunque.
+    Qui si usa UaExpert, che è gratuito, e si sfoglia l'albero a mano.</p>
+    <div class="terminale">
+      <span class="pr">$</span> python -m plcsim.serve --mode realtime --seed 42<br>
+      <span style="color:#8f9aa4">server pronto su opc.tcp://localhost:4840/filler01/ · 567 tag</span><br><br>
+      <span class="pr">#</span> poi, da UaExpert: Add Server → opc.tcp://localhost:4840/filler01/<br>
+      <span class="pr">#</span> Objects → Filler01 → Valve29 → trascina FillingTime nel pannello
+    </div>
+    <p class="min">La sicurezza qui non c'è, ed è voluto: accesso anonimo, niente cifratura. È un
+    banco di prova su <code>localhost</code>, e l'irrobustimento è una tappa dichiarata più avanti.</p>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="box">
+  <h2 class="box-tit">Domanda 5 <span class="per">· e se domani ci fosse una macchina vera?</span></h2>
+  <div class="box-corpo">
+    <h2>Non se ne accorgerebbe nessuno</h2>
+    <p>È il punto per cui questa tappa esiste. Da qui in avanti nessuno sa che dietro c'è un
+    simulatore scritto in Python. Node-RED, MQTT, il modello e la dashboard vedono soltanto un
+    server OPC UA con quei 567 indirizzi.</p>
+    <p>Sostituisci il simulatore con un PLC vero, cioè il controllore programmabile che governa una
+    macchina dal quadro elettrico, che espone lo stesso albero e tutta la catena
+    continua a funzionare senza una riga cambiata. Per questo nei nomi non compare mai la parola
+    <i>sim</i>. <b>Il confine è qui</b>, ed è voluto.</p>
+    <div class="scheda-dato" style="margin-top:2px">
+      <div class="cella"><span class="k">Tag esposti</span><span class="v">567</span></div>
+      <div class="cella"><span class="k">Valvole</span><span class="v">35</span></div>
+      <div class="cella"><span class="k">Porta</span><span class="v">4840</span></div>
+      <div class="cella att"><span class="k">Push ogni</span><span class="v">10 ms</span></div>
+    </div>
+    <div class="avanti">
+      <span>Il server aspetta che qualcuno legga. Chi legge, e cosa ne fa?</span>
+      <span style="color:var(--ink);font-weight:600">Tappa 3 · Node-RED →</span>
+    </div>
+  </div>
+</section>
+
+</div>
