@@ -1394,7 +1394,8 @@ function montaTema() {
   const b = $('#tema');
   const scuro = () => (document.documentElement.getAttribute('data-tema')
     || (matchMedia('(prefers-color-scheme: dark)').matches ? 'scuro' : 'chiaro')) === 'scuro';
-  const dip = () => { b.textContent = scuro() ? 'CHIARO' : 'SCURO'; };
+  // Minuscolo come nelle altre quattro pagine: il pulsante e' lo stesso.
+  const dip = () => { b.textContent = scuro() ? 'chiaro' : 'scuro'; };
   dip();
   b.addEventListener('click', () => {
     const n = scuro() ? 'chiaro' : 'scuro';
