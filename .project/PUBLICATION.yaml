@@ -13,3 +13,5 @@ publication:
     - "work/**"
     - "data/**"
     - "edge/postgres/**"
+    - "edge/mosquitto/data/**"
+    - "edge/mosquitto/log/**"

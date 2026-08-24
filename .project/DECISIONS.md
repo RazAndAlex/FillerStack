@@ -797,8 +797,8 @@ container: verificato a zero duplicati su 2683 eventi. Si chiude come
 ## 2026-08-24 · La prognosi va alla v2, e qui c'e' scritto perche' non c'era
 
 L'utente ha chiesto perche' il progetto non facesse analisi predittiva, dicendo:
-*«il mio progetto era mettere quell'analisi predittiva che [il simulatore di riferimento] non aveva mai
-fatto»*. Ha poi deciso: **la predittiva sara' la v2**. Questa voce serve a
+*«il mio progetto era mettere quell'analisi predittiva che [il simulatore di
+riferimento] non aveva mai fatto»*. Ha poi deciso: **la predittiva sara' la v2**. Questa voce serve a
 impedire che la v2 si perda come si e' persa la prima volta.
 
 ### Come si e' persa la prima volta
@@ -812,8 +812,8 @@ internamente coerente: `work/plan-ml-v2.md` cita quell'handoff come autorita',
 `converged-feedback.md` ratifica il piano, ADR-0015 registra la ratifica. Nessuno
 di quei passaggi aveva piu' motivo di riaprire la domanda.
 
-Il documento che conteneva l'obiettivo vero, `Proposte/contesto_progetto_
-IIoT_ML_OPCUA_pipeline_aggiornato_2026-08-12.md` §46, e' entrato nel repository
+Il documento che conteneva l'obiettivo vero, `Proposte/contesto_progetto_IIoT_ML_OPCUA_pipeline_aggiornato_2026-08-12.md`
+§46, e' entrato nel repository
 **il giorno dopo**, e non e' mai stato citato da nessun piano successivo.
 Distingue tre problemi: *e' diverso dal normale* · *che tipo di problema sembra* ·
 *quanto manca al guasto*. Il progetto si e' fermato al primo, con l'apparato del
@@ -880,3 +880,66 @@ contro la ground truth, e non chiede di riaddestrare niente.
 Non si scrive «manutenzione predittiva» da nessuna parte finche' la v2 non
 esiste. Il caso studio dichiara due gradini su tre e nomina il terzo come non
 fatto. Un confine dichiarato regge una domanda in un colloquio; una promessa no.
+
+## 2026-08-24 · Lo scrub prima della pubblicazione, e le due cose lasciate stare
+
+L'utente ha aperto lo scrub del repository in vista della pubblicazione. Tre
+binari, tutti decisi da lui davanti alle alternative: ambito, prefisso nuovo,
+sorte del nome proprio.
+
+### Ambito
+
+**Tutto l'albero, esclusi `Proposte/` e `.scratch/`.** Sono le fonti di partenza
+e gli appunti: non si pubblicano, e ripulirli e' lavoro che non serve. Unica
+eccezione dentro `Proposte/`: il **nome** di un file e' stato cambiato, non il
+contenuto — vedi sotto.
+
+### Il prefisso dei topic
+
+Il primo livello dei topic e' diventato **`plant/`**. Non era una cartella: era
+il primo segmento della gerarchia MQTT, e l'ADR-0018 dichiarava a chiare lettere
+che portava un **marchio commerciale**. Era l'unico punto in cui un
+identificativo aziendale entrava
+in un contratto tecnico. La rinomina ha il suo ADR: **ADR-0022**, che modifica
+l'ADR-0018 §Decisione 2. QoS, retained ed envelope non cambiano.
+
+**I dati gia' scritti non sono stati toccati.** La colonna `source` di
+`machine_state_history` porta ancora il vecchio prefisso sulle righe
+vecchie. Sono cronologia: dicono da dove e' arrivata davvero una transizione.
+Riscriverle le renderebbe coerenti e false. Conseguenza accettata e da sapere:
+nello storico convivono due prefissi, e la data della riga dice quale.
+
+### Il nome proprio
+
+Fuori dal codice e dagli ADR, dove era diventato l'etichetta di un difetto
+(«l'artefatto il simulatore di riferimento», «i dashboard il simulatore di riferimento», «l'LCG di il simulatore di riferimento»); dentro il
+README come credito, senza cognome. La voce di glossario in `CONTEXT.md` e'
+diventata **«Simulatore di riferimento»**. Nella citazione testuale delle parole
+dell'utente, sopra in questo file, il nome e' stato sostituito fra parentesi
+quadre invece di riscrivere la frase: una citazione redatta resta una citazione,
+una citazione riscritta no.
+
+Il documento sorgente `Proposte/contesto_progetto_IIoT_...md` e' stato
+rinominato togliendo `impianto` dal nome; le sei citazioni in `docs/` e in
+`.project/` puntano al nome nuovo.
+
+### Le due cose lasciate stare, dichiarate
+
+- **Tre percorsi Windows assoluti in `HANDOFF-dashboard.md`** (righe 42, 44, 51)
+  contengono ancora `Tesi il simulatore di riferimento` e `Desktop\impianto\`. Sono puntatori alla macchina
+  dell'utente: neutralizzarli li rompe e basta. La domanda vera non e' come
+  scriverli ma **se gli `HANDOFF-*.md` debbano stare in un repository pubblico**.
+- **`edge/mosquitto/data/mosquitto.db`** contiene 5.684 occorrenze del vecchio
+  prefisso nei
+  messaggi persistiti (5.654 su `telemetry/valve`, 7 su `state`). E' stato del
+  broker, non sorgente. Aggiunto a `PUBLICATION.yaml` fra le esclusioni, insieme
+  a `edge/mosquitto/log/**`: e' runtime, come `edge/postgres/**` che era gia'
+  escluso. **Il file non e' stato cancellato** — va svuotato prima di una corsa
+  live, o il broker ripubblica retained su un topic che nessuno ascolta piu'.
+
+### Il README
+
+Alla radice non ne esisteva nessuno: chi apriva il repository trovava undici file
+di memoria e nessuna frase che dicesse cos'e'. `README.md` e' in inglese e dice
+anche cosa **non** c'e': niente prognosi, il classificatore a 7 classi quasi
+inerte, la sicurezza come POC accettato.

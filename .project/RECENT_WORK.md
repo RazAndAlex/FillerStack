@@ -842,7 +842,8 @@ contatto pratico.
   duplicato nei prompt, cosi' le tre varianti hanno ricevuto istruzioni
   letteralmente identiche e il confronto regge.
 - Tre versioni con nomi neutri, stesso tier, unica variabile il principio
-  organizzativo: A grammatica della piattaforma di supervisione esistente, B scatter valvole della tesi di riferimento, C layout BI
+  organizzativo: A grammatica della piattaforma di supervisione esistente, B scatter valvole
+  della tesi di riferimento, C layout BI
   convenzionale. Consegnate come tre URL cliccabili, non come screenshot.
 - **L'utente ha scelto A**, poi tre giri di revisione guidati dal suo feedback.
 
@@ -2426,3 +2427,151 @@ Tutte in `work/ricollaudo-20260824/`, non in una cartella di sessione: le due
 corse pulite della suite, la corsa sporca iniziale, la corsa di controllo, i due
 collaudi M9, il collaudo M10, il gate del battito e il sommario della corsa di
 bit-identita'.
+
+
+## 2026-08-24 (pomeriggio) — Lo scrub del marchio, e la prova che regge
+
+Primo passo verso la pubblicazione. Tre binari, decisi dall'utente davanti alle
+alternative: **tutto l'albero tranne `Proposte/` e `.scratch/`**, prefisso nuovo
+**`plant/`**, nome proprio **fuori dal codice e dentro il README come credito**.
+Il perche' di ognuno sta in `DECISIONS.md`, stessa data.
+
+### Cosa e' cambiato
+
+Il primo livello dei topic e' `plant/` in tredici file: i quattro moduli di
+`pipeline/`, i due flow
+Node-RED, il compose, `edge/README.md`, i due test che asseriscono le stringhe,
+gli ADR 0018 e 0020, la roadmap. La frase dell'ADR-0018 che dichiarava il
+marchio ora dice «livello di impianto». La rinomina ha il suo ADR — **0022** —
+perche' l'ADR-0018 aveva **congelato** il contratto topic v1: cambiarlo in
+silenzio sarebbe stato peggio del marchio.
+
+Il nome proprio e' uscito da `plcsim/validation.py`, dagli ADR 0004 e 0011, dal
+glossario di `CONTEXT.md`, da `DECISIONS.md` e da qui. Il documento sorgente in
+`Proposte/` e' stato **rinominato** (solo il nome, non il contenuto) e le sei
+citazioni aggiornate.
+
+`README.md` alla radice non esisteva. Ora c'e', in inglese, e la sezione «what
+works, and what does not» dice che la prognosi non c'e', che il classificatore a
+7 classi e' quasi inerte e che la sicurezza e' un POC accettato.
+
+### La verifica indipendente ha trovato tre cose, e una era mia
+
+Un verificatore che non aveva fatto le modifiche le ha contestate.
+
+- **Un riferimento rotto che avevo introdotto io.** Il code-span in
+  `DECISIONS.md` che cita il documento rinominato andava a capo **dentro** il
+  nome del file: come percorso non risolveva. Riunito.
+- **Un residuo che non avevo previsto**: `edge/mosquitto/data/mosquitto.db`
+  contiene **5.684 occorrenze del vecchio prefisso** nei messaggi persistiti (5.654 su
+  `telemetry/valve`, 7 su `state`). E' stato del broker e non era escluso dalla
+  pubblicazione. Ora `edge/mosquitto/data/**` e `edge/mosquitto/log/**` stanno
+  fra le esclusioni di `PUBLICATION.yaml`, accanto a `edge/postgres/**` che
+  c'era gia'. **Il file non e' stato cancellato**: va svuotato prima di una
+  corsa live, o il broker ripubblica retained su un topic che nessuno ascolta.
+- **Il verdetto verde non valeva niente.** Il verificatore ha lanciato i test a
+  Docker spento: `10 passed, 32 skipped`, «passed» con tre quarti dei test non
+  eseguiti — esattamente il tranello registrato il 24 mattina. Lo ha dichiarato
+  invece di consegnare il verde.
+
+### La prova vera
+
+Docker acceso, `plcsim-postgres` atteso fino a `healthy`, suite intera:
+**567 passed, zero skip, 13 min 19 s**. E' il numero di riferimento del
+progetto, quindi il rename non ha rotto nulla, e la copertura sul topic e' stata
+esercitata davvero (i test che toccano le stringhe passano dal database).
+Container fermati e Docker Desktop chiuso: a fine lavoro non resta acceso niente
+che non fosse acceso prima.
+
+### Due voci aperte, non risolte
+
+- **Tre percorsi Windows assoluti in `HANDOFF-dashboard.md`** (righe 42, 44, 51)
+  portano ancora `Tesi il simulatore di riferimento` e `Desktop\impianto\`. Sono puntatori alla macchina
+  dell'utente: neutralizzarli li rompe. La domanda e' se gli `HANDOFF-*.md`
+  debbano stare in un repository pubblico, non come riscriverli.
+- **`edge/flows/main.json` e `edge/flows/test-sink.json`** hanno lo stesso topic
+  alla stessa riga e nessun test li confronta. Il prossimo rename puo' aggiornare
+  uno solo dei due e nessuno se ne accorge. Lavoro nuovo, non scrub.
+
+Copie di sicurezza dei 23 file toccati in `.scratch/scrub-20260824/backup/`.
+
+
+## 2026-08-24 (sera) — Il repository pronto per essere pubblicato, e il file che lo avrebbe rotto
+
+Secondo tempo dello scrub. L'utente ha confermato che il progetto e' interamente
+personale — *«fatto di conto mio sul mio computer»* — e ha chiesto di procedere.
+
+### La provenienza, verificata invece che ereditata
+
+Il README diceva che il simulatore nasce dal «reverse engineering di un
+simulatore esistente», formulazione ereditata da un vecchio handoff. Un controllo
+sulla cartella `Comprensione PLC Sim` ha stabilito i fatti: il materiale di
+partenza erano **sei dataset CSV** (maggio e giugno, ~8 GB) e **una tesi in
+docx**. Codice sorgente del simulatore originale: **zero**, nemmeno un file di
+programma Siemens.
+
+Il V2 era un campionatore statistico — estraeva i KPI da distribuzioni misurate
+sui dati — e il suo stesso rapporto ammetteva di non riprodurre la forma d'onda.
+Il V3 non campiona niente: integra una portata e i KPI emergono. **Del vecchio
+generatore non sopravvive una riga.** Quello che attraversa il confine e' una
+**taratura, non un'implementazione**: 35 righe di medie per valvola, piu' poche
+costanti dedotte (periodo driver 46, fase 2,39996, ricetta 250 ml). Il README
+ora dice questo.
+
+### Il file che avrebbe rotto il repository pubblicato
+
+`plcsim/config.py` leggeva `work/kpi_params_clean.csv` a ogni avvio, e `work/`
+va in `.gitignore`. Chi avesse clonato il repository avrebbe trovato un
+simulatore che si ferma all'avvio.
+
+Il file e' ora **`plcsim/valve_params.csv`**, dentro il pacchetto, byte per byte
+identico. Un dato di ingresso obbligatorio stava nella cartella delle uscite
+rigenerabili: era sbagliato gia' prima, la pubblicazione lo ha solo reso visibile.
+`config.py` e' uno dei cinque file congelati dall'invariante 1, quindi la
+modifica ha il suo ADR: **0023**. Verifica: 35 valvole caricate, impronta delle
+costanti derivate `10197b433edba12c`, **258 passed** sulla suite del simulatore.
+
+### La ricerca a mano ha trovato due cose, e una era mia
+
+- **`edge/tests/mqtt_parity_check.py:377`** aveva cablato
+  `C:/Users/Utente/AppData/Local/Programs/DockerDesktop/...`. Sostituito con
+  `LOCALAPPDATA`: funziona per chiunque, e non pubblica il percorso di nessuno.
+- **L'ADR-0022 che avevo scritto io** spiegava per esteso che il vecchio prefisso
+  era il marchio dell'azienda, e lo ripeteva dodici volte. Era l'unico documento
+  del repository che rimetteva dentro esattamente cio' che lo scrub aveva tolto.
+  Riscritto: registra la decisione e il motivo senza nominare il valore vecchio.
+  Chi ha il database lo legge comunque nella colonna `source`.
+
+### Cosa entra e cosa resta fuori
+
+`.gitignore` (nuovo): ambiente, cache, `data/`, `work/`, volumi dei container.
+E' pubblico ed e' giusto che si veda.
+
+`.git/info/exclude` (nuovo): gli `HANDOFF-*.md`, `CLAUDE.md`, `Proposte/`,
+`Archive/`, `.scratch/`, `.agents/`, `.pi-subagents/`, `feedback/`, `risposte/`,
+`skills-lock.json`, `package.json`. **Questo file non viene pubblicato**, quindi
+non rivela nemmeno i nomi di cio' che tiene fuori.
+
+Due file tolti con motivo: `skills-lock.json` e' configurazione degli strumenti
+agentici; `package.json` e' un abbozzo di `npm init` mai usato in un progetto
+Python, e dichiarava `"license": "ISC"` in contraddizione col file `LICENSE`.
+
+### La licenza
+
+`LICENSE` MIT, intestata ad Andrei Razvan Alexandru, stesso testo di LineLens.
+Nel README tre targhette come sull'altro progetto e una sezione finale.
+
+### Resta aperto
+
+- **La cronologia non e' ancora stata riscritta.** Tre commit gia' su GitHub
+  (`e4e82f2`, `94c5981`, `5ba964c`) contengono ancora il nome e il marchio. Il
+  repository e' privato, quindi non e' esposto, ma renderlo pubblico li
+  esporrebbe. `git filter-repo` con una tabella di sostituzioni, poi push
+  forzato. Nessun collaboratore e nessun fork: non rompe niente a nessuno.
+- **`edge/mosquitto/data/mosquitto.db`** e' ancora sul disco con 5.684 occorrenze
+  del vecchio prefisso. Escluso dalla pubblicazione, ma va svuotato prima di una
+  corsa live.
+- **`work/kpi_params_clean.csv`** e' rimasto come copia. Innocuo (`work/` e'
+  ignorata) ma puo' divergere da quello nel pacchetto: la copia buona e'
+  `plcsim/valve_params.csv`.
+- **Il debito ADR su `plcsim/run.py`** (modifica del 19 agosto) resta aperto.
