@@ -89,16 +89,12 @@ Said plainly, because the alternative is letting someone find out.
 ## Where to start reading
 
 **[Il viaggio del dato](https://razandalex.github.io/FillerStack/)** — eleven
-stops from the can to the screen, following one number. No acronym is used
-before it is explained. Start here if you have never seen a filling line.
+stops from the can to the screen, following one number: 2505 pulses, born
+inside a can at 10:03 and read off a screen eleven handovers later. No acronym
+is used before it is explained.
 
-**[La guida tecnica](https://razandalex.github.io/FillerStack/guida/01-simulatore.html)**
-— the same chain in eight stops, with the real commands and the frozen
-contracts: simulator, OPC UA, Node-RED, MQTT, Mosquitto, Docker, machine
-learning, API and dashboard.
-
-Both are in Italian, like the dashboard, because the technicians who would use
-it are.
+It is in Italian, like the dashboard, because the technicians who would use it
+are.
 
 ## What is in here
 

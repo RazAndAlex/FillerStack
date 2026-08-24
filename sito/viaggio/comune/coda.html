@@ -47,8 +47,11 @@
 
   function valvola(quanto){
     var h = '';
-    h += '<rect x="140" y="18" width="140" height="34" rx="3" fill="var(--sup-2)" stroke="var(--bordo)"></rect>';
-    h += '<text x="210" y="40" text-anchor="middle" font-size="12" '+F+' fill="var(--muto)">il serbatoio, tenuto in pressione</text>';
+    /* Il serbatoio era largo 140 e la sua etichetta 192: il testo usciva da
+       tutti e due i lati. Un serbatoio in pressione e' piu' largo del rubinetto
+       e della lattina, quindi allargarlo e' anche piu' giusto di com'era. */
+    h += '<rect x="110" y="18" width="200" height="34" rx="3" fill="var(--sup-2)" stroke="var(--bordo)"></rect>';
+    h += '<text x="210" y="40" text-anchor="middle" font-size="11.5" '+F+' fill="var(--muto)">il serbatoio, tenuto in pressione</text>';
     h += '<rect x="196" y="52" width="28" height="40" fill="var(--banda)"></rect>';
     h += '<rect x="182" y="92" width="56" height="20" rx="2" fill="var(--dato)"></rect>';
     h += '<text x="250" y="107" font-size="12" '+F+' fill="var(--muto)">il rubinetto</text>';
@@ -82,18 +85,18 @@
 
   function albero(){
     var h = '<text x="16" y="24" font-size="12" '+F+' fill="var(--muto)">la macchina si fa sfogliare come delle cartelle</text>';
-    h += '<text x="20" y="60" font-size="14" '+F+' fill="var(--ink)" font-weight="600">Filler01</text>';
-    h += '<path d="M28 68 V232" stroke="var(--banda)"></path>';
-    h += '<path d="M28 88 h16 M28 118 h16 M28 148 h16 M28 228 h16" stroke="var(--banda)"></path>';
-    h += '<text x="52" y="93" font-size="13" '+F+' fill="var(--dato)">Machine</text>';
-    h += '<text x="52" y="123" font-size="13" '+F+' fill="var(--dato)">Valve01</text>';
-    h += '<text x="52" y="153" font-size="13" '+F+' fill="var(--ink)" font-weight="600">Valve29</text>';
-    h += '<path d="M66 158 V222" stroke="var(--attenz)"></path>';
-    h += '<path d="M66 174 h16 M66 196 h16 M66 218 h16" stroke="var(--attenz)"></path>';
-    h += '<text x="90" y="179" font-size="12.5" '+F+' fill="var(--ink)">FillingTime</text><text x="240" y="179" font-size="12.5" '+F+' fill="var(--dato)">1980</text>';
-    h += '<text x="90" y="201" font-size="12.5" '+F+' fill="var(--ink)">PulseCount</text><text x="240" y="201" font-size="12.5" '+F+' fill="var(--dato)">2505</text>';
-    h += '<text x="90" y="223" font-size="12.5" '+F+' fill="var(--ink)">DeltaPulse</text><text x="240" y="223" font-size="12.5" '+F+' fill="var(--dato)">-5</text>';
-    h += '<text x="52" y="233" font-size="13" '+F+' fill="var(--muto)">SimulationControl</text>';
+    h += '<text x="20" y="56" font-size="14" '+F+' fill="var(--ink)" font-weight="600">Filler01</text>';
+    h += '<path d="M28 64 V239" stroke="var(--banda)"></path>';
+    h += '<path d="M28 81 h16 M28 109 h16 M28 137 h16 M28 235 h16" stroke="var(--banda)"></path>';
+    h += '<text x="52" y="86" font-size="13" '+F+' fill="var(--dato)">Machine</text>';
+    h += '<text x="52" y="114" font-size="13" '+F+' fill="var(--dato)">Valve01</text>';
+    h += '<text x="52" y="142" font-size="13" '+F+' fill="var(--ink)" font-weight="600">Valve29</text>';
+    h += '<path d="M66 147 V209" stroke="var(--attenz)"></path>';
+    h += '<path d="M66 161 h16 M66 183 h16 M66 205 h16" stroke="var(--attenz)"></path>';
+    h += '<text x="90" y="166" font-size="12.5" '+F+' fill="var(--ink)">FillingTime</text><text x="240" y="166" font-size="12.5" '+F+' fill="var(--dato)">1980</text>';
+    h += '<text x="90" y="188" font-size="12.5" '+F+' fill="var(--ink)">PulseCount</text><text x="240" y="188" font-size="12.5" '+F+' fill="var(--dato)">2505</text>';
+    h += '<text x="90" y="210" font-size="12.5" '+F+' fill="var(--ink)">DeltaPulse</text><text x="240" y="210" font-size="12.5" '+F+' fill="var(--dato)">-5</text>';
+    h += '<text x="52" y="240" font-size="13" '+F+' fill="var(--muto)">SimulationControl</text>';
     h += '<text x="16" y="272" font-size="12" '+F+' fill="var(--muto)">567 indirizzi. DeltaPulse vale meno 5 perche conta</text>' + '<text x="16" y="288" font-size="12" '+F+' fill="var(--muto)">quanto manca al bersaglio, e qui e stato superato</text>';
     return h;
   }
@@ -144,7 +147,8 @@
         h += '<rect x="'+(x+14)+'" y="'+(98+k*14)+'" width="92" height="7" fill="var(--traccia)"></rect>';
       }
     });
-    h += '<text x="280" y="232" text-anchor="middle" font-size="12" '+F+' fill="var(--attenz)">18 511 righe</text>';
+    /* Il cassetto acceso va da 280 a 400: il suo centro e' 340, non 280. */
+    h += '<text x="340" y="232" text-anchor="middle" font-size="12" '+F+' fill="var(--attenz)">18 511 righe</text>';
     h += '<text x="16" y="266" font-size="12" '+F+' fill="var(--muto)">chi cerca un giorno apre un cassetto solo</text>';
     return h;
   }
@@ -155,11 +159,15 @@
       h += '<rect x="16" y="'+(48+k*15)+'" width="120" height="9" fill="'+(k===8?'var(--attenz)':'var(--traccia)')+'"></rect>';
     }
     h += '<text x="16" y="216" font-size="11.5" '+F+' fill="var(--muto)">50 cicli di fila</text>';
-    h += '<path d="M144 120 H184 m-8 -6 l8 6 l-8 6" stroke="var(--banda)" fill="none" stroke-width="1.5"></path>';
-    h += '<rect x="192" y="90" width="104" height="60" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>';
-    h += '<text x="244" y="115" text-anchor="middle" font-size="13" '+F+' fill="var(--ink)">43 misure</text>';
-    h += '<text x="244" y="133" text-anchor="middle" font-size="11" '+F+' fill="var(--muto)">media, pendenza…</text>';
-    h += '<path d="M300 120 H340 m-8 -6 l8 6 l-8 6" stroke="var(--banda)" fill="none" stroke-width="1.5"></path>';
+    /* I puntini di sospensione sembravano un testo tagliato. Il riquadro si
+       allarga e le misure si dicono per intero, con le stesse parole del
+       testo accanto: la media, quanto ballano, se stanno crescendo. */
+    h += '<path d="M144 120 H182 m-8 -6 l8 6 l-8 6" stroke="var(--banda)" fill="none" stroke-width="1.5"></path>';
+    h += '<rect x="186" y="84" width="116" height="72" rx="2" fill="var(--sup-2)" stroke="var(--bordo)"></rect>';
+    h += '<text x="244" y="106" text-anchor="middle" font-size="13" '+F+' fill="var(--ink)">43 misure</text>';
+    h += '<text x="244" y="126" text-anchor="middle" font-size="9.5" '+F+' fill="var(--muto)">media, quanto ballano,</text>';
+    h += '<text x="244" y="141" text-anchor="middle" font-size="9.5" '+F+' fill="var(--muto)">se stanno crescendo</text>';
+    h += '<path d="M306 120 H340 m-8 -6 l8 6 l-8 6" stroke="var(--banda)" fill="none" stroke-width="1.5"></path>';
     h += '<rect x="346" y="96" width="62" height="48" rx="2" fill="var(--sup-2)" stroke="var(--attenz)"></rect>';
     h += '<text x="377" y="118" text-anchor="middle" font-size="12.5" '+F+' fill="var(--ink)">sana</text>';
     h += '<text x="377" y="134" text-anchor="middle" font-size="11" '+F+' fill="var(--muto)">87%</text>';
@@ -167,40 +175,76 @@
     return h;
   }
 
+  /* L'ultima scena e' la pagina VALVOLE, quella vera: una giostra vista in
+     pianta, con la corona degli allarmi fuori e il conteggio al centro. Prima
+     qui c'erano trentacinque quadratini in griglia, che la pagina vera non ha
+     mai avuto: il viaggio arrivava a una schermata inventata. I nove numeri in
+     allarme sono quelli veri della corsa registrata. */
+  var IN_ALLARME = [8,13,14,15,16,17,18,21,30];
+
   function schermata(){
-    var h = '<text x="16" y="16" font-size="12" '+F+' fill="var(--muto)">la schermata vera, con dentro il nostro riempimento</text>';
-    // la finestra, con la barra scura e le cinque voci della dashboard vera
-    h += '<rect x="10" y="26" width="404" height="206" rx="3" fill="var(--sup-2)" stroke="var(--bordo)"></rect>';
-    h += '<rect x="10" y="26" width="404" height="24" fill="var(--barra)"></rect>';
-    var voci = ['MACCHINA','VALVOLE','OEE','TEMPO','CARTA'];
-    voci.forEach(function(n,i){
-      var x = 20 + i*78;
-      if (i === 1) h += '<rect x="'+(x-7)+'" y="26" width="70" height="24" fill="var(--sup)"></rect>';
-      h += '<text x="'+x+'" y="42" font-size="9" letter-spacing="0.7" '+F+' fill="'+
-           (i===1 ? 'var(--ink)' : 'var(--barra-muto)')+'">'+n+'</text>';
-    });
-    // i 35 rubinetti, come li dispone la pagina VALVOLE
-    for (var k=0;k<35;k++){
-      var x = 20 + (k%7)*55, y = 60 + Math.floor(k/7)*20;
-      var att = (k === 28);
-      h += '<rect x="'+x+'" y="'+y+'" width="48" height="16" rx="2" fill="var(--sup)" stroke="'+
-           (att?'var(--attenz)':'var(--bordo)')+'" stroke-width="'+(att?'2':'1')+'"></rect>';
-      h += '<text x="'+(x+24)+'" y="'+(y+12)+'" text-anchor="middle" font-size="9.5" '+F+
-           ' fill="'+(att?'var(--ink)':'var(--muto)')+'">'+(k+1)+'</text>';
+    var cx=110, cy=150, R=58, Ra=72, Rl=86, h='';
+    h += '<text x="16" y="16" font-size="12" '+F+' fill="var(--muto)">la schermata vera: la pagina delle valvole</text>';
+
+    h += '<rect x="8" y="26" width="408" height="228" rx="3" fill="var(--sup-2)" stroke="var(--bordo)"></rect>';
+    h += '<rect x="8" y="26" width="408" height="20" fill="var(--barra)"></rect>';
+    h += '<text x="18" y="40" font-size="8" letter-spacing="0.7" '+F+' fill="var(--barra-muto)">GIOSTRA &#8212; TEMPO DI RIEMPIMENTO DELLE 35 VALVOLE</text>';
+
+    /* il normale di ogni valvola: la circonferenza tratteggiata */
+    h += '<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="none" stroke="var(--banda)" stroke-dasharray="2 3"></circle>';
+
+    for (var k=1;k<=35;k++){
+      var a = -Math.PI/2 + (k-1)*2*Math.PI/35;
+      var ca = Math.cos(a), sa = Math.sin(a);
+      var all = IN_ALLARME.indexOf(k) >= 0;
+      var noi = (k === 29);
+
+      /* la candela: quanto sta dentro o fuori dal proprio normale */
+      var d = all ? 7 : 2.5;
+      h += '<line x1="'+(cx+(R-4)*ca).toFixed(1)+'" y1="'+(cy+(R-4)*sa).toFixed(1)+
+           '" x2="'+(cx+(R+d)*ca).toFixed(1)+'" y2="'+(cy+(R+d)*sa).toFixed(1)+
+           '" stroke="'+(noi?'var(--ink)':'var(--dato)')+'" stroke-width="'+(noi?3:2.4)+'"></line>';
+
+      /* la corona esterna: un segmento acceso per ogni allarme attivo */
+      var a1 = a - 0.075, a2 = a + 0.075;
+      h += '<path d="M'+(cx+Ra*Math.cos(a1)).toFixed(1)+' '+(cy+Ra*Math.sin(a1)).toFixed(1)+
+           ' A'+Ra+' '+Ra+' 0 0 1 '+(cx+Ra*Math.cos(a2)).toFixed(1)+' '+(cy+Ra*Math.sin(a2)).toFixed(1)+
+           '" fill="none" stroke="'+(all?'var(--attenz)':'var(--banda)')+'" stroke-width="'+(all?5:3)+'"></path>';
+
+      /* i numeri: solo quelli che l'occhio cerca davvero */
+      if (all || noi){
+        h += '<text x="'+(cx+Rl*ca).toFixed(1)+'" y="'+(cy+Rl*sa+3).toFixed(1)+
+             '" text-anchor="middle" font-size="7.5" '+F+' fill="'+
+             (noi?'var(--ink)':'var(--attenz)')+'" font-weight="600">'+k+'</text>';
+      }
     }
-    // il pannello che si apre cliccando: qui finisce il viaggio del nostro dato
-    h += '<rect x="20" y="166" width="384" height="56" rx="2" fill="var(--sup)" stroke="var(--attenz)"></rect>';
-    h += '<text x="30" y="181" font-size="9.5" letter-spacing="0.8" '+F+' fill="var(--muto)">RUBINETTO 29</text>';
-    h += '<text x="150" y="181" font-size="9.5" '+F+' fill="var(--muto)">22 agosto, 10:03</text>';
-    var celle = [['durata','1980 ms'],['scatti','2505'],['in piu','+5'],['giudizio','sana 87%']];
+
+    h += '<circle cx="'+cx+'" cy="'+cy+'" r="32" fill="var(--sup)" stroke="var(--bordo)"></circle>';
+    h += '<text x="'+cx+'" y="'+(cy-8)+'" text-anchor="middle" font-size="6.5" letter-spacing="0.5" '+F+' fill="var(--muto)">IN ALLARME</text>';
+    h += '<text x="'+cx+'" y="'+(cy+9)+'" text-anchor="middle" font-size="19" '+F+' fill="var(--ink)" font-weight="600">9</text>';
+    h += '<text x="'+cx+'" y="'+(cy+21)+'" text-anchor="middle" font-size="7" '+F+' fill="var(--muto)">su 35</text>';
+
+    /* il riquadro che si apre sulla valvola scelta: qui finisce il viaggio */
+    h += '<rect x="200" y="60" width="204" height="92" rx="2" fill="var(--sup)" stroke="var(--ink)"></rect>';
+    h += '<text x="212" y="76" font-size="8.5" letter-spacing="0.8" '+F+' fill="var(--muto)">RUBINETTO 29</text>';
+    h += '<text x="392" y="76" text-anchor="end" font-size="8.5" '+F+' fill="var(--muto)">22 ago, 10:03</text>';
+    var celle = [['DURATA','1980 ms'],['SCATTI','2505'],['GIUDIZIO','sana 87%']];
     celle.forEach(function(c,i){
-      var x = 30 + i*94;
-      h += '<text x="'+x+'" y="197" font-size="8.5" letter-spacing="0.6" '+F+' fill="var(--muto)">'+
-           c[0].toUpperCase()+'</text>';
-      h += '<text x="'+x+'" y="214" font-size="14" '+F+' fill="var(--ink)" font-weight="600">'+c[1]+'</text>';
+      var x = 212 + i*62;
+      h += '<text x="'+x+'" y="99" font-size="7" letter-spacing="0.5" '+F+' fill="var(--muto)">'+c[0]+'</text>';
+      h += '<text x="'+x+'" y="117" font-size="'+(i===2?11:12.5)+'" '+F+' fill="var(--ink)" font-weight="600">'+c[1]+'</text>';
     });
-    h += '<text x="16" y="252" font-size="12" '+F+' fill="var(--muto)">gli altri 34 restano grigi: il colore va solo dove serve</text>';
-    h += '<text x="16" y="270" font-size="12" '+F+' fill="var(--muto)">OEE, nella barra, vuol dire quanto rende la linea</text>';
+    h += '<text x="212" y="139" font-size="8" '+F+' fill="var(--muto)">il nostro riempimento, arrivato in fondo</text>';
+
+    /* una delle misure che la pagina tiene di fianco alla giostra */
+    h += '<text x="200" y="180" font-size="7" letter-spacing="0.6" '+F+' fill="var(--muto)">RIEMPIMENTI CONFORMI</text>';
+    h += '<text x="200" y="200" font-size="16" '+F+' fill="var(--ink)" font-weight="600">74,3%</text>';
+    h += '<rect x="200" y="210" width="204" height="7" fill="var(--traccia)"></rect>';
+    h += '<rect x="200" y="210" width="152" height="7" fill="var(--attenz)"></rect>';
+    h += '<text x="200" y="232" font-size="7.5" '+F+' fill="var(--muto)">riferimento 78,7% &#183; base delle 35 valvole</text>';
+
+    h += '<text x="16" y="272" font-size="12" '+F+' fill="var(--muto)">il colore va solo dove serve: nove valvole su trentacinque</text>';
+    h += '<text x="16" y="290" font-size="12" '+F+' fill="var(--muto)">la nostra, la 29, sta dentro il suo normale</text>';
     return h;
   }
 

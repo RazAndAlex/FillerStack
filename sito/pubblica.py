@@ -5,12 +5,11 @@ diverse, perche' sono due montatori distinti. Un sito vuole invece un albero
 solo, con un ingresso.
 
     pubblica/
-      index.html                    il viaggio del dato
-      guida/01-simulatore.html      la guida tecnica, otto tappe
-      ...
+      index.html      il viaggio del dato
 
-L'ingresso e' il viaggio, non la guida: chi arriva da un indirizzo non sa
-ancora cos'e' il progetto, e la guida da' per scontato che lo sappia.
+Il sito e' il viaggio, e basta. La guida tecnica in otto tappe resta materiale
+personale dell'autore: si monta in locale con `costruisci.py`, si legge da
+`sito/build/`, e non viene pubblicata. E' sempre stata una cosa a parte.
 
 Uso, dopo aver montato:
 
@@ -37,27 +36,22 @@ PUBBLICA = QUI / "pubblica"
 
 
 def main() -> int:
-    if not (BUILD / "01-simulatore.html").exists():
-        print("manca la guida montata. Lancia prima: python sito/costruisci.py")
-        return 1
     viaggio = BUILD_VIAGGIO / "viaggio.html"
     if not viaggio.exists():
         print("manca il viaggio montato. "
               "Lancia prima: python sito/viaggio/costruisci.py")
         return 1
 
-    if PUBBLICA.exists():
-        shutil.rmtree(PUBBLICA)
-    (PUBBLICA / "guida").mkdir(parents=True)
-
+    # Si svuota il contenuto invece di cancellare la cartella: mentre la si
+    # guarda in locale un server la tiene aperta, e su Windows rimuoverla
+    # fallisce. Rifare il sito non deve pretendere di chiudere l'anteprima.
+    for x in PUBBLICA.iterdir() if PUBBLICA.exists() else []:
+        shutil.rmtree(x) if x.is_dir() else x.unlink()
+    PUBBLICA.mkdir(parents=True, exist_ok=True)
     shutil.copy2(viaggio, PUBBLICA / "index.html")
-    n = 0
-    for p in sorted(BUILD.glob("*.html")):
-        shutil.copy2(p, PUBBLICA / "guida" / p.name)
-        n += 1
 
     peso = sum(f.stat().st_size for f in PUBBLICA.rglob("*") if f.is_file())
-    print(f"pubblica/: index.html + {n} tappe in guida/  ({peso/1024:.0f} KB)")
+    print(f"pubblica/: index.html  ({peso/1024:.0f} KB)")
     return 0
 
 

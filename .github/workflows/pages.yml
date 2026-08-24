@@ -38,6 +38,9 @@ jobs:
           python-version: '3.14'
 
       - name: Monta le pagine
+        # La guida tecnica si monta lo stesso: verifica.py la controlla, e un
+        # difetto li' e' comunque un difetto. Ma non finisce nel sito: e'
+        # materiale personale dell'autore, non una pagina pubblica.
         run: |
           python sito/costruisci.py
           python sito/viaggio/costruisci.py
