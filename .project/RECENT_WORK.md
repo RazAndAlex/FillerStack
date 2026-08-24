@@ -2575,3 +2575,44 @@ Nel README tre targhette come sull'altro progetto e una sezione finale.
   ignorata) ma puo' divergere da quello nel pacchetto: la copia buona e'
   `plcsim/valve_params.csv`.
 - **Il debito ADR su `plcsim/run.py`** (modifica del 19 agosto) resta aperto.
+
+
+## 2026-08-24 (tarda sera) — La cronologia riscritta, e il repository pronto
+
+Ultimo passo dello scrub, l'unico che non si disfa. Prima di toccare niente:
+`git bundle create --all` in `.scratch/scrub-20260824/git-backup/`, 131 KB,
+verificato con «the bundle records a complete history». Da quel file si
+ricostruisce il repository esatto com'era prima.
+
+`git filter-repo 2.47` con una tabella di sostituzioni costruita sulle cinque
+righe trovate nei tre commit interessati, piu' tre regole di riserva. Dodici
+commit riscritti, identificatori tutti nuovi.
+
+**Il controllo dopo ha trovato una cosa che avevo scritto io.** La tabella
+sostituiva la sigla in maiuscolo, ma la voce di memoria che avevo appena
+committato scriveva il vecchio prefisso in **minuscolo**, sette volte, spiegando
+la rimozione. Stesso errore commesso poche ore prima nell'ADR-0022: il documento
+che registra la rimozione di un marchio e' il primo posto in cui il marchio
+rientra. Corretto e commit rifatto.
+
+Verifica finale su tutte le versioni di tutti i file in tutti i dodici commit:
+zero occorrenze dei tre termini.
+
+**Effetto collaterale utile.** `.git` pesava **2,75 GB in 27.510 file** per un
+repository che traccia undici file di testo. Erano stash abbandonati da sessioni
+passate che avevano preso dentro anche le cartelle di dati — irraggiungibili,
+quindi mai arrivati su GitHub, ma sul disco sì. Dopo la riscrittura: **5 oggetti
+sciolti e un pacchetto da 139 KB**.
+
+`origin` era stato rimosso da filter-repo, come fa apposta per impedire un invio
+distratto. Rimesso a mano.
+
+### Stato: pronto, non pubblicato
+
+Nessun invio a GitHub. Il ramo locale e quello remoto sono ora storie diverse, e
+allinearli richiede un push forzato. Da decidere prima di pubblicare:
+
+- Aggiungere il codice sorgente al repository. Oggi il repository traccia solo
+  `.project/**` e `AGENTS.md`: reso pubblico cosi', mostrerebbe la memoria di
+  progetto e nient'altro.
+- Il push forzato, e poi il cambio di visibilita'.
