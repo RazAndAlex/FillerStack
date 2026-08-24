@@ -21,7 +21,7 @@ import argparse
 import json
 from datetime import datetime
 from functools import lru_cache
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -162,7 +162,9 @@ if __name__ == "__main__":
             f"manca la registrazione in {cartella}.\n"
             "Rigenerala con l'API viva:  python dashboard/registra_demo.py")
 
-    srv = HTTPServer(("127.0.0.1", args.port), Handler)
+    # A un thread solo il server si impianta: una pagina carica decine di
+    # file e il browser tiene aperte piu' connessioni insieme.
+    srv = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     print(f"dashboard (demo) su http://127.0.0.1:{args.port}/   "
           "Ctrl-C per fermare")
     print(f"  {_titolo()} — dati fermi, nessun database richiesto")
