@@ -1,0 +1,78 @@
+/* Pagina OEE. Disposizione specifica di QUESTA pagina.
+   La grammatica (tinte, navigazione, riquadri, tipografia, hover/focus,
+   suggerimento, tema) sta in /comune/lessico.css, caricato PRIMA di questo
+   file. Qui restano solo le aree della griglia e gli elementi che esistono
+   solo su OEE: didascalia numerica del riquadro, tabella di cifre,
+   colonna "adesso". */
+
+.griglia{
+  grid-template-columns: 1fr 1fr 1fr 296px;
+  grid-template-rows: 1.34fr 1fr;
+  grid-template-areas:
+    "casc  casc  casc  ora"
+    "disp  prest qual  ora";
+}
+.box-casc { grid-area:casc;  }
+.box-disp { grid-area:disp;  }
+.box-prest{ grid-area:prest; }
+.box-qual { grid-area:qual;  }
+.box-ora  { grid-area:ora;   }
+
+/* ---------- navigazione: le voci non attive sono collegamenti ---------- */
+.nav-voci li a{
+  color:inherit; text-decoration:none; display:flex; align-items:center;
+  height:100%; cursor:pointer;
+}
+.nav-voci li:has(a):hover{ background:#454e59; }
+.nav-voci li a:focus-visible{ outline:2px solid #9fb4c8; outline-offset:-3px; }
+
+/* ---------- didascalia numerica in testa al riquadro ----------
+   Non e' prosa: e' il valore della componente piu' la provenienza del
+   proprio riferimento, che deve essere leggibile senza aprire il codice. */
+.cap{ display:flex; align-items:baseline; gap:10px; flex:0 0 auto;
+      margin:0 0 4px; }
+.cap .n{ font-size:32px; font-weight:600; line-height:1; letter-spacing:.01em; }
+.cap .n.muta{ font-size:17px; color:var(--muto); }
+.cap .r{ font-size:11px; color:var(--rif); line-height:1.3; }
+
+.graf{ flex:1 1 auto; min-height:0; }
+
+/* ---------- cifre in fondo al riquadro ---------- */
+.cifre{ margin:4px 0 0; padding:0; flex:0 0 auto; display:flex; gap:14px; }
+.cifre .riga{ flex:1 1 0; min-width:0; border-top:1px solid var(--traccia);
+              padding-top:3px; }
+.cifre dt{ font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+           color:var(--muto); white-space:nowrap; overflow:hidden;
+           text-overflow:ellipsis; }
+.cifre dd{ margin:1px 0 0; font-size:15px; font-weight:600; line-height:1.1; }
+.cifre dd .u{ font-size:10.5px; font-weight:400; color:var(--muto);
+              margin-left:3px; }
+
+/* ---------- colonna "adesso" ---------- */
+.stato-grande{
+  display:flex; align-items:baseline; gap:10px;
+  padding:8px 12px; border-radius:2px; margin:0 0 6px;
+  background:var(--sup-2); color:var(--ink); border:1px solid var(--bordo);
+}
+.stato-grande.fermo{ background:var(--attenz); color:var(--su-att);
+                     border-color:var(--attenz); }
+.stato-grande .n{ font-size:25px; font-weight:600; line-height:1.05; }
+.stato-grande .d{ font-size:11.5px; color:var(--muto); letter-spacing:.05em; }
+.stato-grande.fermo .d{ color:var(--su-att); opacity:.8; }
+
+.riga-dato{ margin:0 0 4px; font-size:12px; color:var(--muto);
+            display:flex; align-items:center; gap:7px; }
+.riga-dato .et{ font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; }
+.riga-dato .or{ color:var(--ink); font-weight:600; font-size:13px; }
+.riga-dato.vecchio{ color:var(--attenz); }
+.riga-dato.vecchio .or{ color:var(--attenz); }
+.riga-dato .pallino{ width:8px; height:8px; border-radius:50%;
+                     background:var(--attenz); display:inline-block; }
+
+.micro-tit.sep{ margin-top:10px; padding-top:8px;
+                border-top:1px solid var(--traccia); }
+.graf-turno{ flex:1 1 auto; min-height:0; }
+
+/* ---------- variante di forma del primario (?forma=barra) ----------
+   Il primario occupa meno altezza: la scomposizione sta in una barra sola. */
+.forma-barra .griglia{ grid-template-rows: 0.72fr 1fr; }

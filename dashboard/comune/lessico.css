@@ -1,0 +1,289 @@
+/* ==================================================================
+   LESSICO — grammatica visiva comune alle pagine della dashboard v7.
+   Estratto da a/stile.css (pagina MACCHINA, accettata dall'utente).
+
+   Contiene SOLO grammatica: tinte nei due temi, barra di navigazione,
+   riquadro incorniciato con barra-titolo, tipografia e sue scale,
+   impianto della griglia, stati di hover e focus, pannello di dettaglio,
+   riquadro del suggerimento, interruttore del tema.
+   La disposizione specifica di una pagina sta nel suo stile.css.
+
+   REGOLA DEL COLORE (vedi LESSICO.md):
+   il colore lo prende SOLO cio' che ha una gravita'. Tutto il resto e'
+   neutro. Un valore che sta bene non diventa verde: resta grigio. Le
+   uniche tinte ammesse sono --attenz e --grave (piu' la rampa
+   --sev1..--sev4), piu' il grigio-dato --dato per i marchi.
+   ================================================================== */
+
+:root{
+  color-scheme: light;
+  --pagina:  #e9ebee;
+  --sup:     #ffffff;
+  --sup-2:   #f4f6f7;
+  --bordo:   #b9c0c8;
+  --barra:   #2f3640;   /* barra-titolo e navigazione */
+  --barra-t: #f2f5f7;
+  --ink:     #16191d;
+  --muto:    #79818a;
+  --dato:    #4a545e;   /* inchiostro dei marchi: neutro, non una tinta */
+  --traccia: #e3e7ea;
+  --banda:   #cfd5db;
+  --rif:     #5d666f;
+  --attenz:  #b9880f;
+  --grave:   #8f2418;
+  --su-att:  #ffffff;   /* testo sopra --attenz */
+  /* testo attenuato SOPRA la barra scura (barra-titolo, testa del
+     pannello). Non puo' usare --muto, che e' pensato per il fondo chiaro
+     della pagina e su --barra da' un contrasto insufficiente. Definito una
+     volta sola: --barra e' scura nei tre temi, quindi il valore non cambia
+     e i blocchi scuri lo ereditano. */
+  --barra-muto: #aab3bc;
+  /* rampa di gravita': sotto il riferimento il marchio si colora subito,
+     e l'intensita' cresce a gradini. Sopra o dentro il riferimento: neutro. */
+  --sev1:    #c2a05a;
+  --sev2:    #b9880f;
+  --sev3:    #a55a12;
+  --sev4:    #8f2418;
+}
+
+:root[data-tema="scuro"]{
+  color-scheme: dark;
+  --pagina:  #14171a;
+  --sup:     #1c2126;
+  --sup-2:   #232a30;
+  --bordo:   #333c45;
+  --barra:   #0f1418;
+  --barra-t: #dfe5ea;
+  --ink:     #e8ecef;
+  --muto:    #8a939c;
+  --dato:    #9aa6b1;
+  --traccia: #2a3138;
+  --banda:   #3a434c;
+  --rif:     #98a2ab;
+  --attenz:  #d9a227;
+  --grave:   #d9604a;
+  --su-att:  #1a1408;
+  --sev1:    #a99a72;
+  --sev2:    #d9a227;
+  --sev3:    #dd8434;
+  --sev4:    #d9604a;
+}
+
+@media (prefers-color-scheme: dark){
+  :root:not([data-tema="chiaro"]){
+    color-scheme: dark;
+    --pagina:  #14171a;
+    --sup:     #1c2126;
+    --sup-2:   #232a30;
+    --bordo:   #333c45;
+    --barra:   #0f1418;
+    --barra-t: #dfe5ea;
+    --ink:     #e8ecef;
+    --muto:    #8a939c;
+    --dato:    #9aa6b1;
+    --traccia: #2a3138;
+    --banda:   #3a434c;
+    --rif:     #98a2ab;
+    --attenz:  #d9a227;
+    --grave:   #d9604a;
+    --su-att:  #1a1408;
+    --sev1:    #a99a72;
+    --sev2:    #d9a227;
+    --sev3:    #dd8434;
+    --sev4:    #d9604a;
+  }
+}
+
+/* ---------- base e tipografia ----------
+   Un solo carattere, cifre tabellari ovunque: i numeri di questa
+   dashboard vanno confrontati in colonna. */
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0; background:var(--pagina); color:var(--ink);
+  font:14px/1.35 "Segoe UI", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+
+/* ---------- barra di navigazione ---------- */
+.nav{
+  flex:0 0 auto; display:flex; align-items:stretch;
+  background:var(--barra); color:var(--barra-t); height:46px;
+}
+.nav-marca{
+  display:flex; align-items:center; padding:0 18px;
+  font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--muto); border-right:1px solid #454e59;
+}
+.nav-voci{ display:flex; list-style:none; margin:0; padding:0; }
+.nav-voci li{
+  display:flex; align-items:center; padding:0 22px;
+  font-size:13px; letter-spacing:.11em; color:#c3cbd3; cursor:default;
+}
+.nav-voci li.attiva{ background:var(--sup); color:var(--ink); font-weight:600; }
+/* Il menu e' uguale su tutte e cinque le pagine dal 2026-08-22, quindi la voce
+   collegata si veste qui e non pagina per pagina. Senza questa regola il
+   collegamento prende il blu e la sottolineatura del browser, e la voce gia'
+   visitata diventa viola: era il caso di `a/`, l'unica delle cinque che non
+   aveva la regola nel proprio foglio. */
+.nav-voci li a{ color:inherit; text-decoration:none; }
+.nav-dx{ margin-left:auto; display:flex; align-items:center; gap:10px; padding:0 14px; }
+.nav-dx select, .btn-tema{
+  font:12px "Segoe UI", system-ui, sans-serif; padding:4px 8px;
+  background:#454e59; color:#e7ebef; border:1px solid #5c656f; border-radius:2px;
+}
+.btn-tema{ cursor:pointer; letter-spacing:.06em; min-width:66px; }
+.btn-tema:hover{ background:#5a646f; }
+.btn-tema:focus-visible, .nav-dx select:focus-visible{ outline:2px solid #9fb4c8;
+  outline-offset:1px; }
+
+/* ---------- impianto della griglia ----------
+   Colonne, righe e aree sono disposizione della singola pagina e stanno
+   nel suo stile.css. Qui c'e' solo il contenitore. */
+.griglia{
+  flex:1 1 auto; min-height:0;
+  display:grid; gap:10px; padding:10px;
+}
+
+/* ---------- riquadro incorniciato con barra-titolo ---------- */
+.box{
+  background:var(--sup); border:1px solid var(--bordo); border-radius:3px;
+  display:flex; flex-direction:column; min-height:0; min-width:0;
+}
+.box-tit{
+  margin:0; background:var(--barra); color:var(--barra-t);
+  font-size:11.5px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; padding:5px 11px;
+  border-radius:2px 2px 0 0; align-self:flex-start;
+}
+.box-corpo{ flex:1 1 auto; min-height:0; padding:8px 12px 10px; display:flex;
+            flex-direction:column; }
+.box-corpo svg{ width:100%; height:100%; display:block; }
+
+/* ---------- micro-titolo: la scala tipografica piu' piccola ---------- */
+.micro-tit{
+  font-size:10.5px; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--muto); margin:0 0 5px;
+}
+
+/* ---------- affordance: cio' che si clicca lo dichiara ---------- */
+.cella-valvola{ cursor:pointer; }
+.cella-valvola .sfondo{ transition:none; }
+.cella-valvola:hover .sfondo,
+.cella-valvola:focus-visible .sfondo{ stroke:var(--ink); stroke-width:2; }
+.cella-valvola:hover .num,
+.cella-valvola:focus-visible .num{ font-weight:700; }
+.cella-valvola:focus{ outline:none; }
+.cella-valvola:focus-visible .sfondo{ stroke-dasharray:none; }
+
+svg.interattivo{ outline:none; }
+svg.interattivo:focus-visible{ outline:2px solid var(--rif); outline-offset:-2px; }
+
+/* ---------- pannello di dettaglio ----------
+   Si apre SOPRA la pagina, non la sostituisce: chi lo chiude torna dove era. */
+/* display:flex/fixed batterebbe la regola utente-agente su [hidden] */
+.velo[hidden], .pannello[hidden]{ display:none; }
+.velo{ position:fixed; inset:0; background:rgba(0,0,0,.34); z-index:9; }
+.pannello{
+  position:fixed; top:0; right:0; bottom:0; width:560px; max-width:92vw; z-index:10;
+  background:var(--sup); border-left:1px solid var(--bordo);
+  display:flex; flex-direction:column; box-shadow:-4px 0 18px rgba(0,0,0,.22);
+}
+.pan-testa{
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--barra); color:var(--barra-t); padding:9px 12px;
+}
+.pan-testa h2{ margin:0; font-size:14px; font-weight:600; letter-spacing:.12em;
+               text-transform:uppercase; }
+.pan-x{ background:none; border:1px solid #5c656f; color:var(--barra-t);
+        font-size:13px; line-height:1; padding:4px 8px; border-radius:2px;
+        cursor:pointer; }
+.pan-x:hover{ background:#454e59; }
+.pan-corpo{ flex:1 1 auto; overflow-y:auto; padding:14px 16px 22px; }
+.pan-sez{ margin:0 0 18px; }
+.pan-sez > h3{
+  margin:0 0 7px; font-size:10.5px; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--muto); font-weight:600;
+}
+.chip{
+  display:inline-flex; align-items:center; gap:8px; margin:0 6px 6px 0;
+  padding:5px 10px; border-radius:2px; font-size:12px;
+  background:var(--sup-2); border:1px solid var(--bordo); color:var(--ink);
+}
+.chip.att{ background:var(--attenz); border-color:var(--attenz); color:var(--su-att); }
+.chip.gra{ background:var(--grave); border-color:var(--grave); color:#fff; }
+.chip .k{ color:var(--muto); font-size:10.5px; letter-spacing:.08em;
+          text-transform:uppercase; }
+.chip.att .k, .chip.gra .k{ color:inherit; opacity:.75; }
+.pan-vuoto{ font-size:12px; color:var(--muto); }
+.pan-graf{ margin:0 0 12px; }
+.pan-graf svg{ width:100%; display:block; }
+.pan-nota{ font-size:11px; color:var(--muto); margin:8px 0 0; }
+
+/* ---------- suggerimento al passaggio del mouse ----------
+   position:fixed: non sposta mai il contenuto della pagina. */
+.tip{
+  position:fixed; z-index:20; pointer-events:none;
+  background:var(--barra); color:var(--barra-t);
+  border:1px solid var(--bordo); border-radius:3px;
+  padding:6px 9px; font-size:11.5px; line-height:1.45;
+  box-shadow:0 2px 10px rgba(0,0,0,.28); max-width:280px;
+}
+.tip[hidden]{ display:none; }
+.tip .v{ font-weight:600; font-size:13px; }
+/* Il suggerimento ha fondo SCURO in tutti e due i temi, quindi il suo testo
+   non puo' usare la rampa del tema chiaro: --sev4 (#8f2418) su --barra
+   (#2f3640) da' un contrasto di 1,1:1, cioe' illeggibile. Colori dedicati,
+   scelti per il fondo scuro e verificati: 6,5:1 il secondario, 5,0:1 il
+   marchio di gravita'. */
+.tip .m{ color:#b6bec6; }
+.tip .f{ color:#f08a76; font-weight:600; }
+
+
+/* ==================================================================
+   AGGIUNTE ESTRATTE DA pc/ (pagina TEMPO, accettata il 2026-08-20).
+
+   Solo grammatica riusabile. Nessuno di questi nomi di classe compare
+   in a/, v1/, oee/ ne' altrove in questo foglio: verificato prima di
+   aggiungerli, cosi' le tre pagine accettate rendono identiche.
+   Le regole in parole stanno in LESSICO.md, sezioni 4 e 5.
+   ================================================================== */
+
+/* ---------- il periodo in vista, dentro una barra-titolo ----------
+   Un riquadro che rispetta una finestra temporale la dichiara nel proprio
+   titolo, e la dichiarazione cambia mentre l'utente trascina. */
+.box-tit .per,
+.pan-testa .pan-per{
+  font-weight:400; color:var(--barra-muto); letter-spacing:.06em;
+}
+.box-tit .per b{ color:var(--barra-t); font-weight:600; }
+.pan-testa .pan-per{ margin-left:auto; margin-right:12px; font-size:11px; }
+
+/* ---------- affordance: cio' che si trascina lo dichiara ----------
+   Gemella di .cella-valvola. pc/ e' anteriore a questa regola e porta la
+   propria copia in pc/stile.css, ristretta a .box-str: le pagine nuove
+   usano queste due classi invece di riscriverla. */
+.trascinabile{ cursor:grab; }
+.trascinabile.trascino{ cursor:grabbing; }
+
+/* ---------- affordance: celle contigue senza fessure ----------
+   Deroga voluta a .cella-valvola. Quando le superfici afferrabili sono
+   colonne adiacenti, un contorno spesso 2 fra l'una e l'altra disegna una
+   griglia che nessuno ha chiesto: la cella si illumina invece di
+   incorniciarsi. Il contorno resta sul fuoco da tastiera, dove serve a
+   dire dove si e'. */
+.cella-pop{ cursor:pointer; }
+.cella-pop:focus{ outline:none; }
+.cella-pop:hover .sfondo{ fill:var(--sup-2); stroke:none; }
+.cella-pop:focus-visible .sfondo{ fill:var(--sup-2); stroke:var(--ink); stroke-width:1.5; }
+.cella-pop:focus-visible .num{ font-weight:700; }
+
+/* ---------- interruttore fra due letture, dentro un <svg> ----------
+   E' una voce dell'intestazione del riquadro, non un bottone di sistema:
+   si accende passandoci sopra e mostra il fuoco da tastiera. La voce
+   spenta porta un fatto misurato, non solo il proprio nome (LESSICO.md 4). */
+.pop-scelta{ cursor:pointer; }
+.pop-scelta:hover text{ fill:var(--ink); }
+.pop-scelta:focus{ outline:none; }
+.pop-scelta:focus-visible .sfondo{ fill:var(--sup-2); stroke:var(--rif); stroke-width:1.5; }

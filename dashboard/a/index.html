@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MACCHINA</title>
+<link rel="stylesheet" href="/comune/lessico.css">
+<link rel="stylesheet" href="stile.css">
+<script>
+  // tema applicato prima del primo disegno, per non far lampeggiare la pagina
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('tema-v7a'); } catch (e) {}
+    if (t) document.documentElement.setAttribute('data-tema', t);
+  })();
+</script>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-marca">filler01</span>
+  <ul class="nav-voci">
+    <li class="attiva">MACCHINA</li>
+    <li><a id="v-valvole" href="/v1/">VALVOLE</a></li>
+    <li><a id="v-oee" href="/oee/">OEE</a></li>
+    <li><a id="v-tempo" href="/pc/">TEMPO</a></li>
+    <li><a id="v-carta" href="/k1/">CARTA</a></li>
+  </ul>
+  <span class="nav-dx">
+    <button id="tema" type="button" class="btn-tema" aria-label="Tema chiaro o scuro"></button>
+    <span id="switch-scenario"></span>
+  </span>
+</nav>
+
+<main class="griglia">
+
+  <!-- ============ PRIMARIO ============ -->
+  <section class="box box-primario" id="box-primario">
+    <h2 class="box-tit">Macchina</h2>
+    <div class="box-corpo">
+
+      <div class="micro-tit">Stato macchina</div>
+      <div class="stato-grande" id="stato-grande"></div>
+      <ol class="omac" id="omac"></ol>
+      <p class="riga-dato" id="riga-dato"></p>
+
+      <div class="gauge-grande"><svg id="g-oee" viewBox="0 0 360 460"></svg></div>
+
+      <div class="gauge-tris">
+        <div class="gauge-piccolo"><svg id="g-a" viewBox="0 0 200 156"></svg></div>
+        <div class="gauge-piccolo"><svg id="g-p" viewBox="0 0 200 156"></svg></div>
+        <div class="gauge-piccolo"><svg id="g-q" viewBox="0 0 200 156"></svg></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ CENTRO ============ -->
+  <section class="box box-and">
+    <h2 class="box-tit">Andamento OEE — finestra giorno</h2>
+    <div class="box-corpo"><svg id="serie" viewBox="0 0 760 250"></svg></div>
+  </section>
+
+  <section class="box box-tempo">
+    <h2 class="box-tit">Ripartizione del tempo — 24 h</h2>
+    <div class="box-corpo"><svg id="tempo" viewBox="0 0 760 96"></svg></div>
+  </section>
+
+  <section class="box box-valv">
+    <h2 class="box-tit">Allarmi attivi per valvola</h2>
+    <div class="box-corpo"><svg id="valvole" viewBox="0 0 760 96"></svg></div>
+  </section>
+
+  <!-- ============ DESTRA ============ -->
+  <section class="box box-turno">
+    <h2 class="box-tit">Turno in corso</h2>
+    <div class="box-corpo"><svg id="g-turno" viewBox="0 0 240 322"></svg></div>
+  </section>
+
+  <section class="box box-cont">
+    <h2 class="box-tit">Contatori — 24 h</h2>
+    <div class="box-corpo"><dl class="contatori" id="contatori"></dl></div>
+  </section>
+
+</main>
+
+<!-- pannello valvola: si apre sopra la pagina, non la sostituisce -->
+<div class="tip" id="tip" hidden role="status" aria-live="polite"></div>
+<div class="velo" id="velo" hidden></div>
+<aside class="pannello" id="pannello" hidden aria-labelledby="pan-tit" role="dialog"
+       aria-modal="true" tabindex="-1">
+  <header class="pan-testa">
+    <h2 id="pan-tit"></h2>
+    <button type="button" id="pan-chiudi" class="pan-x" aria-label="Chiudi">✕</button>
+  </header>
+  <div class="pan-corpo" id="pan-corpo"></div>
+</aside>
+
+<script type="module" src="/comune/scenario.js"></script>
+<script type="module" src="pagina.js"></script>
+<script type="module">
+  import { collegaNav } from '/comune/dati.js';
+  collegaNav();
+</script>
+</body>
+</html>

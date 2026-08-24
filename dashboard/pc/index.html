@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TEMPO</title>
+<link rel="stylesheet" href="/comune/lessico.css">
+<link rel="stylesheet" href="stile.css">
+<script>
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('tema-v7pc'); } catch (e) {}
+    if (t) document.documentElement.setAttribute('data-tema', t);
+  })();
+</script>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-marca">filler01</span>
+  <ul class="nav-voci">
+    <li><a id="v-macchina" href="/a/">MACCHINA</a></li>
+    <li><a id="v-valvole" href="/v1/">VALVOLE</a></li>
+    <li><a id="v-oee" href="/oee/">OEE</a></li>
+    <li class="attiva">TEMPO</li>
+    <li><a id="v-carta" href="/k1/">CARTA</a></li>
+  </ul>
+  <span class="nav-dx">
+    <button id="tema" type="button" class="btn-tema" aria-label="Tema chiaro o scuro"></button>
+    <span id="switch-scenario"></span>
+  </span>
+</nav>
+
+<main class="griglia">
+
+  <!-- ============ PRIMARIO ============ -->
+  <section class="box box-oee">
+    <h2 class="box-tit" id="tit-oee">OEE</h2>
+    <div class="box-corpo">
+      <svg id="g-oee" viewBox="0 0 1100 322" class="interattivo"
+           tabindex="0" role="img" aria-label="OEE nel tempo"></svg>
+    </div>
+  </section>
+
+  <section class="box box-comp">
+    <h2 class="box-tit">Le tre componenti</h2>
+    <div class="box-corpo">
+      <svg id="g-comp" viewBox="0 0 356 322" class="interattivo"
+           tabindex="0" role="img" aria-label="Disponibilità, prestazione e qualità nel tempo"></svg>
+    </div>
+  </section>
+
+  <!-- ============ le 35 sulla stessa scala ============ -->
+  <section class="box box-pop">
+    <h2 class="box-tit" id="tit-pop">Le 35 sulla stessa scala</h2>
+    <div class="box-corpo">
+      <svg id="g-pop" viewBox="0 0 1490 140" class="interattivo"
+           tabindex="0" role="img"
+           aria-label="Qualità del periodo di tutte le valvole su una scala comune"></svg>
+    </div>
+  </section>
+
+  <!-- ============ le 35 valvole ============ -->
+  <section class="box box-valv">
+    <h2 class="box-tit" id="tit-valv">Qualità per valvola</h2>
+    <div class="box-corpo">
+      <svg id="g-valv" viewBox="0 0 1490 150"></svg>
+    </div>
+  </section>
+
+  <!-- ============ la striscia: sempre in vista ============ -->
+  <section class="box box-str">
+    <h2 class="box-tit" id="tit-str">Due mesi</h2>
+    <div class="box-corpo">
+      <svg id="g-str" viewBox="0 0 1490 78" class="interattivo"
+           tabindex="0" role="slider" aria-label="Finestra di tempo sui due mesi"></svg>
+    </div>
+  </section>
+
+</main>
+
+<div class="velo" id="velo" hidden></div>
+<aside class="pannello" id="pan" hidden role="dialog" aria-modal="true" aria-labelledby="pan-tit">
+  <div class="pan-testa">
+    <h2 id="pan-tit">Valvola</h2>
+    <span class="pan-per" id="pan-per"></span>
+    <button class="pan-x" id="pan-x" type="button" aria-label="Chiudi il dettaglio">&#10005;</button>
+  </div>
+  <div class="pan-corpo">
+    <section class="pan-sez">
+      <div class="pan-graf">
+        <svg id="pan-onda" viewBox="0 0 520 284" class="interattivo"
+             tabindex="0" role="img"
+             aria-label="Profilo del ciclo medio della valvola"></svg>
+      </div>
+    </section>
+    <section class="pan-sez">
+      <div class="pan-graf">
+        <svg id="pan-g" viewBox="0 0 520 132" class="interattivo"
+             tabindex="0" role="img" aria-label="Qualità della valvola nel periodo"></svg>
+      </div>
+    </section>
+    <section class="pan-sez">
+      <h3>Grandezze del periodo</h3>
+      <div id="pan-chip"></div>
+    </section>
+  </div>
+</aside>
+
+<div class="tip" id="tip" hidden role="status" aria-live="polite"></div>
+
+<script type="module" src="/comune/scenario.js"></script>
+<script type="module" src="pagina.js"></script>
+</body>
+</html>

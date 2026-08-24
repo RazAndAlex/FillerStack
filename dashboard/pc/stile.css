@@ -1,0 +1,73 @@
+/* TEMPO — solo la disposizione. La grammatica sta in /comune/lessico.css. */
+
+.nav-voci a{ color:inherit; text-decoration:none; }
+.nav-voci li:has(a):hover{ background:#3c4550; }
+
+.griglia{
+  grid-template-columns: 1fr 380px;
+  /* la striscia ha guadagnato altezza: sessanta giorni in 78 px non lasciavano
+     vedere una deriva di tre punti, e la forma `b` porta 35 traiettorie */
+  /* La lettura di popolazione e' un riquadro suo, e lo spazio glielo devono
+     dare gli altri: la striscia e' intoccabile, la fascia delle 35 scende da
+     188 a 168, il resto lo paga il primario. Due riquadri parlano ora delle
+     stesse trentacinque valvole in due modi diversi, uno sopra l'altro. */
+  grid-template-rows: 1fr 140px 168px 150px;
+  grid-template-areas:
+    "oee  comp"
+    "pop  pop"
+    "valv valv"
+    "str  str";
+}
+
+.box-pop  { grid-area: pop;  }
+.box-pop  { min-height:140px; }
+.box-pop .box-corpo{ padding:4px 12px 6px; }
+.box-pop svg{ cursor:default; }
+/* la colonna intera e' afferrabile: si illumina, non si incornicia */
+.cella-pop:hover .sfondo{ fill:var(--sup-2); stroke:none; }
+.cella-pop:focus-visible .sfondo{ fill:var(--sup-2); stroke:var(--ink); stroke-width:1.5; }
+.cella-pop:focus-visible .num{ font-weight:700; }
+
+.box-oee  { grid-area: oee;  }
+.box-comp { grid-area: comp; }
+.box-valv { grid-area: valv; }
+.box-str  { grid-area: str;  }
+
+/* la striscia e' permanente: non si comprime mai sotto la sua altezza */
+.box-str  { min-height:150px; }
+.box-str .box-corpo{ padding:6px 12px 8px; }
+.box-str svg{ cursor:grab; }
+.box-str svg.trascino{ cursor:grabbing; }
+
+.box-valv .box-corpo{ padding:6px 12px 8px; }
+
+/* i titoli portano il periodo: cambia quando si trascina */
+.box-tit .per{ font-weight:400; color:#aab3bc; letter-spacing:.06em; }
+.box-tit .per b{ color:var(--barra-t); font-weight:600; }
+
+/* Finche' valves/quality/series non risponde, la riga delle valvole non si
+   prende lo spazio di un contenuto che non c'e': si dichiara e si ritira. */
+body.valv-assenti .griglia{ grid-template-rows: 1fr 40px 40px 150px; }
+body.valv-assenti .box-valv .box-corpo{ padding:2px 12px 4px; }
+
+/* il dettaglio di una valvola: il periodo accanto al titolo, il grafico alto
+   abbastanza da mostrare una traiettoria e non una riga */
+.pan-testa .pan-per{
+  margin-left:auto; margin-right:12px;
+  font-size:11px; letter-spacing:.06em; color:#aab3bc;
+}
+/* Nel pannello il primario e' il profilo del ciclo: e' il marchio piu' alto e
+   il piu' grande. L'andamento della qualita' resta, attenuato, sotto. */
+#pan-onda{ height:284px; }
+#pan-g{ height:132px; }
+#pan-chip{ display:flex; flex-wrap:wrap; }
+#pan-chip .chip{ flex-direction:column; align-items:flex-start; gap:2px;
+                 min-width:132px; }
+
+/* L'interruttore fra le due grandezze del riquadro di popolazione: e' una
+   voce dell'intestazione, non un bottone di sistema. Si accende passandoci
+   sopra e mostra il fuoco da tastiera. */
+.pop-scelta{ cursor:pointer; }
+.pop-scelta:hover text{ fill:var(--ink); }
+.pop-scelta:focus{ outline:none; }
+.pop-scelta:focus-visible .sfondo{ fill:var(--sup-2); stroke:var(--rif); stroke-width:1.5; }

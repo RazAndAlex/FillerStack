@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VALVOLE</title>
+<link rel="stylesheet" href="/comune/lessico.css">
+<link rel="stylesheet" href="stile.css">
+<script>
+  // tema applicato prima del primo disegno, per non far lampeggiare la pagina
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('tema-v7v1'); } catch (e) {}
+    if (t) document.documentElement.setAttribute('data-tema', t);
+  })();
+</script>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-marca">filler01</span>
+  <ul class="nav-voci">
+    <li><a id="v-macchina" href="/a/">MACCHINA</a></li>
+    <li class="attiva">VALVOLE</li>
+    <li><a id="v-oee" href="/oee/">OEE</a></li>
+    <li><a id="v-tempo" href="/pc/">TEMPO</a></li>
+    <li><a id="v-carta" href="/k1/">CARTA</a></li>
+  </ul>
+  <span class="nav-dx">
+    <button id="tema" type="button" class="btn-tema" aria-label="Tema chiaro o scuro"></button>
+    <span id="switch-scenario"></span>
+  </span>
+</nav>
+
+<main class="griglia">
+
+  <!-- ============ PRIMARIO: la giostra ============ -->
+  <section class="box box-giostra" id="box-giostra">
+    <h2 class="box-tit">Giostra — tempo di riempimento delle 35 valvole</h2>
+    <div class="box-corpo">
+      <svg id="giostra" viewBox="0 0 720 720"></svg>
+    </div>
+  </section>
+
+  <!-- ============ DESTRA: l'insieme, poi le 35 ============ -->
+  <section class="box box-conf">
+    <h2 class="box-tit">Riempimenti conformi</h2>
+    <div class="box-corpo"><div class="mono" id="conf"></div></div>
+  </section>
+
+  <section class="box box-chius">
+    <h2 class="box-tit">Motivi di chiusura del ciclo</h2>
+    <div class="box-corpo"><div class="mono" id="chius"></div></div>
+  </section>
+
+  <section class="box box-nonconf">
+    <h2 class="box-tit">Riempimenti non conformi — 35 valvole</h2>
+    <div class="box-corpo"><svg id="nonconf" viewBox="0 0 400 330"></svg></div>
+  </section>
+
+</main>
+
+<!-- pannello valvola: identico a quello di MACCHINA, gia' approvato -->
+<div class="tip" id="tip" hidden role="status" aria-live="polite"></div>
+<div class="velo" id="velo" hidden></div>
+<aside class="pannello" id="pannello" hidden aria-labelledby="pan-tit" role="dialog"
+       aria-modal="true" tabindex="-1">
+  <header class="pan-testa">
+    <h2 id="pan-tit"></h2>
+    <button type="button" id="pan-chiudi" class="pan-x" aria-label="Chiudi">✕</button>
+  </header>
+  <div class="pan-corpo" id="pan-corpo"></div>
+</aside>
+
+<script type="module" src="/comune/scenario.js"></script>
+<script type="module" src="pagina.js"></script>
+</body>
+</html>

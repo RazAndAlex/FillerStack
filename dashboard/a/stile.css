@@ -1,0 +1,79 @@
+/* Pagina MACCHINA — versione A. Disposizione specifica di QUESTA pagina.
+   La grammatica (tinte, navigazione, riquadri, tipografia, hover/focus,
+   pannello, suggerimento, tema) sta in /comune/lessico.css, che va
+   caricato PRIMA di questo file. Qui restano solo le aree della griglia
+   e gli elementi che esistono solo su MACCHINA: stato OMAC, riga
+   dell'ultimo dato, gauge, contatori. */
+
+/* ---------- aree della griglia di MACCHINA ---------- */
+.griglia{
+  grid-template-columns: 500px 1fr 260px;
+  grid-template-rows: 1.55fr 1fr 1fr;
+  grid-template-areas:
+    "prim and   turno"
+    "prim tempo cont"
+    "prim valv  cont";
+}
+.box-primario{ grid-area:prim; }
+.box-and     { grid-area:and;   }
+.box-tempo   { grid-area:tempo; }
+.box-valv    { grid-area:valv;  }
+.box-turno   { grid-area:turno; }
+.box-cont    { grid-area:cont;  }
+
+/* ---------- primario: stato macchina ---------- */
+.stato-grande{
+  display:flex; align-items:baseline; gap:12px;
+  padding:9px 14px; border-radius:2px; margin:0 0 6px;
+  background:var(--sup-2); color:var(--ink);
+  border:1px solid var(--bordo);
+}
+/* colore SOLO quando la macchina non e' in marcia: quella e' la gravita' */
+.stato-grande.fermo{ background:var(--attenz); color:var(--su-att);
+                     border-color:var(--attenz); }
+.stato-grande .n{ font-size:31px; font-weight:600; letter-spacing:.02em;
+                  line-height:1.05; }
+.stato-grande .d{ font-size:12px; color:var(--muto); letter-spacing:.05em; }
+.stato-grande.fermo .d{ color:var(--su-att); opacity:.8; }
+
+.omac{ list-style:none; margin:0; padding:0; display:flex; gap:3px; }
+.omac li{
+  flex:1 1 0; text-align:center; padding:5px 2px 4px;
+  font-size:10px; letter-spacing:.04em; text-transform:uppercase;
+  background:var(--sup-2); color:var(--muto);
+  border:1px solid var(--bordo); border-radius:2px;
+}
+.omac li.on{ background:var(--dato); border-color:var(--dato);
+             color:var(--sup); font-weight:600; }
+
+/* riga dell'ultimo dato: testo, non un quadrante */
+.riga-dato{
+  margin:7px 0 0; font-size:12px; color:var(--muto);
+  display:flex; align-items:center; gap:7px;
+}
+.riga-dato .et{ font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; }
+.riga-dato .or{ color:var(--ink); font-weight:600; font-size:13px; }
+.riga-dato.vecchio{ color:var(--attenz); }
+.riga-dato.vecchio .or{ color:var(--attenz); }
+.riga-dato .pallino{ width:8px; height:8px; border-radius:50%;
+                     background:var(--attenz); display:inline-block; }
+
+/* ---------- disposizione dei gauge ---------- */
+.gauge-grande{ flex:1 1 auto; min-height:0; }
+.gauge-tris{ flex:0 0 146px; display:flex; gap:6px; }
+.gauge-piccolo{ flex:1 1 0; min-width:0; }
+
+/* ---------- contatori ---------- */
+.contatori{ margin:0; padding:0; display:flex; flex-direction:column;
+            justify-content:space-between; height:100%; }
+.contatori .riga{ padding:5px 0; border-top:1px solid var(--traccia); }
+.contatori .riga:first-child{ border-top:0; }
+.contatori dt{
+  font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muto);
+}
+.contatori dd{ margin:1px 0 0; font-size:23px; font-weight:600; line-height:1.05; }
+.contatori dd .u{ font-size:12px; font-weight:400; color:var(--muto);
+                  margin-left:4px; letter-spacing:.02em; }
+.contatori dd.att{ color:var(--attenz); }
+.contatori dd.gra{ color:var(--grave); }

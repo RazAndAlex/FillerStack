@@ -1,0 +1,94 @@
+/* Pagina VALVOLE — la giostra fisica.
+   Disposizione specifica di QUESTA pagina. La grammatica (tinte, barra,
+   riquadri, tipografia, hover/focus, pannello, suggerimento, tema) sta in
+   /comune/lessico.css, caricato PRIMA di questo file. */
+
+/* ---------- aree della griglia ----------
+   La colonna di destra va dall'insieme al dettaglio: due barre che dicono
+   come stanno le 35 tutte insieme, poi le 35 una per una. La giostra tiene
+   TUTTA l'altezza: e' l'elemento su cui la pagina e' stata scelta e non si
+   comprime per fare posto a nient'altro.
+   minmax(0,…): senza questo il contenuto minimo di un riquadro puo'
+   spingere la griglia oltre l'altezza della finestra. Misurato a 1536x770 px
+   CSS (1920x1080 con la scalatura di Windows al 125%). */
+.griglia{
+  grid-template-columns: 1fr 430px;
+  grid-template-rows: minmax(0, auto) minmax(0, auto) minmax(0, 1fr);
+  grid-template-areas:
+    "gio conf"
+    "gio chius"
+    "gio noncf";
+}
+.box-giostra{ grid-area:gio;   }
+.box-conf   { grid-area:conf;  }
+.box-chius  { grid-area:chius; }
+.box-nonconf{ grid-area:noncf; }
+
+/* la giostra e' quadrata e centrata nel suo riquadro */
+.box-giostra .box-corpo{ align-items:center; justify-content:center; padding:4px 8px 6px; }
+.box-giostra svg{ height:100%; width:auto; max-width:100%; }
+
+/* ---------- la voce MACCHINA porta davvero a /a/ ---------- */
+.nav-voci li a{
+  display:flex; align-items:center; height:100%;
+  color:inherit; text-decoration:none; letter-spacing:inherit;
+}
+.nav-voci li:has(a){ cursor:pointer; padding:0; }
+.nav-voci li:has(a) a{ padding:0 22px; }
+.nav-voci li:has(a):hover{ background:#454e59; }
+.nav-voci li a:focus-visible{ outline:2px solid #9fb4c8; outline-offset:-2px; }
+
+/* ---------- affordance della cella circolare ----------
+   .cella-valvola e' gia' nel lessico; qui solo cio' che la forma anulare
+   aggiunge: il settore non ha riempimento, quindi deve catturare comunque
+   il puntatore. Il bersaglio si ferma prima del numero della valvola: il
+   contorno arrivava sotto le cifre e le toccava, sui numeri a due cifre
+   in particolare. */
+.cella-valvola .sfondo{ fill:none; pointer-events:all; }
+
+/* ---------- le due barre d'insieme (portate dalla versione 3) ---------- */
+.mono{ flex:1 1 auto; display:flex; flex-direction:column; justify-content:center; }
+.mono .cifra{ font-size:26px; font-weight:600; line-height:1.05; margin:0 0 5px; }
+.mono .cifra .u{ font-size:11px; font-weight:400; color:var(--muto);
+                 margin-left:7px; letter-spacing:.02em; }
+.mono .cifra.att{ color:var(--attenz); }
+.mono .cifra.gra{ color:var(--grave); }
+
+.barra{ position:relative; height:19px; background:var(--traccia);
+        border-radius:1px; }
+.barra .q{ position:absolute; top:0; bottom:0; left:0; border-radius:1px; }
+.barra .tacca{ position:absolute; top:-4px; bottom:-4px; width:0;
+               border-left:1.5px dashed var(--rif); }
+.mono .rif{ margin:6px 0 0; font-size:10.5px; color:var(--rif); }
+
+/* dati non piu' correnti: le barre d'insieme si spengono come la giostra e
+   il grafico delle 35 — non si stanno guardando misure di adesso */
+.mono.vecchio{ opacity:.42; }
+
+/* ---------- suggerimento della valvola ----------
+   Il suggerimento standard del lessico e' largo 280 px: qui porta una
+   tabellina di cinque grandezze e ne serve di piu'. Resta position:fixed e
+   pointer-events:none (dal lessico): non sposta mai il contenuto. */
+.tip.tip-valvola{ max-width:none; width:322px; }
+.tip-valvola .tg{
+  display:grid; grid-template-columns:1fr auto auto;
+  column-gap:10px; row-gap:2px; align-items:baseline;
+  margin:6px 0 5px; padding-top:5px;
+  border-top:1px solid rgba(255,255,255,.16);
+}
+.tip-valvola .th{ font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;
+                  color:var(--muto); padding-bottom:2px; }
+.tip-valvola .tn{ text-align:right; font-variant-numeric:tabular-nums;
+                  white-space:nowrap; }
+.tip-valvola .tl{ color:var(--barra-t); }
+.tip-valvola .cd{ font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;
+                  color:var(--muto); margin-left:4px; }
+.tip-valvola .tf{ display:block; font-size:10px; line-height:1.35; }
+
+/* Il fondo del suggerimento e' --barra, cioe' SCURO in tutti e due i temi.
+   In tema chiaro --sev4 vale #8f2418 e su quel fondo ha un contrasto di
+   1,1:1 — misurato, non stimato: illeggibile. Qui la gravita' usa il rosso
+   che il lessico gia' definisce per il tema scuro. NOTA PER IL LESSICO: il
+   difetto e' in `.tip .f` di comune/lessico.css e vale anche per la pagina
+   `a/`; non l'ho toccato li' perche' e' lo standard approvato. */
+.tip.tip-valvola .f{ color:#d9604a; }

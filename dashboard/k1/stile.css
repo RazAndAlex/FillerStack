@@ -1,0 +1,47 @@
+/* Disposizione della sola pagina CARTA. La grammatica sta in
+   /comune/lessico.css, che va caricato prima di questo foglio. */
+
+.nav-voci li a{ color:inherit; text-decoration:none; }
+.nav-voci li a:hover{ color:#fff; }
+
+.griglia{
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr 104px;
+  grid-template-areas: "uno" "due" "str";
+}
+.box-uno{ grid-area: uno; }
+.box-due{ grid-area: due; }
+.box-str{ grid-area: str; }
+
+/* La barra-titolo porta la provenienza del riferimento e il conteggio:
+   sono i due marchi che non possono stare dentro il disegno. */
+.box-tit{ display:flex; align-items:baseline; gap:14px; align-self:stretch; }
+.box-tit .per{ font-size:11px; text-transform:none; letter-spacing:.04em; }
+.box-tit .per .sep{ color:var(--barra-muto); padding:0 2px; }
+
+.box-str .box-corpo{ padding:6px 12px 8px; }
+
+/* Legenda della striscia: dice quale fascia appartiene a quale carta.
+   Non e' un dato, quindi non e' una regione tinta — sta in grigio-dato. */
+.box-str .leg{ display:inline-flex; align-items:center; gap:5px;
+  color:var(--muto); height:11px; line-height:11px; vertical-align:middle; }
+.box-str .leg i{
+  display:inline-block; width:11px; height:11px; margin-left:8px;
+  border:1px solid var(--bordo); box-sizing:border-box;
+}
+.box-str .leg i:first-child{ margin-left:0; }
+/* Le due meta' della riga tinta: sinistra il ciclo singolo, destra la
+   media di 46. Il campione ripete la forma della cella, non la riassume. */
+.box-str .leg i.l1{
+  background:linear-gradient(to right, var(--dato) 0 50%, transparent 50%)
+    bottom left / 100% 4px no-repeat;
+}
+.box-str .leg i.l2{
+  background:linear-gradient(to right, transparent 0 50%, var(--dato) 50%)
+    bottom left / 100% 4px no-repeat;
+}
+.box-str .leg i.l0{
+  border:1px solid var(--bordo);
+  background:repeating-linear-gradient(45deg,
+    var(--sup) 0 1.4px, var(--bordo) 1.4px 2.6px);
+}

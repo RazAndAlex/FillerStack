@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OEE</title>
+<link rel="stylesheet" href="/comune/lessico.css">
+<link rel="stylesheet" href="stile.css">
+<script>
+  // tema applicato prima del primo disegno, per non far lampeggiare la pagina
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('tema-v7oee'); } catch (e) {}
+    if (t) document.documentElement.setAttribute('data-tema', t);
+  })();
+</script>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-marca">filler01</span>
+  <ul class="nav-voci">
+    <li><a id="v-macchina" href="/a/">MACCHINA</a></li>
+    <li><a id="v-valvole" href="/v1/">VALVOLE</a></li>
+    <li class="attiva">OEE</li>
+    <li><a id="v-tempo" href="/pc/">TEMPO</a></li>
+    <li><a id="v-carta" href="/k1/">CARTA</a></li>
+  </ul>
+  <span class="nav-dx">
+    <button id="tema" type="button" class="btn-tema" aria-label="Tema chiaro o scuro"></button>
+    <span id="switch-scenario"></span>
+  </span>
+</nav>
+
+<main class="griglia">
+
+  <!-- ============ PRIMARIO: la cascata ============ -->
+  <section class="box box-casc" id="box-casc">
+    <h2 class="box-tit">Cascata del tempo — 24 h</h2>
+    <div class="box-corpo"><svg id="casc" viewBox="0 0 1186 367"></svg></div>
+  </section>
+
+  <!-- ============ i tre ingredienti ============ -->
+  <section class="box box-disp">
+    <h2 class="box-tit">Disponibilità — tempo per stato</h2>
+    <div class="box-corpo">
+      <div class="cap" id="cap-a"></div>
+      <div class="graf"><svg id="g-disp" viewBox="0 0 372 185"></svg></div>
+      <dl class="cifre" id="cifre-a"></dl>
+    </div>
+  </section>
+
+  <section class="box box-prest">
+    <h2 class="box-tit">Prestazione — prodotto e producibile</h2>
+    <div class="box-corpo">
+      <div class="cap" id="cap-p"></div>
+      <div class="graf"><svg id="g-prest" viewBox="0 0 372 150"></svg></div>
+      <dl class="cifre" id="cifre-p"></dl>
+    </div>
+  </section>
+
+  <section class="box box-qual">
+    <h2 class="box-tit">Qualità — buoni e scarti</h2>
+    <div class="box-corpo">
+      <div class="cap" id="cap-q"></div>
+      <div class="graf"><svg id="g-qual" viewBox="0 0 372 150"></svg></div>
+      <dl class="cifre" id="cifre-q"></dl>
+    </div>
+  </section>
+
+  <!-- ============ colonna destra: adesso ============ -->
+  <section class="box box-ora">
+    <h2 class="box-tit">Adesso</h2>
+    <div class="box-corpo">
+      <div class="micro-tit">Stato macchina</div>
+      <div class="stato-grande" id="stato-grande"></div>
+      <p class="riga-dato" id="riga-dato"></p>
+      <div class="micro-tit sep">Turno in corso</div>
+      <div class="graf-turno"><svg id="g-turno" viewBox="0 0 272 446"></svg></div>
+    </div>
+  </section>
+
+</main>
+
+<div class="tip" id="tip" hidden role="status" aria-live="polite"></div>
+
+<script type="module" src="/comune/scenario.js"></script>
+<script type="module" src="pagina.js"></script>
+</body>
+</html>

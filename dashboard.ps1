@@ -3,7 +3,8 @@
 # Cosa accende, in ordine:
 #   1. il container Postgres, solo se e' fermo
 #   2. l'API vera        python -m uvicorn pipeline.api:app --port 8123
-#   3. il server pagine  python .scratch/dashboard-v7/server_api.py --port 8078
+#   3. il server pagine  python dashboard/server_api.py --port 8078
+#      (senza database: python dashboard/server_demo.py, dati registrati)
 #   4. il browser su http://127.0.0.1:8078/a/
 #
 # I due processi Python sono legati a questa finestra da un Job Object di
@@ -173,40 +174,62 @@ try {
         Riga '  Chiudi con Ctrl+C per essere sicuro che si spenga tutto.' 'DarkYellow'
     }
 
-    # --- 1. il database -----------------------------------------------------
-    $stato = (& docker inspect -f '{{.State.Running}}' $CONTAINER 2>$null)
-    if ($LASTEXITCODE -ne 0) {
-        throw "Il container $CONTAINER non esiste. Serve Docker acceso e il container creato."
+    # --- 1. dati vivi o dati registrati? ------------------------------------
+    #
+    # La dashboard sa girare in due modi. Con PostgreSQL acceso legge l'API
+    # vera e mostra lo stato di adesso. Senza, serve la fotografia registrata
+    # in dashboard/demo: dati veri, fermi, e nessuna installazione richiesta.
+    # Chi scarica il progetto deve poterla aprire comunque.
+    $vivo = $false
+    if (Get-Command docker -ErrorAction SilentlyContinue) {
+        $stato = (& docker inspect -f '{{.State.Running}}' $CONTAINER 2>$null)
+        if ($LASTEXITCODE -eq 0) {
+            $vivo = $true
+            if ($stato -ne 'true') {
+                Riga "  accendo il database ($CONTAINER)"
+                & docker start $CONTAINER | Out-Null
+                $postgresAccesoQui = $true
+                Start-Sleep -Seconds 3
+            } else {
+                Riga "  database gia' acceso, lo lascio com'e'"
+            }
+        }
     }
-    if ($stato -ne 'true') {
-        Riga "  accendo il database ($CONTAINER)"
-        & docker start $CONTAINER | Out-Null
-        $postgresAccesoQui = $true
-        Start-Sleep -Seconds 3
-    } else {
-        Riga "  database gia' acceso, lo lascio com'e'"
+    if (-not $vivo) {
+        Riga '  niente database: apro i dati registrati' 'DarkYellow'
     }
 
-    # --- 2. l'API vera ------------------------------------------------------
-    Libera-Porta $PORTA_API   'uvicorn pipeline.api'  "l'API"
-    Libera-Porta $PORTA_PAGINE 'server_api.py'        'il server delle pagine'
+    # --- 2. l'API vera, solo se ha senso ------------------------------------
+    $api = $null
+    if ($vivo) {
+        Libera-Porta $PORTA_API 'uvicorn pipeline.api' "l'API"
+        Riga "  avvio l'API sulla porta $PORTA_API"
+        $api = Start-Process -FilePath $python `
+            -ArgumentList '-m', 'uvicorn', 'pipeline.api:app', '--port', $PORTA_API `
+            -NoNewWindow -PassThru
+        [void]$avviati.Add($api)
+        Adotta $api "l'API"
 
-    Riga "  avvio l'API sulla porta $PORTA_API"
-    $api = Start-Process -FilePath $python `
-        -ArgumentList '-m', 'uvicorn', 'pipeline.api:app', '--port', $PORTA_API `
-        -NoNewWindow -PassThru
-    [void]$avviati.Add($api)
-    Adotta $api "l'API"
-
-    if (-not (Aspetta "http://127.0.0.1:$PORTA_API/health" 60 "l'API")) {
-        throw "L'API non si e' alzata. Guarda i messaggi qui sopra."
+        if (Aspetta "http://127.0.0.1:$PORTA_API/health" 60 "l'API") {
+            Riga '  API pronta' 'Green'
+        } else {
+            # Non e' un motivo per fermarsi: i dati registrati bastano a
+            # vedere la dashboard, e dirlo e' meglio che morire con un errore.
+            Riga "  l'API non si e' alzata: passo ai dati registrati" 'DarkYellow'
+            if (-not $api.HasExited) { & taskkill /PID $api.Id /T /F 2>&1 | Out-Null }
+            $api = $null
+            $vivo = $false
+        }
     }
-    Riga '  API pronta' 'Green'
 
-    # --- 3. il server delle pagine -----------------------------------------
+    # --- 3. il server delle pagine ------------------------------------------
+    $script = if ($vivo) { 'dashboard/server_api.py' } else { 'dashboard/server_demo.py' }
+    $firma  = if ($vivo) { 'server_api.py' } else { 'server_demo.py' }
+    Libera-Porta $PORTA_PAGINE $firma 'il server delle pagine'
+
     Riga "  avvio il server delle pagine sulla porta $PORTA_PAGINE"
     $pagine = Start-Process -FilePath $python `
-        -ArgumentList '.scratch/dashboard-v7/server_api.py', '--port', $PORTA_PAGINE `
+        -ArgumentList $script, '--port', $PORTA_PAGINE `
         -NoNewWindow -PassThru
     [void]$avviati.Add($pagine)
     Adotta $pagine 'il server delle pagine'
@@ -235,7 +258,7 @@ try {
 
     while ($true) {
         Start-Sleep -Seconds 1
-        if ($api.HasExited)    { Riga "  l'API si e' fermata da sola" 'Red'; break }
+        if ($api -and $api.HasExited) { Riga "  l'API si e' fermata da sola" 'Red'; break }
         if ($pagine.HasExited) { Riga '  il server delle pagine si e fermato da solo' 'Red'; break }
     }
 }
