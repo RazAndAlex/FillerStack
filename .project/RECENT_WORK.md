@@ -2187,3 +2187,242 @@ nessun trabocco orizzontale.
 Suite: **567 su 567**, un solo avviso, nei quattro comandi registrati in
 `STATE.md`. Fuori da `.scratch/dashboard-v7/` e `.project/` non e' stato
 modificato nessun file: verificato con `find -newermt`.
+
+## 2026-08-23 · Guida tecnica: scelte di forma e prima tappa approvata
+
+Aperto il lavoro di presentazione del progetto: due artefatti didattici, una
+guida tecnica in otto tappe e un "viaggio del dato" per chi non ha mai sentito
+nominare PLC, OPC UA o broker. Nessun codice del simulatore, della pipeline o
+della dashboard e' stato toccato.
+
+### Scelte di forma, prese dall'utente su anteprime funzionanti
+
+Le quattro decisioni strutturali sono state portate all'utente come una pagina di
+anteprime vere da cliccare, non come prosa
+(<https://claude.ai/code/artifact/d96105f0-db79-4903-8f88-07377c93876c>). Ha
+scelto: mappa dell'impianto incollata in cima (A3), codice vero del repository
+con le righe che si accendono (B1), scena ferma e testo che scorre per il
+viaggio del dato (C1), giostra vista in pianta che ruota (D1).
+
+### La prima tappa, in tre varianti
+
+Tappa **02 OPC UA**, costruita in tre varianti indipendenti con lo stesso
+briefing, gli stessi numeri e lo stesso codice: cambiava solo il principio
+organizzativo. L'utente ha scelto la variante A, la catena di domande
+(<https://claude.ai/code/artifact/0a8839ff-f127-4d09-8741-90a266283779>).
+Scartate: B, l'anatomia in tre pezzi
+(<https://claude.ai/code/artifact/e4374ffb-3ebc-4d4e-a9de-b2b08f18f691>); C, la
+sessione pratica in cinque passi
+(<https://claude.ai/code/artifact/878bc1e6-aeb3-460a-b6d5-76f3cd6be566>).
+
+Contenuto verificato sul repository, non riassunto a memoria: righe 302-311 e
+344-368 di `plcsim/opcua_server.py`, NodeId presi da `edge/tag-mapping.yaml`,
+567 tag contati (7 di macchina piu' 16 per ognuna delle 35 valvole), e il ciclo
+417 del 22 agosto letto dal Parquet (valvola 29, 1980 ms, 2505 impulsi contro un
+bersaglio di 2500).
+
+### Correzione sulla scrittura
+
+L'utente ha respinto la prima consegna della variante A per gli em dash: ne aveva
+visti quattro, ce n'erano dodici nel corpo, due negli `aria-label` generati da
+JavaScript e due en dash nei riferimenti di riga. La lezione registrata: la
+ripulitura del testo si fa **prima** di pubblicare e su ogni stringa visibile del
+file, non solo sulla risposta in chat.
+
+### Grammatica estratta
+
+`.scratch/presentazione/GRAMMATICA.md`, piu' i pezzi comuni in
+`comune/{testa,coda}.html` e il montatore `costruisci.py`. La tappa 02 rimontata
+dai pezzi comuni e' identica a quella approvata a meno di un commento nel codice,
+verificato con `diff`. Dalla tappa 03 in poi la lingua non e' piu' in
+discussione.
+
+## 2026-08-23 (sera) · Le altre sette tappe, il viaggio del dato, e la revisione
+
+Completata la presentazione: 24 pagine della guida (otto tappe per tre varianti)
+piu' tre varianti del viaggio del dato. Indirizzi in
+`.scratch/presentazione/INDIRIZZI.md`. Nessun file del simulatore, della
+pipeline o della dashboard e' stato toccato.
+
+### Le tre varianti, e cosa cambia fra loro
+
+Grammatica identica, un solo asse di variazione: **a** la catena di domande
+(il principio approvato per la tappa 02), **b** l'anatomia in pezzi con un
+"se togli questo pezzo" per ciascuno, **c** la sessione pratica coi comandi
+veri in ordine cronologico. Il viaggio del dato usa gli stessi tre principi su
+undici tappe, con la scena ferma che si trasforma e la giostra vista in pianta.
+
+### Il controllo automatico
+
+`verifica.py` gira su tutte le pagine montate: trattini lunghi, segnaposto,
+`<svg>` senza descrizione, note che puntano a righe di codice inesistenti,
+risorse esterne, temi mancanti, tag non chiusi. **25 su 25 pulite.** La sintassi
+del JavaScript e' controllata a parte con `node --check`: aveva trovato un
+apostrofo dentro una stringa a virgolette singole che rompeva in silenzio le tre
+pagine del viaggio.
+
+### La revisione, fatta da tre agenti separati
+
+Nessuno dei tre ha modificato file: hanno prodotto elenchi, applicati da me.
+
+**Fatti** (16 vere, 3 false, 1 non verificabile). Le tre false, corrette:
+i nodi OPC UA si chiamano `Valve01…Valve35`, non `Valve00…Valve34`; il record
+di ciclo ha **19** colonne (`telemetry.py` `CYCLE_COLUMNS`), non 21; l'esempio di
+risposta di `/valves/29` conteneva `cycles_24h` e `filling_ok_rate`, che in
+`pipeline/api.py` non esistono, e chiamava `probability` un campo che si chiama
+`probabilities` ed e' un oggetto per classe. Corretta anche una contraddizione:
+`tag-mapping.yaml` e' generato, non scritto a mano. Il dettaglio piu' esposto
+regge: la riga valvola 29 / ciclo 417 corrisponde al Parquet campo per campo, e
+18 511 righe e' esatto.
+
+**Scrittura** (36 sostituzioni su 19 file). Il tic per antitesi era ancora vivo
+in 17 punti, tre dei quali titoli; la formula "il modo piu' X per" in tre tappe;
+il titolo vuoto "Una cosa che va detta" ripetuto in sette file; ventiquattro due
+punti usati come connettivo.
+
+**Leggibilita'.** Il difetto peggiore non era nel testo ma nel disegno: nel
+viaggio la prosa diceva *rubinetto* e *scatti* mentre la scena accanto diceva
+*valvola* e *impulsi*, e mostrava `-5` dove il testo diceva "cinque in piu'".
+Allineato il vocabolario della scena alla prosa, tolti `slot` e `OEE` che non
+erano mai sciolti, spiegato il segno dello scarto. Nella guida sono state
+sciolte alla prima comparsa **PLC**, **KPI**, **tag**, **QoS** e **OEE**, che
+non erano definiti in nessuna delle 21 pagine.
+
+
+## 2026-08-23 · La scelta, e le tre correzioni che ha portato
+
+L'utente ha scelto la **variante a** per tutte e otto le tappe della guida e per
+il viaggio del dato. Il principio organizzativo del progetto e' quindi uno solo,
+la catena di domande; le varianti b e c restano pubblicate come archivio del
+confronto e non vanno piu' aggiornate.
+
+Con la scelta sono arrivati tre difetti visivi, tutti corretti e ripubblicati
+agli stessi indirizzi:
+
+1. **I sei strati del simulatore.** Le etichette di destra uscivano dal riquadro.
+   Ora sono ancorate al bordo destro invece che posizionate sperando che ci stiano.
+2. **Il grafico di Docker.** Il filo del consumatore attraversava il riquadro di
+   Node-RED. Ora passa sotto i riquadri, tratteggiato.
+3. **Il finale del viaggio.** L'ultima scena adesso rispecchia la dashboard vera,
+   con le cinque voci di navigazione, le 35 postazioni e il riquadro di dettaglio
+   della 29 che porta il dato arrivato in fondo al percorso.
+
+Nessuna delle tre era visibile al verificatore automatico: erano difetti di
+geometria dentro gli SVG.
+
+
+## 2026-08-24 · L'IIoT chiuso, e le quattro cose che lo tenevano aperto
+
+L'utente ha chiesto di portare a chiusura il progetto IIoT, cioe' la roadmap
+`docs/roadmap-iiot.md`. Non era chiudibile per un motivo stupido e uno serio.
+
+### Il motivo stupido: due cose si chiamavano M11
+
+Nella roadmap M11 e' sicurezza e hardening, segnata opzionale dal 2026-08-12 e
+mai aperta. In `STATE.md` e in `DECISIONS.md` «M11» indica invece la taratura
+dell'allarme, dichiarata chiusa il 2026-08-23. Chi leggeva «M11 e' chiuso»
+concludeva che la roadmap fosse finita.
+
+I due nomi sono ora **M11-sicurezza** e **M11-taratura** e non vanno piu' usati
+nudi. La prima e' dichiarata **fuori ambito, POC accettato**, per decisione
+dell'utente presa davanti al quadro completo dei sei gradini. Non e' un rinvio.
+Motivo: la catena gira su una macchina sola, in locale, e non e' mai stata
+esposta; i file di configurazione dichiarano gia' da soli di essere un POC.
+
+### Il motivo serio: quattro documenti dicevano cose diverse
+
+I rapporti di collaudo M9 e M10 portavano dal 2026-08-13 un verdetto **ritirato**
+mentre la memoria di progetto trattava M10 come accettata. Rifatti entrambi oggi,
+con una sezione `## 8` appesa in coda: i verdetti vecchi non sono stati toccati.
+
+**M9**: tutti i criteri PASS su due corse. AC-M9-2, il criterio che aveva causato
+la ritrattazione perche' l'harness confrontava con `zstats=None`, oggi passa con
+gli zstats reali del modello. E' la prima volta che quel criterio viene
+verificato davvero.
+
+**M10**: due FAIL e un `TypeError` alla prima esecuzione, **nessuno dei tre un
+difetto del prodotto**. L'harness era rimasto indietro rispetto a due decisioni
+prese dopo il freeze:
+
+- non fissava la modalita' dell'alert engine, quindi dal 2026-08-21 ereditava il
+  default score-only K=5/N=150 e misurava un motore che il criterio non descrive:
+  con sei record in sequenza K non si raggiunge mai, `labels=[]`;
+- `alert_id_for`, `upsert_alert` e `insert_transition` avevano preso un `run_id`
+  obbligatorio il 2026-08-22, e l'harness non era mai stato aggiornato.
+
+Corretti tutti e due, M10 esce 0 su tutti i criteri. Throughput 666.011 rec/s
+contro una soglia informativa di 1.000.
+
+### Una deviazione dichiarata, non aggirata
+
+AC-M10-5 asserisce il vincolo unico `uq_alerts_valve_fault` su
+`(valve_id, fault_type)`. La separazione dei run lo ha sostituito con
+`uq_alerts_run_valve_fault` a tre colonne. Il criterio congelato non e' stato
+ammorbidito: e' stato **superato da una decisione successiva**, e la cosa e'
+registrata in `work/review-gate-log.md` come deviazione regolamentata, con il suo
+limite scritto. Il limite: con `RUN_ID` fisso nell'harness, nessun assert prova
+che due corse diverse producano due righe distinte.
+
+### La verifica indipendente ha trovato sette rilievi, e uno era grosso
+
+Un verificatore che non aveva scritto i report li ha contestati, come chiede il
+protocollo. Il rilievo grosso: avevo dato AC-M9-0 per PASS scrivendo «nessun file
+core modificato», ed e' falso. `plcsim/run.py` e' del 2026-08-19, quando gli sono
+stati aggiunti `--start` e `--end`.
+
+Misurato invece che dedotto: rigenerata la corsa sana di un giorno con seed 42 e
+`m4_healthy.yaml`, e confrontata con l'ancora `work/m4_healthy_1d` dell'11 agosto.
+**I tre parquet sono identici byte per byte** (SHA-256), 604.398 cicli in
+entrambe. La modifica e' retrocompatibile per costruzione: il default di
+`--start` e' `2026-06-01T00:00:00Z`, lo stesso ancoraggio che prima era cablato.
+
+**Resta aperto**: l'invariante 1 della roadmap chiede un ADR esplicito per ogni
+modifica ai cinque file core, e per quella del 19 agosto l'ADR non esiste. Va
+scritto oggi riconoscendo la modifica, oppure va dichiarata una deroga. Non lo
+decide un report di accettazione.
+
+### Un secondo rilievo mi ha smentito, e la misura gli ha dato ragione
+
+Avevo scritto che la suite lanciata con il Python di sistema salta 154 test in
+silenzio. Il verificatore ha osservato che quella corsa aveva **due** variabili:
+l'interprete e Postgres ancora in avvio. Corsa di controllo con il Python di
+sistema e Postgres `healthy`: **567 passed, zero skip**. Non era l'interprete.
+
+Il reperto resta e cambia causa: una suite lanciata su un Postgres che non e'
+ancora `healthy` salta piu' di un quarto dei test e chiude comunque con «passed».
+La regola operativa: si aspetta `docker inspect plcsim-postgres --format
+"{{.State.Health.Status}}"` uguale a `healthy`, e il numero da confrontare e'
+**567 passed**.
+
+### Il preflight, perche' le regole a memoria si saltano
+
+`edge/scripts/preflight_live_run.py` trasforma in controllo eseguibile le quattro
+regole d'avvio di un run live, che vivevano come prosa in due file diversi:
+partizione raw nuova, Node-RED riavviato a server gia' in ascolto, sessione
+broker pulita con `--client-id` dedicato, `--run-id` esplicito e non gia' usato.
+Solo letture, esce 0/1/2. Tre stati e non due: un controllo che non si e' potuto
+eseguire non e' un controllo passato.
+
+Ha gia' guadagnato il suo posto due volte nella stessa sessione: ha colto il
+server OPC UA spento, e poi ha confermato l'ordine di avvio corretto.
+
+### La prova generale, superata
+
+Catena accesa nell'ordine giusto e `verifica_battito.py 10` con uscita **0**: in
+dieci minuti raw +193, cycles +187, predizioni +3, tutti e tre gli stadi vivi.
+Evidenza in `work/ricollaudo-20260824/esito_battito-20260824.json`. Catena poi
+spenta; a fine sessione non resta acceso nulla che non fosse acceso prima.
+
+### Le due voci minori, rinviate per iscritto
+
+`SpeedActual` dichiara una velocita' 2,5 volte sotto la cadenza reale: rinviata,
+perche' nessun consumatore a valle legge quel tag e sistemarlo tocca il contratto
+OPC UA. La provenienza del modello: rinviata con condizione di riapertura
+esplicita, il giorno in cui si spedisce un modello riaddestrato.
+
+### Le catture
+
+Tutte in `work/ricollaudo-20260824/`, non in una cartella di sessione: le due
+corse pulite della suite, la corsa sporca iniziale, la corsa di controllo, i due
+collaudi M9, il collaudo M10, il gate del battito e il sommario della corsa di
+bit-identita'.

@@ -7,13 +7,13 @@
   "files": [
     {
       "path": ".project/DECISIONS.md",
-      "sha256": "566022807ea967c32f08c59982c261ce28409b1c6f5cf29f84255263bc682aa0",
-      "size": 25384
+      "sha256": "3dc8dc58a275c6b659794787dde7bbd5faf58a46cfaf02fb5d1553566dc5c74c",
+      "size": 47911
     },
     {
       "path": ".project/OPEN_QUESTIONS.md",
-      "sha256": "129d287e6e92e3e8180de867a306f9e3043de588bca4ee4f0beedcd9859508a5",
-      "size": 18835
+      "sha256": "2aa9e833f6910c4df193922e6a55caec1b1a62368fdde58008ec68d93899a5d7",
+      "size": 54512
     },
     {
       "path": ".project/OVERVIEW.md",
@@ -27,13 +27,13 @@
     },
     {
       "path": ".project/RECENT_WORK.md",
-      "sha256": "f77a15ee1e26501ffa4895d1913e9eeb6957e22da92cae1877f3bd96e5696d12",
-      "size": 67264
+      "sha256": "6df9535da4897e6be75505fa5c237ea62f4abd1c0b65bc0549868b3e6d17a2d1",
+      "size": 136677
     },
     {
       "path": ".project/STATE.md",
-      "sha256": "f619289ed718ad27b752fb5db764f2b7c16acb6c4a4b1ed6cd28397da051d42d",
-      "size": 15432
+      "sha256": "8bae666afa16e42da34b27daa64c8aeb9d655918292d76bfb4fb59af65a6ef73",
+      "size": 37789
     },
     {
       "path": ".project/receipts/.gitkeep",

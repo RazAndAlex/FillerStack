@@ -697,3 +697,98 @@ entrambe le pagine. Non e' una rifinitura: era una data sbagliata.
 Restano fuori: le altre tre pagine, la lineage dentro il motore, il modello, il
 normalizzatore e l'API. La voce aperta sulla provenienza del modello resta tale —
 riguarda il giorno in cui si spedisse un modello nuovo, che ora non succede.
+
+## 2026-08-23 · La guida tecnica eredita il lessico della dashboard
+
+I due artefatti di presentazione non hanno un linguaggio visivo proprio. Le
+tinte, la barra, i riquadri con barra-titolo e la regola del colore sono copiati
+da `.scratch/dashboard-v7/comune/lessico.css`, cioe' dalla dashboard che
+l'utente ha accettato il 2026-08-19. Motivo: chi passa dalla guida alla
+dashboard non deve accorgersi di aver cambiato prodotto.
+
+La regola del colore vale intera. Nella guida `--attenz` compare in quattro punti
+soltanto (`SEI QUI`, bordo della nota aperta, riga di codice accesa, cella fuori
+bersaglio) ed e' un tetto, non una media.
+
+**Il metodo e' quello che ha fatto accettare la dashboard.** Le scelte di
+struttura sono state messe davanti all'utente come anteprime funzionanti da
+cliccare, mai come schizzi o prosa; la prima schermata e' stata costruita in tre
+varianti indipendenti con nomi neutri e nessuna raccomandazione; si consegna una
+schermata alla volta e ci si ferma finche' non e' approvata. Appena approvata, la
+grammatica si estrae in un documento e in pezzi comuni condivisi, cosi' le tappe
+successive la ereditano invece di reinventarla.
+
+**Niente em dash e niente en dash nel testo dei due artefatti.** L'utente li
+conta. Dove servirebbe uno stacco si chiude la frase o si mette una virgola; nei
+separatori grafici si usa il punto medio, che e' gia' l'idioma della dashboard;
+negli intervalli numerici il trattino semplice. La ripulitura si fa prima di
+pubblicare e copre anche le stringhe costruite da JavaScript e gli `aria-label`.
+
+
+## 2026-08-23 · Chi scrive non e' chi verifica, nemmeno sulla lingua
+
+L'utente ha bocciato due volte il testo della presentazione: la prima per gli em
+dash, la seconda per un titolo costruito per antitesi. Ha poi chiesto
+esplicitamente che la ripulitura venisse **verificata da un revisore separato**,
+perche' fatta da chi ha scritto non funziona.
+
+Da qui in avanti, per i due artefatti di presentazione: la ripulitura si fa prima
+di pubblicare, e il risultato passa da un revisore con mandato ostile che produce
+un elenco di citazioni esatte, non un giudizio. Vale la stessa regola gia' scritta
+per il codice: **chi realizza non verifica se stesso**.
+
+La revisione del 2026-08-23 ha prodotto 36 correzioni di scrittura, tre errori di
+fatto e un disallineamento fra testo e disegno che nessun controllo automatico
+avrebbe visto. Il costo e' stato tre agenti in parallelo; il difetto piu' grave
+che hanno trovato (la scena che diceva "valvola" mentre la prosa diceva
+"rubinetto", con un numero di segno opposto) era invisibile sia al verificatore
+sia a me.
+
+**Il verificatore automatico non basta e non deve illudere.** `verifica.py` copre
+solo le cose gia' costate una bocciatura, e la sintassi del JavaScript la vede
+solo `node --check`, che va lanciato a parte: un apostrofo dentro una stringa
+aveva rotto tre pagine in silenzio, con il verificatore tutto verde.
+
+
+## 2026-08-24 · Le due M11, e la sorte di quella di sicurezza
+
+Il progetto aveva due cose diverse che si chiamavano M11, e una delle due era
+dichiarata chiusa. Chi leggeva `STATE.md` trovava scritto «M11 e' chiuso» e ne
+concludeva che la roadmap IIoT fosse finita. Non lo era.
+
+**Da qui in avanti i due nomi sono distinti e non vanno piu' usati nudi:**
+
+- **M11-sicurezza** e' la milestone della roadmap (`docs/roadmap-iiot.md`, §7):
+  security policy OPC UA con certificati e utenti, autenticazione e ACL sul
+  broker, iniezione di guasti di comunicazione come scenari YAML, metriche di
+  pipeline. Era segnata opzionale fin dal 2026-08-12 e non e' mai stata aperta.
+- **M11-taratura** e' l'aggregazione score-only K=5/N=150 e la classificazione
+  del modello sulla valvola 21, chiusa il 2026-08-23. E' quella a cui si
+  riferiscono `STATE.md` e le voci precedenti di questo file.
+
+### M11-sicurezza non si fa: POC accettato
+
+Decisione dell'utente il 2026-08-24, davanti al quadro completo dei sei gradini.
+**La milestone e' dichiarata fuori ambito e il POC e' accettato come tale.** Non
+e' un rinvio: e' una chiusura. Chi riapre il progetto non deve rimetterla in
+discussione, e chi cerca la sicurezza in questo repository deve trovare questa
+riga prima di cercarla nel codice.
+
+Il motivo non e' che la sicurezza non conti. E' che questo progetto gira su una
+sola macchina, in locale, e non e' mai stato esposto: `mosquitto.conf` dichiara
+da solo «plaintext su 1883, nessuna autenticazione», e il compose di Postgres
+porta `POSTGRES_PASSWORD: plcsim` con il commento `POC`. Erano dichiarazioni
+oneste di un prototipo, non debiti nascosti. Formalizzarle costa una riga;
+onorarle costerebbe giorni e comprerebbe una proprieta' che nessuno esercita.
+
+Le quattro voci restano scritte nella roadmap come ambito **non svolto e non
+previsto**. Se un giorno la catena dovesse uscire da questa macchina, quelle
+quattro voci sono la lista da riaprire, in quell'ordine.
+
+### Cosa resta vero anche senza M11-sicurezza
+
+La riconnessione OPC UA nativa non funziona sulla palette `node-red-contrib-opcua`
+0.2.354 e la versione che la corregge non e' pubblicata su npm. E' un limite di
+ambiente, non un difetto di questo codice, ed e' aggirato riavviando il
+container: verificato a zero duplicati su 2683 eventi. Si chiude come
+**documentato e aggirato**, non come lavoro aperto.

@@ -945,3 +945,32 @@ così la sua sessione parte senza arretrati.
 Insieme alle altre due già note, la sequenza d'avvio di un run live è:
 partizione raw nuova · Node-RED riavviato a server già in ascolto · sessione
 broker pulita · `--run-id` esplicito e identico per backfill e inference.
+
+
+## RINVIATE PER DECISIONE il 2026-08-24 — le due voci minori dell'IIoT
+
+Chiusa la roadmap IIoT, restavano due voci che nessuno aveva ne' chiuso ne'
+rinviato per iscritto. Restano aperte come fatti, ma **non sono lavoro previsto**:
+chi le trova non deve trattarle come un debito da saldare prima di usare il
+progetto.
+
+1. **`SpeedActual` dichiara una velocita' 2,5 volte sotto la cadenza reale.**
+   `speed_by_status["Running"] = 15110` alimenta il tag. Sistemarlo tocca il
+   contratto tag OPC UA, che ha un test su `SpeedTarget 15500`. **Rinviata**: il
+   tag non e' letto da nulla a valle. Node-RED trasporta, la pipeline non lo usa
+   come feature, l'OEE legge il target dal KV verificato e non da questo tag. Il
+   costo del fix e' un contratto da rinegoziare; il beneficio e' zero finche'
+   nessuno legge quel tag. Si riapre il giorno in cui qualcosa a valle lo legge.
+
+2. **La provenienza del modello non e' tracciabile.** `_resolve_model_version`
+   (`pipeline/inference.py:75-96`) ripiega su `manifest.yaml:code_version`, e
+   `load_score_history` (`pipeline/alert.py:620`) partiziona la cronologia K/N
+   solo per `run_id`. **Rinviata, con una condizione di riapertura precisa**: non
+   e' un problema finche' non si spedisce un modello nuovo, perche' con un solo
+   modello in circolazione non c'e' niente da distinguere. Il giorno in cui se ne
+   riaddestra uno, va bumpato il manifest **prima** di scrivere predizioni, oppure
+   aggiunto `model_version` al sidecar. Questa e' la condizione, non un consiglio.
+
+Nessuna delle due e' stata declassata perche' scomoda. Sono entrambe rinviate
+perche' hanno un costo certo e un beneficio che oggi non esiste, e in tutti e due
+i casi la condizione che le fa tornare a contare e' scritta qui sopra.

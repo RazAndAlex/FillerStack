@@ -1,6 +1,11 @@
 # Project state
 
-Updated: 2026-08-21
+Updated: 2026-08-24
+
+> Le sezioni sono in ordine cronologico e **l'ultima vince**. Il paragrafo
+> «Current objective and milestone» qui sotto e' del 2026-08-13 e descrive uno
+> stato superato: per lo stato di oggi si legge l'ultima sezione, «Stato al
+> 2026-08-24».
 
 ## Project
 
@@ -578,9 +583,10 @@ vuoto e sembra ancora in corso. Si scrive su file e si guarda quello.
 
 ## Stato al 2026-08-23, terzo aggiornamento — M11 chiuso, i guasti hanno un nome
 
-- **M11 e' chiuso.** Non sulla classificazione del modello, che resta come e' e
-  come e' spiegata, ma sulla constatazione che l'allarme funziona. Vedi
-  `DECISIONS.md`.
+- **M11-taratura e' chiuso.** Non sulla classificazione del modello, che resta
+  come e' e come e' spiegata, ma sulla constatazione che l'allarme funziona. Vedi
+  `DECISIONS.md`. Da non confondere con **M11-sicurezza**, la milestone della
+  roadmap IIoT, che e' un'altra cosa: vedi l'aggiornamento del 2026-08-24.
 - **Le pagine MACCHINA e VALVOLE scrivono il nome del guasto**, preso da
   `last_prediction.predicted_label` che `/valves` gia' porta. Nessuna route
   nuova, nessuna chiamata in piu'. Otto valvole su nove prendono il nome giusto;
@@ -621,3 +627,38 @@ uscendo con Ctrl+C. Chiudendo con la croce il blocco finale non gira.
 
 Nota: sulla porta 8077 può esserci ancora `server.py`, il guscio a fixture
 avviato il 21 agosto. Non c'entra col lanciatore e non viene toccato.
+
+## Stato al 2026-08-24 — la roadmap IIoT e' chiusa
+
+- **`docs/roadmap-iiot.md` e' chiusa.** M6, M7, M8, M9 e M10 sono saliti;
+  **M11-sicurezza e' dichiarata fuori ambito, POC accettato**, per decisione
+  dell'utente. Non e' un rinvio: chi riapre il progetto non deve rimetterla in
+  discussione. Le quattro voci restano scritte come la lista da riaprire **se**
+  un giorno la catena esce da questa macchina.
+- **Attenzione al nome.** «M11» senza qualificatore e' ambiguo e non va usato.
+  **M11-sicurezza** e' la milestone della roadmap, mai aperta e ora chiusa come
+  non svolta. **M11-taratura** e' K=5/N=150 e la classificazione del modello
+  sulla valvola 21, chiusa il 2026-08-23.
+- **I collaudi M9 e M10 non portano piu' un verdetto ritirato.** Rifatti il
+  2026-08-24, sezioni `## 8` in coda ai due report. Entrambi **ESITO
+  COMPLESSIVO: OK**. I verdetti vecchi restano scritti sopra come storia.
+- **Il percorso live e' stato riprovato oggi**, dopo le migrazioni e la pulizia:
+  `verifica_battito.py 10` con uscita 0, tutti e tre gli stadi vivi in dieci
+  minuti. La catena e' poi stata spenta.
+- **Esiste un preflight**: `edge/scripts/preflight_live_run.py`. Va lanciato
+  prima di ogni run live. Le quattro regole d'avvio non vivono piu' solo come
+  prosa.
+- **La suite si misura a Postgres `healthy`.** Su un container che sta ancora
+  salendo, 154 test dei 567 saltano in silenzio e pytest chiude comunque con
+  «passed». Il numero da confrontare e' **567 passed**; un totale diverso e' di
+  per se' un segnale. Non e' l'interprete: verificato con una corsa di controllo.
+- **Restano aperte due voci, entrambe rinviate per iscritto** in
+  `OPEN_QUESTIONS.md`: `SpeedActual` fuori scala e la provenienza del modello.
+  Nessuna delle due morde oggi, ognuna ha la sua condizione di riapertura.
+- **Resta aperto un reperto nuovo**: `plcsim/run.py` e' stato modificato il
+  2026-08-19 e l'invariante 1 della roadmap chiede un ADR esplicito per i cinque
+  file core. Quell'ADR non esiste. La bit-identita' e' stata **misurata** e
+  regge (tre parquet identici per SHA-256 contro `work/m4_healthy_1d`), quindi
+  non c'e' un danno: c'e' un documento mancante. Va scritto, o va dichiarata una
+  deroga.
+- Evidenza della giornata in `work/ricollaudo-20260824/`.
