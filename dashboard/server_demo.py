@@ -58,15 +58,25 @@ SCENARIO = "registrato"
 def chiave_file(route: str, query: str) -> str:
     """route + query -> nome di file. Identica a quella di `server_api.py`.
 
-    Le due copie devono restare uguali: e' il contratto fra chi registra e chi
-    ripropone. Se una cambia, la demo smette di trovare i suoi file.
+    Le due copie devono restare uguali: e' il contratto fra chi registra e
+    chi ripropone. Se una cambia, la demo smette di trovare i suoi file.
+
+    La chiave comprende la query perche' le pagine chiedono intervalli diversi
+    dalla stessa route: una serie su due settimane non e' la stessa risposta
+    della stessa serie su due mesi. Registrarle sotto la stessa chiave farebbe
+    rispondere con un periodo diverso da quello chiesto, e in silenzio.
+
+    La query non finisce pero' nel nome per esteso: le date ISO percent-encoded
+    producevano nomi da 90 caratteri, e su Windows un `git clone` in una
+    cartella gia' profonda falliva con «Filename too long». Il nome porta la
+    route in chiaro, che serve a capire cosa c'e' dentro guardando la cartella,
+    e la query come impronta.
     """
-    grezzo = route + (("?" + query) if query else "")
-    ripulito = re.sub(r"[^A-Za-z0-9._-]+", "_", grezzo).strip("_")
-    if len(ripulito) > 120:
-        impronta = hashlib.sha256(grezzo.encode()).hexdigest()[:12]
-        ripulito = ripulito[:100] + "-" + impronta
-    return ripulito + ".json"
+    base = re.sub(r"[^A-Za-z0-9._-]+", "_", route).strip("_")[:48]
+    if not query:
+        return base + ".json"
+    impronta = hashlib.sha256(query.encode()).hexdigest()[:10]
+    return f"{base}-{impronta}.json"
 
 
 def titolo() -> str:

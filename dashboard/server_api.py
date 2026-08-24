@@ -91,22 +91,24 @@ KPI_LIMIT = 400
 
 
 def chiave_file(route: str, query: str) -> str:
-    """route + query -> un nome di file stabile e valido su Windows.
+    """route + query -> nome di file corto, stabile, valido su Windows.
 
-    La chiave comprende la query perche' le pagine chiedono intervalli
-    diversi dalla stessa route: `machine/oee/series?windows=day&from=...` non
-    e' la stessa risposta di `machine/oee/series`. Registrarle sotto la stessa
-    chiave farebbe rispondere alla demo con un periodo diverso da quello
-    chiesto, e in silenzio. Meglio un 404, che le pagine gia' dichiarano.
+    La chiave comprende la query perche' le pagine chiedono intervalli diversi
+    dalla stessa route: una serie su due settimane non e' la stessa risposta
+    della stessa serie su due mesi. Registrarle sotto la stessa chiave farebbe
+    rispondere con un periodo diverso da quello chiesto, e in silenzio.
+
+    La query non finisce pero' nel nome per esteso: le date ISO percent-encoded
+    producevano nomi da 90 caratteri, e su Windows un `git clone` in una
+    cartella gia' profonda falliva con «Filename too long». Il nome porta la
+    route in chiaro, che serve a capire cosa c'e' dentro guardando la cartella,
+    e la query come impronta.
     """
-    grezzo = route + (("?" + query) if query else "")
-    ripulito = re.sub(r"[^A-Za-z0-9._-]+", "_", grezzo).strip("_")
-    if len(ripulito) > 120:
-        # I nomi lunghi li accorcia, ma senza collisioni: l'impronta e' del
-        # testo intero, non della parte troncata.
-        impronta = hashlib.sha256(grezzo.encode()).hexdigest()[:12]
-        ripulito = ripulito[:100] + "-" + impronta
-    return ripulito + ".json"
+    base = re.sub(r"[^A-Za-z0-9._-]+", "_", route).strip("_")[:48]
+    if not query:
+        return base + ".json"
+    impronta = hashlib.sha256(query.encode()).hexdigest()[:10]
+    return f"{base}-{impronta}.json"
 
 
 def istante_fine_run() -> tuple[datetime, str | None]:
