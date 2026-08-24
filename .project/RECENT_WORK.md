@@ -2616,3 +2616,69 @@ allinearli richiede un push forzato. Da decidere prima di pubblicare:
   `.project/**` e `AGENTS.md`: reso pubblico cosi', mostrerebbe la memoria di
   progetto e nient'altro.
 - Il push forzato, e poi il cambio di visibilita'.
+
+
+## 2026-08-24 (notte) — La dashboard nel repository, e la demo che parte senza niente
+
+L'utente ha chiesto perche' pubblicare la dashboard fosse mai stata una domanda:
+*«a cosa serve quella pipeline se non puoi vedere la fine?»*. Aveva ragione, e la
+richiesta operativa era una sola: *«fallo funzionare prima, se io faccio doppio
+click sulla dashboard non va perche' vuole docker»*.
+
+### Il difetto che il clone ha trovato
+
+Le cinque pagine accettate vivevano in `.scratch/dashboard-v7/`, esclusa dalla
+pubblicazione, mentre `dashboard.ps1` — tracciato — le lanciava da li'. Chi
+clonava leggeva nel README «doppio clic su `dashboard.bat`» e si schiantava.
+Nessuna ricerca testuale poteva vederlo: si vede solo clonando e provando.
+
+Ora `dashboard/` contiene MACCHINA, VALVOLE, OEE, TEMPO e CARTE, il lessico
+condiviso e i due server. Le varianti scartate dei confronti a tre restano fuori.
+
+### La modalita' demo
+
+`server_demo.py` ripropone una fotografia delle risposte GET dell'API. Usa solo
+la libreria standard: niente Docker, niente PostgreSQL, niente dipendenze. Il
+lanciatore sceglie da se' — database acceso, dati vivi; altrimenti, dati
+registrati con un avviso a schermo — e il selettore in cima alla pagina porta la
+data della registrazione invece di lasciar credere che i dati siano di adesso.
+
+**Registra il proxy stesso** (`server_api.py --registra`), non un elenco di route
+deciso a tavolino: si aprono le cinque pagine e lui salva cio' che hanno davvero
+chiesto. La chiave comprende la query, perche' una serie su due settimane non e'
+la stessa risposta della stessa serie su due mesi: servire l'una per l'altra
+mostrerebbe un periodo diverso da quello chiesto, in silenzio. Fuori dalla
+fotografia risponde 404, e le pagine lo dichiarano gia'.
+
+### Cinque difetti, tutti trovati provando e non leggendo
+
+1. **`.venv` non c'entra, ma il proxy si**: calcolava la radice del progetto
+   contando le cartelle (`QUI.parents[1]`), e spostandolo importava `pipeline` da
+   un livello sbagliato. Ora la radice e' esplicita.
+2. **Il lanciatore moriva a Docker spento.** PowerShell 5.1 con
+   `ErrorActionPreference='Stop'` trasforma in eccezione la riga che `docker`
+   scrive su stderr quando il demone non gira. Il demone spento non e' un
+   errore: e' uno dei due casi previsti.
+3. **Le pagine chiedevano lo scenario delle vecchie fixture** (`a-sana`) e
+   uscivano vuote con un 404. Visto solo aprendo il browser: `curl` sulle route
+   passava.
+4. **Registrare dall'API cruda dava una fotografia diversa da cio' che si vede
+   dal vivo**: il proxy sposta l'istante di osservazione alla fine della run e
+   chiede 400 cicli invece di 200. Senza, OEE e contatori uscivano a zero e le
+   legende avrebbero mentito.
+5. **`git clone` falliva con «Filename too long»**: le date ISO percent-encoded
+   producevano nomi da 90 caratteri. Ora route in chiaro piu' impronta: il piu'
+   lungo e' 37.
+
+### Il peso
+
+La pagina CARTA chiede 5000 cicli per ognuna delle 35 valvole: 88 MB. Sono serie
+numeriche e scendono al **3%** — la registrazione pesa **3,0 MB**, e il browser
+decomprime da se'. Il clone completo: **13 MB**.
+
+### La prova
+
+Docker spento, clone in cartella vuota, Python di sistema, nessun ambiente
+virtuale: le cinque pagine rispondono 200 e la MACCHINA disegna OEE 47,3%,
+602.821 cicli e le nove valvole in allarme. Verificato a schermo, non solo con
+`curl`. A fine lavoro non resta acceso niente.
