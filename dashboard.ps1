@@ -180,12 +180,21 @@ try {
     # vera e mostra lo stato di adesso. Senza, serve la fotografia registrata
     # in dashboard/demo: dati veri, fermi, e nessuna installazione richiesta.
     # Chi scarica il progetto deve poterla aprire comunque.
+    #
+    # Nota su PowerShell 5.1: quando il demone Docker e' spento, `docker` scrive
+    # su stderr, e con ErrorActionPreference='Stop' quella riga diventa
+    # un'eccezione che ferma tutto. Il demone spento non e' un errore, e' uno
+    # dei due casi previsti: qui si abbassa la preferenza per la sola sonda.
     $vivo = $false
     if (Get-Command docker -ErrorAction SilentlyContinue) {
-        $stato = (& docker inspect -f '{{.State.Running}}' $CONTAINER 2>$null)
-        if ($LASTEXITCODE -eq 0) {
+        $prima = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        $stato = (& docker inspect -f '{{.State.Running}}' $CONTAINER 2>&1)
+        $rc = $LASTEXITCODE
+        $ErrorActionPreference = $prima
+        if ($rc -eq 0) {
             $vivo = $true
-            if ($stato -ne 'true') {
+            if ("$stato".Trim() -ne 'true') {
                 Riga "  accendo il database ($CONTAINER)"
                 & docker start $CONTAINER | Out-Null
                 $postgresAccesoQui = $true
