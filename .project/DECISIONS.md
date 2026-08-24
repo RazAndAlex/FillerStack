@@ -792,3 +792,91 @@ La riconnessione OPC UA nativa non funziona sulla palette `node-red-contrib-opcu
 ambiente, non un difetto di questo codice, ed e' aggirato riavviando il
 container: verificato a zero duplicati su 2683 eventi. Si chiude come
 **documentato e aggirato**, non come lavoro aperto.
+
+
+## 2026-08-24 · La prognosi va alla v2, e qui c'e' scritto perche' non c'era
+
+L'utente ha chiesto perche' il progetto non facesse analisi predittiva, dicendo:
+*«il mio progetto era mettere quell'analisi predittiva che [il simulatore di riferimento] non aveva mai
+fatto»*. Ha poi deciso: **la predittiva sara' la v2**. Questa voce serve a
+impedire che la v2 si perda come si e' persa la prima volta.
+
+### Come si e' persa la prima volta
+
+Non e' stato un errore di esecuzione. Il punto di svolta e' identificabile alla
+riga. L'**11 agosto alle 09:57**, un passaggio di consegne fra due sessioni di
+agenti ha fatto due cose in una riga sola: ha promosso il layer ML a «obiettivo
+finale del progetto» **e** lo ha definito come «*rilevare* i fault» con
+«precision/recall su classi di fault». Da li' in poi la catena documentale e'
+internamente coerente: `work/plan-ml-v2.md` cita quell'handoff come autorita',
+`converged-feedback.md` ratifica il piano, ADR-0015 registra la ratifica. Nessuno
+di quei passaggi aveva piu' motivo di riaprire la domanda.
+
+Il documento che conteneva l'obiettivo vero, `Proposte/contesto_progetto_
+IIoT_ML_OPCUA_pipeline_aggiornato_2026-08-12.md` §46, e' entrato nel repository
+**il giorno dopo**, e non e' mai stato citato da nessun piano successivo.
+Distingue tre problemi: *e' diverso dal normale* · *che tipo di problema sembra* ·
+*quanto manca al guasto*. Il progetto si e' fermato al primo, con l'apparato del
+secondo costruito accanto e quasi inutilizzato.
+
+Quello che l'utente ha ratificato l'11 agosto era una **soglia di recall per
+classe**. Per ratificare un recall per classe bisogna avere gia' accettato che il
+problema sia fatto di classi. La domanda che contava, *classi dello stato
+presente o tempo che manca al guasto*, non gli e' mai stata posta.
+
+**La lezione, scritta perche' non si ripeta**: un handoff fra sessioni non e' una
+fonte di autorita' sullo scopo. Se contiene una frase che definisce l'obiettivo
+del progetto, quella frase va confrontata con i documenti dell'utente prima di
+costruirci sopra. E un documento dell'utente che entra nel repository dopo una
+decisione architetturale va riconciliato con quella decisione, non archiviato.
+
+### Cosa e' stato costruito, per essere precisi
+
+Il modello **regge** il sistema ma non nel modo che il suo ADR descrive.
+`anomaly_score = 1 - P(healthy)` e' cio' che apre gli allarmi: cinque punteggi
+sopra soglia nelle ultime centocinquanta predizioni. Spegnendo il modello, la
+catena diagnostica si ferma del tutto. Ma quello che decide e' la sola
+**componente binaria** di un classificatore a sette classi: `predicted_label`
+non discrimina mai l'apertura, e il suo unico consumo e' scrivere il nome del
+guasto in una riga della dashboard.
+
+Quindi: primo gradino di §46 raggiunto e portante. Secondo gradino costruito e
+quasi inerte. Terzo mai iniziato.
+
+### Cosa servirebbe per la v2, misurato e non stimato
+
+La buona notizia e' che **i dati la sostengono gia'**. Non e' un progetto da
+ricominciare.
+
+- La ground truth porta la **severita' per ciclo**, non un interruttore:
+  `severity_at()` in `plcsim/scenario.py:87-99` calcola una rampa lineare,
+  `severity · min(1, (cycle_id - start_cycle + 1) / ramp_cycles)`, completa al
+  ciclo `start_cycle + ramp_cycles - 1`. Una traiettoria di degrado esiste ed e'
+  gia' scritta su `ground_truth.parquet` (colonne `cycle_id`, `valve_id`,
+  `fault_type`, `severity`).
+- `scenarios/storico_60d.yaml` contiene gia' un **degrado lento sulla valvola 8**
+  su sessanta giorni, che e' esattamente il caso d'uso della prognosi.
+
+Cosa manca davvero, e sono due cose sole:
+
+1. **Una definizione di «guasto» come evento.** Oggi il guasto arriva a piena
+   severita' e resta li': il motore dei guasti non sa riparare e non ha uno stato
+   terminale. La prognosi ha bisogno di un istante da contare a ritroso. Il
+   candidato naturale e' il primo ciclo in cui quella valvola esce dai parametri
+   di qualita', che e' derivabile dai dati esistenti e ha un significato per il
+   tecnico.
+2. **Etichette spostate in avanti nel tempo.** E' la firma tecnica che oggi manca:
+   `join_labels` in `plcsim/ml_dataset.py:267` prende la ground truth
+   dell'**ultimo ciclo della finestra**, cioe' il presente. Per prevedere,
+   l'etichetta va presa a `t + orizzonte`, e l'orizzonte va dichiarato.
+
+Non serve un modello nuovo per cominciare: con la severita' gia' su disco, la
+prima versione onesta e' una **stima di quando una grandezza tocchera' la sua
+soglia**, estrapolata dal suo andamento. E' interpretabile, e' verificabile
+contro la ground truth, e non chiede di riaddestrare niente.
+
+### Cosa non si fa nel frattempo
+
+Non si scrive «manutenzione predittiva» da nessuna parte finche' la v2 non
+esiste. Il caso studio dichiara due gradini su tre e nomina il terzo come non
+fatto. Un confine dichiarato regge una domanda in un colloquio; una promessa no.
