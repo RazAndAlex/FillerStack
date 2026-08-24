@@ -1,0 +1,14 @@
+# Scenario M2 — profilo valve8/20 (FT ~2035, quota step-26 alta) riprodotto
+# come fault iniettato su valve4 (restriction 0.06, piano M2 §8 / AC-8).
+# seed: null → seed master del run (--seed).
+scenario_id: 3
+name: "profilo valve8/20 come fault iniettato (valve4)"
+seed: null
+faults:
+  - fault_type: restriction
+    scope: local
+    valve_id: 4
+    severity: 0.06
+    onset:
+      mode: abrupt
+      start_cycle: 50

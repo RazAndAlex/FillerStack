@@ -1,0 +1,57 @@
+# Scenario ML test A (D-W1, piano ML §3.1) — come train_a (3 classi meccaniche
+# × 2 valvole) ma con valvole HELD-OUT (mai viste guaste in train):
+# restriction {19,23}, closing_delay {21,25}, opening_delay {26,28}.
+# Severità nel range train (interpolazione, §1.3.7): restriction train
+# [0.04,0.10] -> test {0.05,0.09}; closing [50,150] -> {70,120};
+# opening [40,120] -> {60,100}.
+# valve8 e valve20 MAI portatrici (ML-F4).
+# seed null -> il seed del run viene da --seed (ADR-0013).
+scenario_id: 64
+name: "ML test A — 3 classi meccaniche, valvole held-out"
+seed: null
+faults:
+  - fault_type: restriction
+    scope: local
+    valve_id: 19
+    severity: 0.05
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200
+  - fault_type: restriction
+    scope: local
+    valve_id: 23
+    severity: 0.09
+    onset:
+      mode: abrupt
+      start_cycle: 5000
+  - fault_type: closing_delay
+    scope: local
+    valve_id: 21
+    severity: 70
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200
+  - fault_type: closing_delay
+    scope: local
+    valve_id: 25
+    severity: 120
+    onset:
+      mode: abrupt
+      start_cycle: 12000
+  - fault_type: opening_delay
+    scope: local
+    valve_id: 26
+    severity: 60
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200
+  - fault_type: opening_delay
+    scope: local
+    valve_id: 28
+    severity: 100
+    onset:
+      mode: abrupt
+      start_cycle: 5000

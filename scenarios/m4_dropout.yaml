@@ -1,0 +1,20 @@
+# Scenario M4 — flowmeter dropout su valve12 (severità = frazione di scan
+# persi sul canale osservabile plant.last_pulses; la fisica non è toccata:
+# il mismatch volume/impulsi è la firma del guasto sensore).
+# start_cycle 100 / ramp_cycles 200 (pattern M3 provato sui run compressi
+# 1-giorno: R0 — i valori preliminari 18000/2000 del piano §7 non sarebbero
+# mai attivi in un run di accettazione: 17.269 cicli/valvola/giorno).
+# severity 0.30 -> FT nominale 1912/0.70 ≈ 2731 ms ≫ limite encoder 2127 ms
+# -> quota chiusure encoder_limit ≈ 100% a severità piena (dal ciclo 299).
+scenario_id: 44
+name: "flowmeter dropout valve12"
+seed: null
+faults:
+  - fault_type: flowmeter_dropout
+    scope: local
+    valve_id: 12
+    severity: 0.30
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200

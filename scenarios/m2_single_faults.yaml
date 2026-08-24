@@ -1,0 +1,27 @@
+# Scenario M2 — un fault per tipo, severità mild (piano M2 §8).
+# seed: null → seed master del run (--seed).
+scenario_id: 2
+name: "un fault per tipo (mild-2)"
+seed: null
+faults:
+  - fault_type: restriction
+    scope: local
+    valve_id: 1
+    severity: 0.07
+    onset:
+      mode: abrupt
+      start_cycle: 50
+  - fault_type: closing_delay
+    scope: local
+    valve_id: 5
+    severity: 100
+    onset:
+      mode: abrupt
+      start_cycle: 50
+  - fault_type: opening_delay
+    scope: local
+    valve_id: 11
+    severity: 80
+    onset:
+      mode: abrupt
+      start_cycle: 50

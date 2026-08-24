@@ -1,0 +1,19 @@
+# Scenario demo M3 — instabilita pressione sul gruppo G2 (valvole 12-17).
+# Fault sulla risorsa condivisa (ampiezza driver serbatoio, ADR-0010):
+# severity 0.5 = incremento RELATIVO +50% dell'ampiezza del driver per le
+# valvole del gruppo; onset gradual (start_cycle 100, ramp 200 -> severita
+# piena dal ciclo 299). Seed 42 -> sovrascrive --seed del run (ADR-0013).
+# Severita calibrata in work/m3_calibration.md: lift sigma_FT a severita
+# piena +48.5%..+52.9% su 6/6 valvole di G2, banda sana <= 0.2%.
+scenario_id: 51
+name: "instabilita pressione gruppo G2 (valvole 12-17)"
+seed: 42
+faults:
+  - fault_type: pressure_instability
+    scope: group            # group | global (local NON ammesso per questo tipo)
+    group_id: 2             # indice in config.default_groups -> [12..17]
+    severity: 0.5           # (0,1]: incremento RELATIVO amp driver (1+severity)
+    onset:
+      mode: gradual         # abrupt | gradual (stessa semantica M2)
+      start_cycle: 100      # ciclo DELLA VALVOLA (per ogni valvola del gruppo)
+      ramp_cycles: 200

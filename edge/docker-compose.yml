@@ -1,0 +1,93 @@
+# edge/docker-compose.yml — stack edge M7→M10 (spec .scratch/m7/spec.md §3,
+# spec .scratch/m10/spec.md §1, roadmap docs/roadmap-iiot.md §3)
+#
+# Ruolo: stack edge COMPLETO. Node-RED (integrazione edge, M7) sottoscrive
+# l'OPC UA del simulatore (opc.tcp://localhost:4840, server avviato con
+# `python -m plcsim.serve`), acquisisce i cicli valvola (watermark, spec §4.3)
+# e normalizza nell'envelope JSON v1.2; mosquitto (M8, ADR-0018) è il broker
+# MQTT locale su cui Node-RED pubblica plant/filler01/telemetry/valve; postgres
+# (M10, ADR-0021) è lo storico operazionale (KPI, cicli, predictions ML,
+# alert, stato macchina — fonte unica per le query live).
+#
+# Formato compose v2: NIENTE campo `version:` (obsoleto).
+# Avvio: Docker Desktop attivo, poi `docker compose up -d` (da edge/).
+# Nessun NodeId in questo file: i NodeId vivono SOLO in edge/tag-mapping.yaml
+# (unica fonte, spec §2.4/§4.4) e arrivano nel container come tag-mapping.js
+# GENERATO dal build script (vincolo invariante spec §2.4, AC-M7-4).
+
+services:
+  nodered:
+    # Tag PINNATO 4.0.9 (ultima patch stabile della serie 4.0.x, verificata su
+    # Docker Hub il 2026-08-12) invece di `latest`: riproducibilità del collaudo
+    # (spec §6 — `latest` è flottante e potrebbe rompere la parità T1).
+    # M8 (spec §7.3, AZIONE M8 OBBLIGATORIA 1): la palette node-red-contrib-opcua
+    # è installata DALLO STEP DI BUILD (edge/Dockerfile, versione pinnata 0.2.354 —
+    # 2.x → 404, verifica documentata in edge/README.md §M8) e NON via admin API
+    # (ephemeral, persa alla ricreazione del container).
+    image: nodered/node-red:4.0.9
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: plcsim-nodered
+    restart: unless-stopped
+    ports:
+      - "1880:1880"   # UI Node-RED + endpoint HTTP (http://localhost:1880)
+    volumes:
+      # Flow versionati (M7-Phase2: edge/flows/*.json): l'immagine ufficiale
+      # node-red-docker carica i .json presenti in /data/flows all'avvio.
+      - ./flows:/data/flows
+      # Mapping GENERATO (mai editato a mano): `python edge/scripts/build_tag_mapping.py`
+      # rigenera tag-mapping.js a partire da tag-mapping.yaml (unica fonte).
+      # Eseguire il build PRIMA del primo `docker compose up -d` (vedi README.md).
+      # Il mapping loader dei flow legge /data/tag-mapping.js; i flow NON
+      # contengono NodeId hard-coded (spec §2.4, AC-M7-4).
+      - ./tag-mapping.js:/data/tag-mapping.js:ro
+      # Test-sink: l'append dei record envelope avviene su ./out/out.jsonl (spec §5).
+      - ./out:/data/out
+      # Opzionale (sola lettura): schema envelope v1.0 per validazione lato flow
+      # (edge/schemas/envelope-v1.json). La validazione di collaudo è comunque
+      # Python/jsonschema (spec §6, T2), quindi il mount è solo di comodità.
+      - ./schemas:/data/schemas:ro
+    # environment:
+    #   # Opzionale: TZ influenza solo UI/log del container. Gli event_ts
+    #   # dell'envelope sono ISO8601 UTC per costruzione (spec §4.2) e NON
+    #   # dipendono da questa variabile.
+    #   TZ: Europe/Rome
+
+  mosquitto:
+    # MQTT broker locale (M8, spec §3/§4.2 — ADR 0018): piano di distribuzione
+    # edge→consumer. POC plaintext senza auth dichiarato (hardening M11, roadmap §7).
+    # Config VERSIONATA in edge/mosquitto/config/mosquitto.conf (mai generata a runtime).
+    image: eclipse-mosquitto:2          # tag stabile verificato a M8 (spec §7.2)
+    container_name: plcsim-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"                     # MQTT plaintext (topic/QoS/retained: ADR 0018)
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+
+  postgres:
+    # Storico operazionale M10 (spec .scratch/m10/spec.md §1, ADR 0021): KPI, cicli,
+    # predictions ML, alert, stato macchina — fonte unica per le query live. Il raw
+    # ad alta frequenza resta in Parquet partizionato (M8); la config locale app in
+    # SQLite. Immagine PINNATA postgres:17. POC: credenziali dev esplicite
+    # (hardening M11, roadmap §7). Volume persistente: lo storico sopravvive al
+    # `docker compose down`.
+    image: postgres:17
+    container_name: plcsim-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: plcsim
+      POSTGRES_USER: plcsim
+      POSTGRES_PASSWORD: plcsim          # POC — security M11
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plcsim -d plcsim"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

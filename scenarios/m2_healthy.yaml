@@ -1,0 +1,6 @@
+# Scenario sano M1 — baseline senza fault (piano M2 §8).
+# seed: null → seed master del run (--seed).
+scenario_id: 1
+name: "baseline sana M1"
+seed: null
+faults: []

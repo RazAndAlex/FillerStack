@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:plcsim:schemas:envelope-v1.3",
+  "title": "Envelope JSON v1.3 — stored consumer (M9, tag contract esteso)",
+  "description": "Envelope dati comune (Proposte §17) per la pipeline IIoT: formato STORED del raw Parquet M9 (spec §5). Derivato dalla v1.2 (wire edge, contratto tag esteso) con l'aggiunta di ingest_ts REQUIRED, iniettato dal consumer al momento dell'ingestione. Il consumer interpreta il record tramite schema_version (§58).",
+  "$comment": "v1.3 = v1.2 (15 campi data.*: 12 M7 + close_reason/position_limit/filling_overtime M9) + ingest_ts REQUIRED. Mantiene la catena wire→stored del modello esistente (v1.0→v1.1 oggi; v1.2→v1.3 in M9): il minor-major resta coerente (stored = wire + ingest_ts). I 3 campi nuovi sono output deterministici del PLC virtuale (validation.py), NON ground truth. v1.1 resta CONGELATA e immutata (12 campi), così come v1.0. Policy partial (calibration T6): ogni campo data.* ammette null; i campi ASSENTI restano rifiutati (required). recipe_id resta futuro. format (uuid, date-time) è ASSERTION solo con FormatChecker — pipeline/validator.py lo fa (date-time esplicito stdlib).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "event_type",
+    "event_ts",
+    "source_ts",
+    "ingest_ts",
+    "machine_id",
+    "cycle_id",
+    "valve_id",
+    "data",
+    "quality"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.3",
+      "description": "Versione dello schema dell'envelope (§58): il consumer interpreta il record con questa versione. v1.3 = stored del wire v1.2 (contratto tag esteso M9)."
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "uuid v4 generato dall'edge all'acquisizione; univoco per record, base della dedup M8 (§18)."
+    },
+    "event_type": {
+      "const": "valve_cycle",
+      "description": "v1: un solo tipo evento (chiusura ciclo valvola)."
+    },
+    "event_ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 UTC — orologio edge (Node-RED) all'arrivo del dato."
+    },
+    "source_ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 UTC — dal blocco OPC UA quando disponibile (ServerTimestamp), fallback: event_ts."
+    },
+    "ingest_ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "timestamp di ingestione del consumer; mai generato dall'edge; wire con ingest_ts rifiutato"
+    },
+    "machine_id": {
+      "const": "filler01",
+      "description": "Costante di configurazione, coerente con l'oggetto Filler01 del namespace M6."
+    },
+    "cycle_id": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Int64 — Valve01.LastCycleId: identità del ciclo (cycle_id globale del simulatore)."
+    },
+    "valve_id": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 35,
+      "description": "Int32 1-35 — derivata dal mapping (gruppo valveNN); in M7/M9 sempre 1 (solo Valve01 esposta)."
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "15 campi del contratto (12 M7 + 3 M9); chiavi = logical_name del mapping (convenzione spec §4.4), nomi con unità (§90). Ogni campo ammette null: tag non leggibile (qualità OPC UA cattiva) => quality.valid=false, completeness='partial' (policy T6, calibration); i campi ASSENTI restano rifiutati (required).",
+      "required": [
+        "filling_time_ms",
+        "tail_time_ms",
+        "tail_pulse",
+        "pulse_count",
+        "target",
+        "delta_pulse",
+        "filling_step_out",
+        "filling_ok",
+        "fill_quality_ok",
+        "sequence_ok",
+        "sample_valid",
+        "diagnostic_status",
+        "close_reason",
+        "position_limit",
+        "filling_overtime"
+      ],
+      "properties": {
+        "filling_time_ms": { "type": ["integer", "null"], "minimum": 0, "description": "FT [ms]" },
+        "tail_time_ms": { "type": ["integer", "null"], "minimum": 0, "description": "TT [ms]" },
+        "tail_pulse": { "type": ["integer", "null"], "minimum": 0, "description": "TP [impulsi]" },
+        "pulse_count": { "type": ["integer", "null"], "minimum": 0, "description": "PC [impulsi]" },
+        "target": { "type": ["integer", "null"], "minimum": 0, "description": "Target/K-Target [impulsi] (2500 per 250 ml)" },
+        "delta_pulse": { "type": ["integer", "null"], "description": "target − pulse_count [impulsi]; negativo = sovra-riempimento." },
+        "filling_step_out": { "type": ["integer", "null"], "minimum": 0, "maximum": 26, "description": "Slot della giostra a fine riempimento (26 slot utili)." },
+        "filling_ok": { "type": ["boolean", "null"] },
+        "fill_quality_ok": { "type": ["boolean", "null"] },
+        "sequence_ok": { "type": ["boolean", "null"] },
+        "sample_valid": { "type": ["boolean", "null"] },
+        "diagnostic_status": { "anyOf": [ { "enum": ["NORMAL", "SUSPECT"] }, { "type": "null" } ], "description": "Giudizio sul comportamento della valvola (contratto M6, validation.py): NORMAL | SUSPECT." },
+        "close_reason": { "anyOf": [ { "enum": ["target", "encoder_limit", "safety_timeout", "tail_timeout"] }, { "type": "null" } ], "description": "Causa di chiusura del ciclo (validation.py, whitelist CHIUSA work/ml-feature-schema.md §2.3); feature close_reason_*_rate." },
+        "position_limit": { "type": ["boolean", "null"], "description": "Chiusura per limite encoder (validation.py); feature position_limit_rate." },
+        "filling_overtime": { "type": ["boolean", "null"], "description": "FT > 2000 ms, diagnostica (validation.py, D1); feature filling_overtime_rate." }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Semantica v1: happy path valid=true, completeness='complete'. Tag del blocco non leggibile => record emesso comunque con valid=false, completeness='partial' (nessun ciclo sparisce dalla sequenza). Policy esatta congelata in calibration (spec §6, T6).",
+      "required": ["valid", "completeness"],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "completeness": { "enum": ["complete", "partial"] }
+      }
+    }
+  }
+}

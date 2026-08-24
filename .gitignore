@@ -1,0 +1,32 @@
+# --- Python ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Dati e output del simulatore -----------------------------------------
+# Rigenerabili: si producono con `python -m plcsim.run`. La taratura di
+# ingresso NON sta qui, sta in plcsim/valve_params.csv (ADR-0023).
+data/
+work/
+# Uscita del flow Node-RED: si rigenera a ogni corsa.
+edge/out/*.jsonl
+
+# --- Stato dei servizi al bordo -------------------------------------------
+# Volumi e persistenza dei container: stato di esecuzione, non sorgente.
+edge/postgres/data/
+edge/mosquitto/data/
+edge/mosquitto/log/
+
+# --- Sistema operativo ed editor ------------------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+.vscode/
+*.swp

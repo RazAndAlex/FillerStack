@@ -1,0 +1,14 @@
+# M7 edge — dipendenze di collaudo/validazione (spec M7 §3, §6)
+# Nota: NON è il lockfile del progetto (root requirements.txt invariato).
+# Tutte le voci sono già installate nell'ambiente di collaudo (2026-08-12).
+#
+# Validatore envelope v1.0 (obbligatoria, spec §6): jsonschema
+jsonschema>=4.26
+# T0 browse / T1 client di riferimento (spec §6): client OPC UA asyncua
+asyncua==2.0.1
+# T0 determinismo / load_mapping: conversione yaml -> js
+PyYAML>=6.0.3
+# Esecuzione dei test (pytest -k test_schema ...)
+pytest>=8
+# M8 (ADR-0019): consumer MQTT (pipeline/ingest.py) — pin verificato 2026-08-12 (ultima 2.x)
+paho-mqtt==2.1.0

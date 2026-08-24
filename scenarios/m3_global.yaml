@@ -1,0 +1,15 @@
+# Scenario global M3 — instabilita pressione sull'intero serbatoio (35 valvole).
+# Controprova di non-localita del meccanismo (piano M3 §1.4): la stessa
+# severity 0.5 del demo, onset ABRUPT dal ciclo 100 (nessuna rampa).
+# Misurato (work/m3_calibration.md): 35/35 valvole con Δsigma_FT sopra la
+# soglia del detector 3·sigma_h/sqrt(n-1); sanity bounds rispettati.
+scenario_id: 52
+name: "instabilita pressione scope global"
+seed: 42
+faults:
+  - fault_type: pressure_instability
+    scope: global           # senza group_id ne' valve_id
+    severity: 0.5           # (0,1]: incremento RELATIVO amp driver (1+severity)
+    onset:
+      mode: abrupt
+      start_cycle: 100

@@ -1,0 +1,253 @@
+[
+  {
+    "id": "m7s-tab",
+    "type": "tab",
+    "label": "M7 test-sink",
+    "disabled": false,
+    "info": "Variante di deploy per il collaudo: stessi nodi watermark+builder del main, uscita su file /data/out/out.jsonl (append JSON compatto, una riga per record)."
+  },
+  {
+    "id": "m7s-c1",
+    "type": "comment",
+    "z": "m7s-tab",
+    "name": "M7 test-sink — variante di collaudo (spec §5, §6)",
+    "info": "Stessi nodi del main (mapping loader, subscription, watermark §4.3, builder envelope v1.0), MA l'uscita è il file /data/out/out.jsonl (mount host-side: edge/out/out.jsonl).\n\nConsumato da edge/tests/parity_check.py (T1/T3-T6: parità col riferimento, schema, reconnect, burst, partial T6).\nUna riga per record: JSON.stringify compatto + newline (fs.appendFileSync, mode 'a').",
+    "x": 120,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "m7s-c2",
+    "type": "comment",
+    "z": "m7s-tab",
+    "name": "Watermark in-memory (spec §4.3, §10 Q1)",
+    "info": "Stessa semantica del main: init no-backfill, check cc<=wm ignora, cc<wm epoch reset, cc>wm nuova chiusura ciclo con gap loggati (metrica §89) e aggiornamento watermark nel flow context.",
+    "x": 640,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "m7s-boot",
+    "type": "inject",
+    "z": "m7s-tab",
+    "name": "boot: mapping loader + subscription",
+    "topic": "boot",
+    "payload": "",
+    "payloadType": "str",
+    "repeat": "",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 0.1,
+    "x": 110,
+    "y": 180,
+    "wires": [
+      [
+        "m7s-loader"
+      ]
+    ]
+  },
+  {
+    "id": "m7s-watch",
+    "type": "inject",
+    "z": "m7s-tab",
+    "name": "watchdog re-subscribe (30 s, T3)",
+    "topic": "watchdog",
+    "payload": "",
+    "payloadType": "str",
+    "repeat": "0",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "x": 110,
+    "y": 300,
+    "wires": [
+      [
+        "m7s-sub"
+      ]
+    ]
+  },
+  {
+    "id": "m7s-loader",
+    "type": "function",
+    "z": "m7s-tab",
+    "name": "mapping-loader",
+    "func": "// mapping-loader (spec M7 §5, §4.4) — init a ogni deploy/avvio (inject once).\n// Legge /data/tag-mapping.js (file GENERATO da edge/tag-mapping.yaml, unica\n// fonte §4.4), estrae module.exports (array di {logical_name, node_id,\n// datatype, unit, access, sampling_mode}) e lo espone nel context del flow.\n// Nessun NodeId hard-coded nei flow (AC-M7-4): i node_id vivono solo nel\n// mapping. Se il file manca/non è valido: log errore chiaro e no-op.\nvar MAPPING_FILE = '/data/tag-mapping.js';\nvar mapping = null;\ntry {\n    var src = fs.readFileSync(MAPPING_FILE, 'utf8');\n    // Estrae l'array JSON tra il '[' che segue \"module.exports\" e l'ultimo ']'\n    // (formato deterministico del generatore: \"module.exports = [ ... ];\" —\n    // niente eval/Function). NB: il '[' del commento di testa NON conta.\n    var marker = src.lastIndexOf('module.exports');\n    var start = src.indexOf('[', marker >= 0 ? marker : 0);\n    var end = src.lastIndexOf(']');\n    if (start < 0 || end <= start) {\n        throw new Error('formato inatteso: nessun array JSON in ' + MAPPING_FILE);\n    }\n    // Il generatore lascia una virgola finale prima di ']' (JS valido, JSON no):\n    // la si rimuove prima del parse.\n    var arrSrc = src.slice(start, end + 1).replace(/,\\s*\\]\\s*$/, ']');\n    mapping = JSON.parse(arrSrc);\n} catch (err) {\n    node.error('[mapping-loader] file non leggibile o mapping non valido: ' + err.message +\n        ' — acquisizione DISATTIVATA (no-op). Rigenerare il mapping con: ' +\n        'python edge/scripts/build_tag_mapping.py (da edge/tag-mapping.yaml, unica fonte)');\n    flow.set('m7.tagMapping', null);\n    flow.set('m7.nodeIndex', null);\n    flow.set('m7.ready', false);\n    node.status({ fill: 'red', shape: 'ring', text: 'mapping: NON caricato' });\n    return null; // no-op: nessuna subscription, nessuna acquisizione\n}\n// Validazione di base: ogni voce deve avere logical_name e node_id (formato §4.4).\nvar bad = mapping.filter(function (e) { return !e || !e.logical_name || !e.node_id; });\nif (bad.length > 0) {\n    node.warn('[mapping-loader] ' + bad.length + ' voce/i senza logical_name/node_id — ignorate');\n    mapping = mapping.filter(function (e) { return e && e.logical_name && e.node_id; });\n}\nif (mapping.length === 0) {\n    node.error('[mapping-loader] mapping vuoto dopo la validazione — no-op');\n    flow.set('m7.ready', false);\n    return null;\n}\n// Indicizzazione node_id -> logical_name (le notifiche di subscription portano\n// il nodeId come msg.topic).\nvar index = {};\nmapping.forEach(function (e) { index[e.node_id] = e.logical_name; });\n\n// Stato di acquisizione: ogni deploy/riavvio è un NUOVO epoch (spec §10 Q1:\n// watermark in-memory, niente backfill, niente duplicati).\nflow.set('m7.tagMapping', mapping);\nflow.set('m7.nodeIndex', index);\nflow.set('m7.ready', true);\nflow.set('m7.watermark', null);\nflow.set('m7.initCc', null);\nflow.set('m7.tagStore', {});\n\nvar triggers = mapping.filter(function (e) { return /^machine\\./.test(e.logical_name); }).length;\nvar block = mapping.filter(function (e) { return /^valve01\\./.test(e.logical_name); }).length;\nnode.log('[mapping-loader] mapping caricato: ' + mapping.length + ' voci (' + triggers +\n    ' trigger machine.* + ' + block + ' valve01.*) da ' + MAPPING_FILE);\n// NB: la verifica browse dei node_id (spec §5) è delegata a T0\n// (edge/tests/parity_check.py, browse asyncua): da un function node non è\n// possibile fare un browse sincrono.\nnode.status({ fill: 'green', shape: 'dot', text: 'mapping: ' + mapping.length + ' voci' });\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [{"var": "fs", "module": "fs"}],
+    "x": 300,
+    "y": 180,
+    "wires": [
+      [
+        "m7s-sub"
+      ]
+    ]
+  },
+  {
+    "id": "m7s-sub",
+    "type": "function",
+    "z": "m7s-tab",
+    "name": "subscription-setup (nodeId dal context)",
+    "func": "// subscription-setup (spec §5, §4.3) — costruisce la subscription OPC UA a runtime.\n//\n// PLACEHOLDER (AC-M7-4): nessun NodeId nei flow. I nodeId sono risolti a\n// runtime dal mapping loader (flow context \"m7.tagMapping\"):\n//   - trigger: machine.data_ready + machine.cycle_counter  (logica §4.3:\n//     trigger = DataReady || CycleCounter; CycleCounter è la fonte di verità,\n//     DataReady solo reattività — il pulse di 10 ms può andare perso, §4.1);\n//   - blocco : valve01.* (13 tag) — i valori arrivano via subscription e\n//     restano nello store del context per la lettura blocco (§4.3 passo 4).\n// Se il mapping non è nel context (loader no-op) NON si sottoscrive nulla.\nvar mapping = flow.get('m7.tagMapping');\nif (!mapping || mapping.length === 0) {\n    node.warn('[subscribe] mapping non disponibile nel context — subscription NON creata ' +\n        '(no-op); verificare il mapping loader (/data/tag-mapping.js)');\n    node.status({ fill: 'red', shape: 'ring', text: 'subscribe: SKIP (no mapping)' });\n    return null;\n}\nvar triggers = [];\nvar block = [];\nmapping.forEach(function (e) {\n    if (e.logical_name === 'machine.data_ready' || e.logical_name === 'machine.cycle_counter') {\n        triggers.push({ nodeId: e.node_id });\n    } else if (e.logical_name && e.logical_name.indexOf('valve01.') === 0) {\n        block.push({ nodeId: e.node_id });\n    }\n});\nif (triggers.length === 0 || block.length === 0) {\n    node.warn('[subscribe] mapping incompleto: trigger=' + triggers.length +\n        ' block=' + block.length + ' — subscription NON creata');\n    return null;\n}\nnode.log('[subscribe] subscription: ' + triggers.length + ' trigger (DataReady, CycleCounter) + ' +\n    block.length + ' tag blocco valve01.* (nodeId dal mapping, mai hard-coded)');\nnode.status({ fill: 'blue', shape: 'dot', text: 'subscribe: ' + (triggers.length + block.length) + ' items' });\nvar out = [];\n// NB (deviazione collaudo M7): il msg deletesubscription del watchdog è stato\n// RIMOSSO — la palette node-red-contrib-opcua 0.2.354 (unica disponibile in\n// questo ambiente) dispaccia sull'action config del client ignorando msg.action:\n// il msg finiva nel path single-item con topic 'subscription' → nodeId invalido →\n// eccezione non catturata → crash del processo ogni ~30 s. Restano i re-subscribe\n// 'multiple' (duplicano gli item sulla stessa subscription: dedup watermark ok);\n// azione M8: palette 2.x o action native (vedi work/m7_acceptance_report.md §4).\nout.push({ topic: 'multiple', payload: triggers });\nout.push({ topic: 'multiple', payload: block });\nreturn [out];",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 500,
+    "y": 180,
+    "wires": [
+      [
+        "m7s-client"
+      ]
+    ]
+  },
+  {
+    "id": "m7s-endpoint",
+    "type": "OpcUa-Endpoint",
+    "name": "plcsim filler01 (M6)",
+    "endpoint": "opc.tcp://host.docker.internal:4840",
+    "secpol": "None",
+    "secmode": "None",
+    "none": true,
+    "login": false,
+    "usercert": false,
+    "usercertificate": "",
+    "userprivatekey": ""
+  },
+  {
+    "id": "m7s-client",
+    "type": "OpcUa-Client",
+    "z": "m7s-tab",
+    "endpoint": "m7s-endpoint",
+    "action": "subscribe",
+    "deadbandtype": "a",
+    "deadbandvalue": 1,
+    "time": 0.1,
+    "timeUnit": "s",
+    "certificate": "n",
+    "localfile": "",
+    "localkeyfile": "",
+    "securitymode": "None",
+    "securitypolicy": "None",
+    "useTransport": false,
+    "maxChunkCount": 1,
+    "maxMessageSize": 8192,
+    "receiveBufferSize": 8192,
+    "sendBufferSize": 8192,
+    "setstatusandtime": true,
+    "keepsessionalive": true,
+    "name": "OPC UA client — opc.tcp://localhost:4840 (subscription dal mapping, mai hard-coded)",
+    "x": 740,
+    "y": 180,
+    "wires": [
+      [
+        "m7s-wm"
+      ],
+      [
+        "m7s-dbg-status"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "m7s-wm",
+    "type": "function",
+    "z": "m7s-tab",
+    "name": "watermark-acquisition",
+    "func": "// watermark-acquisition (spec M7 §4.3 — modello watermark, niente ack server).\n// Ingresso: notifiche di subscription dal client OPC UA (output 0, group\n// \"multiple\"): msg.topic = node_id sottoscritto; msg.payload = DataValue\n// {value:{value,dataType}, statusCode, sourceTimestamp, serverTimestamp}\n// (timestamp in ms epoch o Date; statusCode.value 0 = Good).\n// Ogni notifica aggiorna lo store dei tag nel context (in-memory); le notifiche\n// su machine.data_ready | machine.cycle_counter attivano il check watermark:\n//   1) init: alla prima notifica watermark = CycleCounter corrente (nessun backfill)\n//   2) cc <= watermark -> ignora (nessun duplicato)\n//   3) cc < watermark  -> epoch reset (server riavviato): watermark = cc + log\n//   4) cc > watermark  -> nuova chiusura ciclo: burst (delta>1) loggato (metrica\n//      §89), lettura blocco 13 tag valve01.* via mapping dal context, aggiornamento\n//      watermark, emissione al builder.\n// Nessuna logica di business: solo confronto di contatori e letture (spec §2.3).\nvar mapping = flow.get('m7.tagMapping');\nvar index = flow.get('m7.nodeIndex');\nif (!mapping || !index) {\n    node.warn('[watermark] mapping assente nel context — skip');\n    return null;\n}\nvar logical = index[msg.topic];\nif (!logical) {\n    node.warn('[watermark] nodeId non presente nel mapping: ' + msg.topic);\n    return null;\n}\n// --- estrazione valore + qualità OPC UA + ServerTimestamp dalla DataValue ---\nvar dv = msg.payload || {};\nvar sc = dv.statusCode;\nvar good = true;\nif (sc !== undefined && sc !== null) {\n    good = (typeof sc.value === 'number') ? (sc.value === 0) : true; // 0x00000000 = Good\n}\nvar raw = null;\nif (dv.value !== undefined && dv.value !== null) {\n    raw = (typeof dv.value === 'object' && 'value' in dv.value) ? dv.value.value : dv.value;\n}\nvar val = null;\nif (good) {\n    try {\n        // Int64 da node-opcua legacy (palette 0.2.x): valore come array [high, low]\n        // — combinazione in numero (deviazione collaudo M7, .scratch/m6/issues/02-host-bind.md).\n        if (Array.isArray(raw) && raw.length === 2) { val = raw[0] * 4294967296 + raw[1]; }\n        else { val = (typeof raw === 'bigint') ? Number(raw) : raw; }\n    }\n    catch (e) { val = null; }\n}\nvar serverMs = null;\nvar st = dv.serverTimestamp;\nif (st instanceof Date) { serverMs = st.getTime(); }\nelse if (typeof st === 'number') { serverMs = st; }\nelse if (st) { try { serverMs = new Date(st).getTime(); } catch (e) { serverMs = null; } }\n\nvar store = flow.get('m7.tagStore') || {};\nstore[logical] = { v: val, ts: serverMs, good: good };\nflow.set('m7.tagStore', store);\n\n// --- trigger §4.3: DataReady || CycleCounter ---\nif (logical !== 'machine.data_ready' && logical !== 'machine.cycle_counter') {\n    return null; // aggiornamento di un tag di blocco: solo store\n}\nvar ccEntry = store['machine.cycle_counter'];\nif (!ccEntry || ccEntry.v === null || ccEntry.v === undefined) {\n    return null; // CycleCounter non ancora osservato: niente check\n}\nvar cc = ccEntry.v;\nvar wm = flow.get('m7.watermark');\n\nif (wm === null || wm === undefined) {\n    // 1) init: nessun backfill — watermark = CycleCounter corrente\n    flow.set('m7.watermark', cc);\n    flow.set('m7.initCc', cc);\n    node.log('[watermark] init: watermark = CycleCounter ' + cc +\n        ' (nessun backfill dei cicli chiusi durante il down)');\n    node.status({ fill: 'green', shape: 'dot', text: 'watermark init: ' + cc });\n    return null;\n}\nif (cc < wm) {\n    // 3) epoch reset: server riavviato (contatori ripartono da 0)\n    flow.set('m7.watermark', cc);\n    node.warn('[watermark] epoch reset: CycleCounter ' + cc + ' < watermark ' + wm +\n        ' (server riavviato) — nuovo epoch, watermark = ' + cc);\n    node.status({ fill: 'yellow', shape: 'ring', text: 'epoch reset: ' + cc });\n    return null;\n}\nif (cc > wm) {\n    // 4) nuova chiusura ciclo\n    var gaps = cc - wm - 1;\n    if (gaps > 0) {\n        // burst (limite documentato §4.3): blocchi intermedi non più leggibili —\n        // si pubblica l'ultimo blocco leggibile e si LOGGA il gap (metrica §89).\n        node.warn('[watermark] GAP: ' + gaps + ' ciclo/i chiusi tra watermark ' + wm +\n            ' e CycleCounter ' + cc + ' non più leggibili — pubblicato ' +\n            \"l'ultimo blocco leggibile (spec §4.3, metrica §89)\");\n    }\n    // lettura blocco: 13 tag valve01.* via mapping dal context (spec §4.3 passo 4)\n    var block = {};\n    var sourceTs = null;\n    mapping.forEach(function (e) {\n        if (e.logical_name && e.logical_name.indexOf('valve01.') === 0) {\n            var s = store[e.logical_name];\n            block[e.logical_name] = (s && s.good) ? s.v : null;\n            if (s && s.ts !== null && s.ts !== undefined) {\n                if (sourceTs === null || s.ts > sourceTs) { sourceTs = s.ts; }\n            }\n        }\n    });\n    flow.set('m7.watermark', cc);\n    node.status({ fill: 'green', shape: 'dot', text: 'cycle ' + cc });\n    return { payload: { cycleCounter: cc, block: block, sourceTs: sourceTs } };\n}\n// 2) cc === watermark: ignora (nessun duplicato)\nreturn null;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 960,
+    "y": 180,
+    "wires": [
+      [
+        "m7s-builder"
+      ]
+    ]
+  },
+  {
+    "id": "m7s-builder",
+    "type": "function",
+    "z": "m7s-tab",
+    "name": "builder-envelope v1.0",
+    "func": "// builder-envelope (spec M7 §4.2): costruisce l'envelope JSON v1.0 ESATTAMENTE\n// conforme a edge/schemas/envelope-v1.json. Nessuna logica di business: solo\n// normalizzazione e impacchettamento (spec §2.3).\n// Ingresso: { payload: { cycleCounter, block, sourceTs } } dal watermark.\nvar p = msg.payload || {};\nvar block = p.block || {};\nvar cc = p.cycleCounter;\nvar sourceTsMs = p.sourceTs; // ServerTimestamp del blocco (ms epoch o Date) o null\n\n// event_id: uuid v4 — crypto.randomUUID se disponibile, fallback v4 timestamp-based.\nvar eventId = null;\ntry { eventId = crypto.randomUUID(); } catch (e) { eventId = null; }\nif (!eventId) {\n    eventId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {\n        var r = Math.random() * 16 | 0;\n        var v = (c === 'x') ? r : ((r & 0x3) | 0x8);\n        return v.toString(16);\n    });\n}\n\n// event_ts: ISO8601 UTC, orologio edge (Node-RED) all'arrivo del dato (§4.2).\nvar eventTs = new Date().toISOString();\n// source_ts: ServerTimestamp del blocco Valve01 se disponibile (≈ chiusura\n// ciclo, spec §10 Q3), fallback event_ts.\nvar sourceTs = eventTs;\nif (sourceTsMs !== null && sourceTsMs !== undefined) {\n    try {\n        var d = (sourceTsMs instanceof Date) ? sourceTsMs : new Date(sourceTsMs);\n        if (!isNaN(d.getTime())) { sourceTs = d.toISOString(); }\n    } catch (e) { /* fallback: event_ts */ }\n}\n\n// valve_id: derivata dal mapping (gruppo valveNN, §4.2) — in M7 sempre 1.\nvar valveId = 1;\nvar mapping = flow.get('m7.tagMapping') || [];\nvar valveEntry = null;\nmapping.forEach(function (e) {\n    if (!valveEntry && e.logical_name && e.logical_name.indexOf('valve') === 0) {\n        valveEntry = e.logical_name;\n    }\n});\nvar m = valveEntry ? /^valve(\\d+)/.exec(valveEntry) : null;\nif (m) { valveId = parseInt(m[1], 10); }\n// Prefisso del gruppo blocco (es. valve01): il blocco dal watermark è indicizzato\n// per logical_name del mapping (prefisso valveNN., §4.4); le chiavi data.*\n// dell'envelope v1.0 sono le chiavi SENZA prefisso (schema envelope-v1.json,\n// DATA_KEYS di parity_check) — si estrae la parte dopo il prefisso.\nvar prefix = 'valve' + (valveId < 10 ? '0' + valveId : valveId);\n\n// data.* — 15 campi del contratto (chiavi corte, schema v1.2 M9).\n// Tag non leggibile (qualità OPC UA cattiva, valore mancante) => null e\n// quality.valid=false, completeness='partial' (policy T6, nessun ciclo sparisce).\nvar DATA_KEYS = ['filling_time_ms', 'tail_time_ms', 'tail_pulse', 'pulse_count',\n    'target', 'delta_pulse', 'filling_step_out', 'filling_ok',\n    'fill_quality_ok', 'sequence_ok', 'sample_valid', 'diagnostic_status',\n    'close_reason', 'position_limit', 'filling_overtime'];\nvar data = {};\nvar complete = true;\nDATA_KEYS.forEach(function (k) {\n    var v = block[prefix + '.' + k];\n    if (v === undefined || v === null) {\n        data[k] = null;\n        complete = false;\n    } else {\n        try { data[k] = (typeof v === 'bigint') ? Number(v) : v; }\n        catch (e) { data[k] = null; complete = false; }\n    }\n});\n\n// cycle_id = Valve01.LastCycleId (Int64, identità del ciclo, §4.1); fallback:\n// CycleCounter corrente (lockstep M6) con log — il record resta schema-valido.\nvar cycleId = block[prefix + '.last_cycle_id'];\nif (cycleId === undefined || cycleId === null) {\n    cycleId = cc;\n    complete = false;\n    node.warn('[builder] LastCycleId non leggibile: cycle_id = CycleCounter ' + cc +\n        ' (fallback, lockstep spec §4.1)');\n}\ntry {\n    // Int64 da node-opcua legacy (palette 0.2.x): array [high, low] — combinazione\n    // in numero (deviazione collaudo M7, .scratch/m6/issues/02-host-bind.md).\n    if (Array.isArray(cycleId) && cycleId.length === 2) { cycleId = cycleId[0] * 4294967296 + cycleId[1]; }\n    else { cycleId = Number(cycleId); }\n} catch (e) { cycleId = 0; complete = false; }\n\nvar env = {\n    schema_version: '1.2',\n    event_id: eventId,\n    event_type: 'valve_cycle',\n    event_ts: eventTs,\n    source_ts: sourceTs,\n    machine_id: 'filler01',\n    cycle_id: cycleId,\n    valve_id: valveId,\n    data: data,\n    quality: { valid: complete, completeness: complete ? 'complete' : 'partial' }\n};\nnode.status({ fill: 'green', shape: 'dot', text: 'env ' + env.cycle_id });\nmsg.payload = env;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [{"var": "crypto", "module": "crypto"}],
+    "x": 1180,
+    "y": 180,
+    "wires": [
+      [
+        "m7s-append",
+        "m8s-mqtt-out"
+      ]
+    ]
+  },
+  {
+    "id": "m7s-append",
+    "type": "function",
+    "z": "m7s-tab",
+    "name": "test-sink: append out.jsonl",
+    "func": "// test-sink (spec §5): append dell'envelope in JSON compatto (una riga per\n// record) su /data/out/out.jsonl — mount host-side: edge/out/out.jsonl\n// (edge/docker-compose.yml). Variante di deploy per il collaudo (T1/T3-T6).\nvar OUT_FILE = '/data/out/out.jsonl';\nvar record = msg.payload;\nif (!record) {\n    node.warn('[test-sink] nessun envelope in msg.payload — skip');\n    return null;\n}\ntry {\n    fs.appendFileSync(OUT_FILE, JSON.stringify(record) + '\\n', { encoding: 'utf8', flag: 'a', mode: 0o644 });\n    node.status({ fill: 'green', shape: 'dot', text: 'appended ' + record.cycle_id });\n    node.log('[test-sink] append ok: cycle_id=' + record.cycle_id + ' -> ' + OUT_FILE);\n} catch (err) {\n    node.error('[test-sink] append FALLITO: ' + err.message + ' (verificare il mount ' +\n        './out:/data/out nel docker-compose.yml)');\n    node.status({ fill: 'red', shape: 'ring', text: 'append error' });\n}\nreturn null;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [{"var": "fs", "module": "fs"}],
+    "x": 1420,
+    "y": 180,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "m7s-dbg-status",
+    "type": "debug",
+    "z": "m7s-tab",
+    "name": "client status (out 1)",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 960,
+    "y": 60,
+    "wires": []
+  },
+  {
+    "id": "m8s-mqtt-out",
+    "type": "mqtt out",
+    "z": "m7s-tab",
+    "name": "MQTT publish — plant/filler01/telemetry/valve (M8)",
+    "topic": "plant/filler01/telemetry/valve",
+    "qos": "1",
+    "retain": "false",
+    "broker": "m8-broker",
+    "x": 1650,
+    "y": 180,
+    "wires": []
+  },
+  {
+    "id": "m8-broker",
+    "type": "mqtt-broker",
+    "name": "mosquitto (M8)",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "",
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true
+  }
+]

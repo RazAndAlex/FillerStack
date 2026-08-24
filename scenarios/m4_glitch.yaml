@@ -1,0 +1,18 @@
+# Scenario M4 — flowmeter glitch su valve12 (severità = tasso di scan spuri:
+# +1 impulso spurio per scan spuri sul canale osservabile, volume_carry
+# intatto). severity 0.05 -> PC ↑, chiusura target anticipata → ΔFT ≈ −8 ms;
+# spuri in coda spazzano il SilenceTimer → TT/TP ↑ (direzioni vincolanti);
+# il backstop Flowmeter (FLOWMETER_BACKSTOP_MS = 1000) limita gli spuri
+# post-close → nessun livelock (TT max ≈ backstop + silence = 1150 ms).
+scenario_id: 45
+name: "flowmeter glitch valve12"
+seed: null
+faults:
+  - fault_type: flowmeter_glitch
+    scope: local
+    valve_id: 12
+    severity: 0.05
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200

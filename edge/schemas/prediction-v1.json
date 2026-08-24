@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:plcsim:schemas:prediction-v1",
+  "title": "Prediction record v1 — ML inference online (M9)",
+  "description": "Record di prediction prodotto dal consumer inference (pipeline/inference.py, M9/ADR-0020) per ogni (valvola, finestra, predizione). Provenienza completa del modello: model_version + feature_schema_version obbligatori (tracciabilità, contesto §47/§80).",
+  "$comment": "Lo schema_version è '1.0' NELLO SPAZIO DELLE PREDICTION (indipendente dall'envelope raw v1.0/v1.1/v1.2/v1.3). anomaly_score separa la PREDIZIONE dalla DECISIONE (isteresi/cooldown/alert a M10, contesto §67-§68). format (uuid, date-time) è ASSERTION solo con FormatChecker — pipeline/prediction_schema.py lo registra esplicitamente (stdlib date-time, nessuna dipendenza opzionale).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "prediction_id",
+    "model_version",
+    "feature_schema_version",
+    "prediction_ts",
+    "machine_id",
+    "valve_id",
+    "window_idx",
+    "window_end_cycle_id",
+    "predicted_label",
+    "anomaly_score",
+    "probabilities",
+    "feature_fingerprint"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "description": "Versione dello schema prediction (spazio prediction, indipendente dall'envelope)."
+    },
+    "prediction_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "uuid v4 univoco per record di prediction (base dedup/audit)."
+    },
+    "model_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Versione del model artifact (da sidecar model.joblib.json); obbligatoria — niente prediction senza provenienza del modello."
+    },
+    "feature_schema_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Versione dello schema feature (riferita a work/ml-feature-schema.md ML-F1)."
+    },
+    "prediction_ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp di inferenza (ISO8601 UTC)."
+    },
+    "machine_id": {
+      "const": "filler01",
+      "description": "Coerente con l'oggetto Filler01 del namespace M6 / topic MQTT."
+    },
+    "valve_id": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 35,
+      "description": "Valvola predetta (contratto 1-35)."
+    },
+    "window_idx": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Indice finestra (window_idx = (cycle_id-1)//50, da window_cycles ML-F1)."
+    },
+    "window_end_cycle_id": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Ultimo ciclo della finestra (last_cycle_id)."
+    },
+    "predicted_label": {
+      "enum": ["healthy", "restriction", "closing_delay", "opening_delay", "pressure_instability", "flowmeter_dropout", "flowmeter_glitch"],
+      "description": "Classe predetta (healthy + 6 fault type, work/ml-feature-schema.md §3)."
+    },
+    "anomaly_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "1 − P(healthy): score di anomalia (maggiore = più anomalo)."
+    },
+    "probabilities": {
+      "type": "object",
+      "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 },
+      "description": "Probabilità per classe (chiavi = classi note al fit, allineate a classes_ del sidecar)."
+    },
+    "feature_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "sha256 dei 43 feature (input dell'inferenza), tracciabilità input→output per il debug."
+    }
+  }
+}

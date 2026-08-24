@@ -1,0 +1,8 @@
+# Scenario sano M4 — baseline senza fault (percorso sano bit-identico
+# a M1/M2/M3: nessun fault flowmeter dichiarato -> il wrapper per-scan
+# NON viene installato, zero draw dallo stream sensori; scenario_id 41).
+# seed: null -> seed master del run (--seed).
+scenario_id: 41
+name: "baseline sana M4"
+seed: null
+faults: []

@@ -1,0 +1,94 @@
+# Scenario ML validation (D-W1, piano ML §3.1) — tutti i 6 tipi di fault,
+# valvole TERZE rispetto a train/test (held-out per classe), severità nel
+# range train (interpolazione, §1.3.7), onset variati.
+# pressure_instability su G4=[24..29] (MAI G1/G3: contengono valve8/20, ML-F4).
+# Nessun overlap local+group: i local (4,7,10,11,0,31,13,21,23,32) sono tutti
+# fuori da G4; valve8 e valve20 MAI portatrici.
+# seed null -> il seed del run viene da --seed (ADR-0013).
+scenario_id: 63
+name: "ML validation — 6 classi, 10 valvole terze + gruppo G4"
+seed: null
+faults:
+  - fault_type: pressure_instability
+    scope: group
+    group_id: 4
+    severity: 0.40
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 300
+  - fault_type: restriction
+    scope: local
+    valve_id: 4
+    severity: 0.06
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200
+  - fault_type: restriction
+    scope: local
+    valve_id: 7
+    severity: 0.09
+    onset:
+      mode: abrupt
+      start_cycle: 5000
+  - fault_type: closing_delay
+    scope: local
+    valve_id: 10
+    severity: 60
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200
+  - fault_type: closing_delay
+    scope: local
+    valve_id: 11
+    severity: 140
+    onset:
+      mode: abrupt
+      start_cycle: 12000
+  - fault_type: opening_delay
+    scope: local
+    valve_id: 0
+    severity: 50
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200
+  - fault_type: opening_delay
+    scope: local
+    valve_id: 31
+    severity: 110
+    onset:
+      mode: abrupt
+      start_cycle: 5000
+  - fault_type: flowmeter_dropout
+    scope: local
+    valve_id: 13
+    severity: 0.20
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200
+  - fault_type: flowmeter_dropout
+    scope: local
+    valve_id: 21
+    severity: 0.28
+    onset:
+      mode: abrupt
+      start_cycle: 5000
+  - fault_type: flowmeter_glitch
+    scope: local
+    valve_id: 23
+    severity: 0.08
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200
+  - fault_type: flowmeter_glitch
+    scope: local
+    valve_id: 32
+    severity: 0.12
+    onset:
+      mode: abrupt
+      start_cycle: 5000

@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:plcsim:schemas:envelope-v1.1",
+  "title": "Envelope JSON v1.1 — stored consumer (M8)",
+  "description": "Envelope dati comune (Proposte §17) per la pipeline IIoT: formato STORED del raw Parquet M8 (spec §5). Derivato dalla v1.0 (wire edge, immutata) con l'aggiunta di ingest_ts REQUIRED, iniettato dal consumer al momento dell'ingestione. Il consumer interpreta il record tramite schema_version (§58).",
+  "$comment": "Scelta $schema: JSON Schema draft 2020-12 (supporto pieno in jsonschema>=4.18; il format 'uuid' è formalizzato in questa draft). NB: format (uuid, date-time) è una ASSERTION solo se il validatore usa FormatChecker — pipeline/validator.py lo fa (issue M8-02; spec §8 T2). v1.1 = formato STORED del raw Parquet M8 (spec §5): 'ingest_ts' (timestamp di ingestione del CONSUMER) è REQUIRED e viene iniettato dal consumer al momento dell'ingestione — mai generato dall'edge (§58); il bump di schema_version a '1.1' è contestuale all'iniezione (spec §5.3). Un record wire con 'ingest_ts' è NON conforme e viene rifiutato a monte dal validatore v1.0 (campo riservato in v1.0, additionalProperties:false). 'recipe_id' (§17) NON è incluso in v1.1 (nessun tag ricetta nel namespace M6): aggiunta prevista in v1.2 — additionalProperties:false lo rifiuta anche in v1.1. Policy partial (calibration T6, spec §6): un campo data.* non leggibile (qualità OPC UA cattiva, node_id inesistente) è emesso come null — REQUIRED resta sui 12 campi (un campo ASSENTE è ancora rifiutato), il record resta valido, quality.valid=false, completeness='partial' (nessun ciclo sparisce dalla sequenza, spec §4.2). Valutazione minima da M8: determinismo record (event_id univoco, dedup §18).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "event_type",
+    "event_ts",
+    "source_ts",
+    "ingest_ts",
+    "machine_id",
+    "cycle_id",
+    "valve_id",
+    "data",
+    "quality"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.1",
+      "description": "Versione dello schema dell'envelope (§58): il consumer interpreta il record con questa versione. Nessuna modifica retroattiva."
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "uuid v4 generato dall'edge all'acquisizione; univoco per record, base della dedup M8 (§18)."
+    },
+    "event_type": {
+      "const": "valve_cycle",
+      "description": "v1: un solo tipo evento (chiusura ciclo valvola)."
+    },
+    "event_ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 UTC — orologio edge (Node-RED) all'arrivo del dato."
+    },
+    "source_ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 UTC — dal blocco OPC UA quando disponibile (ServerTimestamp), fallback: event_ts."
+    },
+    "ingest_ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "timestamp di ingestione del consumer; mai generato dall'edge; wire con ingest_ts rifiutato"
+    },
+    "machine_id": {
+      "const": "filler01",
+      "description": "Costante di configurazione, coerente con l'oggetto Filler01 del namespace M6."
+    },
+    "cycle_id": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Int64 — Valve01.LastCycleId: identità del ciclo (cycle_id globale del simulatore)."
+    },
+    "valve_id": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 35,
+      "description": "Int32 1-35 — derivata dal mapping (gruppo valveNN); in M7 sempre 1 (solo Valve01 esposta)."
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "12 campi del contratto; chiavi = logical_name del mapping (convenzione spec §4.4), nomi con unità (§90). Ogni campo ammette null: tag non leggibile (qualità OPC UA cattiva) => quality.valid=false, completeness='partial' (policy T6, calibration); i campi ASSENTI restano rifiutati (required).",
+      "required": [
+        "filling_time_ms",
+        "tail_time_ms",
+        "tail_pulse",
+        "pulse_count",
+        "target",
+        "delta_pulse",
+        "filling_step_out",
+        "filling_ok",
+        "fill_quality_ok",
+        "sequence_ok",
+        "sample_valid",
+        "diagnostic_status"
+      ],
+      "properties": {
+        "filling_time_ms": { "type": ["integer", "null"], "minimum": 0, "description": "FT [ms]" },
+        "tail_time_ms": { "type": ["integer", "null"], "minimum": 0, "description": "TT [ms]" },
+        "tail_pulse": { "type": ["integer", "null"], "minimum": 0, "description": "TP [impulsi]" },
+        "pulse_count": { "type": ["integer", "null"], "minimum": 0, "description": "PC [impulsi]" },
+        "target": { "type": ["integer", "null"], "minimum": 0, "description": "Target/K-Target [impulsi] (2500 per 250 ml)" },
+        "delta_pulse": { "type": ["integer", "null"], "description": "target − pulse_count [impulsi]; negativo = sovra-riempimento." },
+        "filling_step_out": { "type": ["integer", "null"], "minimum": 0, "maximum": 26, "description": "Slot della giostra a fine riempimento (26 slot utili)." },
+        "filling_ok": { "type": ["boolean", "null"] },
+        "fill_quality_ok": { "type": ["boolean", "null"] },
+        "sequence_ok": { "type": ["boolean", "null"] },
+        "sample_valid": { "type": ["boolean", "null"] },
+        "diagnostic_status": { "anyOf": [ { "enum": ["NORMAL", "SUSPECT"] }, { "type": "null" } ], "description": "Giudizio sul comportamento della valvola (contratto M6, validation.py): NORMAL | SUSPECT." }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Semantica v1: happy path valid=true, completeness='complete'. Tag del blocco non leggibile => record emesso comunque con valid=false, completeness='partial' (nessun ciclo sparisce dalla sequenza). Policy esatta congelata in calibration (spec §6, T6).",
+      "required": ["valid", "completeness"],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "completeness": { "enum": ["complete", "partial"] }
+      }
+    }
+  }
+}

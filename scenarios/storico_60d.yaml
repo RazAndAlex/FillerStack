@@ -1,0 +1,83 @@
+# Storico di 60 giorni — la run che fa da PASSATO alla dashboard.
+#
+# Perche' esiste: fino a oggi il database ha contenuto un giorno solo. Con un
+# giorno solo la baseline sana non esiste (serve un periodo dichiarato sano, e
+# li' il primo allarme apre dopo 13 minuti), lo storico allarmi e' povero e
+# l'andamento OEE non ha respiro. Questa run copre 60 giorni e comincia sana.
+#
+# ARITMETICA DEI CICLI — le soglie qui sotto sono in cicli DELLA VALVOLA
+# target, non in giorni. Misurato sulla run reale m4_demo_dropout_1d:
+# 17.269 cicli/valvola/giorno (24 h di calendario, ~15,3 h di marcia).
+#   giorno 12 -> 207.228     giorno 38 -> 656.222
+#   giorno 25 -> 431.725     giorno 52 -> 897.988
+#   giorno 60 -> 1.036.140  (fine run)
+#
+# LA FINESTRA SANA: giorni 0-12, cioe' i primi 207.228 cicli per valvola.
+# Nessun fault e' attivo prima di quel punto. La baseline delle fixture usava
+# 86.296 cicli per valvola: qui ce ne sono il doppio abbondante. E' questa la
+# finestra da dichiarare in `machine_state.baseline_window`.
+#
+# CIO' CHE QUESTO SCENARIO NON PUO' FARE, dichiarato invece che aggirato:
+# il motore dei guasti non sa RIPARARE. `severity_at` e' monotona crescente e
+# ogni valvola ammette un solo fault, quindi non esiste "guasto risolto il
+# giorno 30". Gli allarmi CHIUSI che si vedranno nello storico saranno quelli
+# spontanei — escursioni marginali che rientrano da sole, come i 4 chiusi su 6
+# della run di un giorno. Sono veri, non sono riparazioni.
+#
+# valve_id qui e' 0-based (0..34) e diventa la valvola N+1 in operativo:
+#   7 -> valvola 8      20 -> valvola 21      29 -> valvola 30
+scenario_id: 60
+name: "storico 60 giorni — sana 12 gg, poi quattro condizioni distinte"
+seed: 42
+faults:
+
+  # Giorno 12 -> giorno ~14. Degrado lento e meccanico: la valvola 8 si
+  # restringe. Rampa su 40.000 cicli (~2,3 giorni) perche' la dashboard deve
+  # poter mostrare un ANDAMENTO, non un gradino.
+  - fault_type: restriction
+    scope: local
+    valve_id: 7
+    severity: 0.35
+    onset:
+      mode: gradual
+      start_cycle: 207228
+      ramp_cycles: 40000
+
+  # Giorno 25. Rottura improvvisa: la valvola 21 apre in ritardo di 45 ms.
+  # `abrupt` di proposito — e' l'altra faccia del degrado lento, e la pagina
+  # deve distinguerle.
+  - fault_type: opening_delay
+    scope: local
+    valve_id: 20
+    severity: 45
+    onset:
+      mode: abrupt
+      start_cycle: 431725
+
+  # Giorno 38. La condizione DIFFUSA: instabilita' di pressione sul gruppo 2,
+  # cioe' le valvole operative 13-18. E' il caso in cui mandare un tecnico a
+  # smontare una valvola sola sarebbe l'errore diagnostico che la dashboard
+  # esiste per prevenire. I gruppi non si sovrappongono alle tre valvole con
+  # guasto locale (8 sta in G1, 21 in G3, 30 in G4): ogni condizione resta
+  # leggibile separatamente.
+  - fault_type: pressure_instability
+    scope: group
+    group_id: 2
+    severity: 0.30
+    onset:
+      mode: gradual
+      start_cycle: 656222
+      ramp_cycles: 25000
+
+  # Giorno 52 -> fine. Guasto di SENSORE sulla valvola 30: il misuratore
+  # perde scansioni, la fisica non e' toccata. Parte tardi e sta ancora
+  # salendo quando la run finisce: e' il guasto "aperto adesso", quello su cui
+  # la dashboard deve mandare il tecnico oggi.
+  - fault_type: flowmeter_dropout
+    scope: local
+    valve_id: 29
+    severity: 0.30
+    onset:
+      mode: gradual
+      start_cycle: 897988
+      ramp_cycles: 60000

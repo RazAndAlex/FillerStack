@@ -1,0 +1,253 @@
+[
+  {
+    "id": "m7-tab",
+    "type": "tab",
+    "label": "Edge main (M7→M9)",
+    "disabled": false,
+    "info": "Edge integration layer M7→M9: subscribe OPC UA + mapping loader + watermark §4.3 + envelope v1.2 (contratto tag esteso M9)"
+  },
+  {
+    "id": "m7-c1",
+    "type": "comment",
+    "z": "m7-tab",
+    "name": "Edge main — edge integration layer (spec §2.3/§5, M7→M9)",
+    "info": "Solo acquisizione/mappatura/normalizzazione/impacchettamento: NESSUNA logica di business/ML/analytics (spec §2 vincolo 3).\n\nCatena: inject(once) -> mapping-loader -> subscription-setup -> OpcUa-Client -> watermark-acquisition -> builder-envelope -> debug.\nWatchdog re-subscribe (T3): DISATTIVATO — la palette node-red-contrib-opcua\n0.2.354 dispaccia i msg deletesubscription ignorando msg.action (crash del\nprocesso ogni ~30 s, vedi subscription-setup); i re-subscribe 'multiple'\nresidui duplicherebbero solo gli item (dedup watermark ok). Il rientro da\nrestart del server resta affidato al watermark (epoch reset, §4.3).\n\nAC-M7-4: nessun NodeId hard-coded — i node_id sono risolti a runtime dal mapping loader (edge/tag-mapping.js, GENERATO da edge/tag-mapping.yaml).",
+    "x": 120,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "m7-c2",
+    "type": "comment",
+    "z": "m7-tab",
+    "name": "Watermark in-memory (spec §4.3, §10 Q1)",
+    "info": "Niente ack server: watermark nel flow context (in-memory).\n1) init: alla prima notifica LastCycleId di ogni ValveNN watermark = valore corrente (nessun backfill)\n2) valore <= watermark -> ignora (nessun duplicato)\n3) valore < watermark -> epoch reset (server riavviato): nuovo watermark = valore + log\n4) valore > watermark -> nuova chiusura: burst (delta>1) loggato (metrica §89), lettura blocco 16 tag della ValveNN dal mapping, watermark indipendente per valvola.\nsource_ts = ServerTimestamp del blocco (max dei 16 tag) con fallback event_ts (spec §10 Q3).",
+    "x": 640,
+    "y": 40,
+    "wires": []
+  },
+  {
+    "id": "m7-boot",
+    "type": "inject",
+    "z": "m7-tab",
+    "name": "boot: mapping loader + subscription",
+    "topic": "boot",
+    "payload": "",
+    "payloadType": "str",
+    "repeat": "",
+    "crontab": "",
+    "once": true,
+    "onceDelay": 0.1,
+    "x": 110,
+    "y": 180,
+    "wires": [
+      [
+        "m7-loader"
+      ]
+    ]
+  },
+  {
+    "id": "m7-watch",
+    "type": "inject",
+    "z": "m7-tab",
+    "name": "watchdog re-subscribe (T3) — DISATTIVATO (palette 0.2.354)",
+    "topic": "watchdog",
+    "payload": "",
+    "payloadType": "str",
+    "repeat": "0",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "x": 110,
+    "y": 300,
+    "wires": [
+      [
+        "m7-sub"
+      ]
+    ]
+  },
+  {
+    "id": "m7-loader",
+    "type": "function",
+    "z": "m7-tab",
+    "name": "mapping-loader",
+    "func": "// mapping-loader (spec M7 §5, §4.4) — init a ogni deploy/avvio (inject once).\n// Legge /data/tag-mapping.js, artefatto generato dalle costanti del simulatore.\n// I node_id non sono presenti in questo flow: sono risolti a runtime dal mapping.\n// Se il file manca, è invalido o contiene duplicati, l'acquisizione resta no-op.\nvar MAPPING_FILE = '/data/tag-mapping.js';\nvar mapping = null;\ntry {\n    var src = fs.readFileSync(MAPPING_FILE, 'utf8');\n    var marker = src.lastIndexOf('module.exports');\n    var start = src.indexOf('[', marker >= 0 ? marker : 0);\n    var end = src.lastIndexOf(']');\n    if (start < 0 || end <= start) {\n        throw new Error('formato inatteso: nessun array JSON in ' + MAPPING_FILE);\n    }\n    var arrSrc = src.slice(start, end + 1).replace(/,\\\\s*\\\\]\\\\s*$/, ']');\n    mapping = JSON.parse(arrSrc);\n} catch (err) {\n    node.error('[mapping-loader] file non leggibile o mapping non valido: ' + err.message +\n        ' — acquisizione DISATTIVATA (no-op). Rigenerare il mapping con: ' +\n        'python edge/scripts/build_tag_mapping.py --generate');\n    flow.set('m7.tagMapping', null);\n    flow.set('m7.nodeIndex', null);\n    flow.set('m7.valveGroups', null);\n    flow.set('m7.ready', false);\n    node.status({ fill: 'red', shape: 'ring', text: 'mapping: NON caricato' });\n    return null;\n}\nif (!Array.isArray(mapping) || mapping.length === 0) {\n    node.error('[mapping-loader] mapping vuoto o non-array — no-op');\n    flow.set('m7.ready', false);\n    return null;\n}\nvar bad = mapping.filter(function (e) {\n    return !e || !e.logical_name || !e.node_id;\n});\nif (bad.length > 0) {\n    node.error('[mapping-loader] ' + bad.length +\n        ' voce/i senza logical_name/node_id — no-op');\n    flow.set('m7.ready', false);\n    return null;\n}\nvar index = {};\nvar duplicateNodeIds = [];\nmapping.forEach(function (e) {\n    if (index[e.node_id] && index[e.node_id] !== e.logical_name) {\n        duplicateNodeIds.push(e.node_id);\n    }\n    index[e.node_id] = e.logical_name;\n});\nif (duplicateNodeIds.length > 0) {\n    node.error('[mapping-loader] node_id duplicati: ' +\n        duplicateNodeIds.join(', ') + ' — no-op');\n    flow.set('m7.ready', false);\n    return null;\n}\n\n// Raggruppa i tag ValveNN e richiede un LastCycleId per ogni gruppo.\n// Il trigger di una valvola è il suo LastCycleId; nessun tag machine.*\n// identifica quale valvola ha chiuso il ciclo.\nvar valveGroups = {};\nmapping.forEach(function (e) {\n    var match = /^valve(\\d{2})\\.(.+)$/.exec(e.logical_name);\n    if (!match) { return; }\n    var group = 'valve' + match[1];\n    if (!valveGroups[group]) { valveGroups[group] = {}; }\n    valveGroups[group][match[2]] = e;\n});\nvar valveNames = Object.keys(valveGroups).sort();\nvar missingTriggers = valveNames.filter(function (group) {\n    return !valveGroups[group].last_cycle_id;\n});\nif (valveNames.length === 0 || missingTriggers.length > 0) {\n    node.error('[mapping-loader] mapping senza trigger LastCycleId per: ' +\n        (missingTriggers.length ? missingTriggers.join(', ') : 'nessuna valvola') +\n        ' — no-op');\n    flow.set('m7.ready', false);\n    return null;\n}\n\nflow.set('m7.tagMapping', mapping);\nflow.set('m7.nodeIndex', index);\nflow.set('m7.valveGroups', valveGroups);\nflow.set('m7.ready', true);\nflow.set('m7.tagStore', {});\nflow.set('m7.watermarks', {});\nnode.log('[mapping-loader] mapping caricato: ' + mapping.length + ' voci (' +\n    mapping.filter(function (e) { return /^machine\\./.test(e.logical_name); }).length +\n    ' machine + ' + valveNames.length + ' valve groups; ' +\n    valveNames.length + ' LastCycleId triggers) da ' + MAPPING_FILE);\nnode.status({ fill: 'green', shape: 'dot',\n    text: 'mapping: ' + mapping.length + ' voci / ' + valveNames.length + ' valve' });\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [{"var": "fs", "module": "fs"}],
+    "x": 300,
+    "y": 180,
+    "wires": [
+      [
+        "m7-sub"
+      ]
+    ]
+  },
+  {
+    "id": "m7-sub",
+    "type": "function",
+    "z": "m7-tab",
+    "name": "subscription-setup (nodeId dal context)",
+    "func": "// subscription-setup (spec M7 §5, §4.3) — costruisce la subscription a runtime.\n// Tutti i node_id arrivano dal mapping-loader. Ogni ValveNN.LastCycleId è un\n// trigger indipendente: il tag condiviso machine.* non identifica una valvola.\n// Se il mapping non è pronto o manca un trigger per un gruppo, no-op.\nvar mapping = flow.get('m7.tagMapping');\nvar valveGroups = flow.get('m7.valveGroups');\nif (!Array.isArray(mapping) || !valveGroups) {\n    node.warn('[subscribe] mapping non disponibile nel context — subscription NON creata');\n    node.status({ fill: 'red', shape: 'ring', text: 'subscribe: SKIP (no mapping)' });\n    return null;\n}\nvar valveNames = Object.keys(valveGroups).sort();\nvar triggerCount = 0;\nvar subscriptions = [];\nmapping.forEach(function (e) {\n    if (e && e.node_id) {\n        subscriptions.push({ nodeId: e.node_id });\n    }\n    if (e && /^valve\\d{2}\\.last_cycle_id$/.test(e.logical_name)) {\n        triggerCount += 1;\n    }\n});\nif (valveNames.length === 0 || triggerCount !== valveNames.length) {\n    node.error('[subscribe] trigger LastCycleId incompleti: ' + triggerCount +\n        ' per ' + valveNames.length + ' valvole — subscription NON creata');\n    return null;\n}\nflow.set('m7.valveTriggerCount', triggerCount);\nnode.log('[subscribe] subscription: ' + subscriptions.length + ' item dal mapping; ' +\n    triggerCount + ' trigger LastCycleId per ' + valveNames.length + ' valvole');\nnode.status({ fill: 'blue', shape: 'dot',\n    text: 'subscribe: ' + subscriptions.length + ' item / ' + triggerCount + ' trigger' });\nvar out = [];\nout.push({ topic: 'multiple', payload: subscriptions });\nreturn [out];",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 500,
+    "y": 180,
+    "wires": [
+      [
+        "m7-client"
+      ]
+    ]
+  },
+  {
+    "id": "m7-endpoint",
+    "type": "OpcUa-Endpoint",
+    "name": "plcsim filler01 (M6)",
+    "endpoint": "opc.tcp://host.docker.internal:4840",
+    "secpol": "None",
+    "secmode": "None",
+    "none": true,
+    "login": false,
+    "usercert": false,
+    "usercertificate": "",
+    "userprivatekey": ""
+  },
+  {
+    "id": "m7-client",
+    "type": "OpcUa-Client",
+    "z": "m7-tab",
+    "endpoint": "m7-endpoint",
+    "action": "subscribe",
+    "deadbandtype": "a",
+    "deadbandvalue": 1,
+    "time": 0.1,
+    "timeUnit": "s",
+    "certificate": "n",
+    "localfile": "",
+    "localkeyfile": "",
+    "securitymode": "None",
+    "securitypolicy": "None",
+    "useTransport": false,
+    "maxChunkCount": 1,
+    "maxMessageSize": 8192,
+    "receiveBufferSize": 8192,
+    "sendBufferSize": 8192,
+    "setstatusandtime": true,
+    "keepsessionalive": true,
+    "name": "OPC UA client — opc.tcp://localhost:4840 (subscription dal mapping, mai hard-coded)",
+    "x": 740,
+    "y": 180,
+    "wires": [
+      [
+        "m7-wm"
+      ],
+      [
+        "m7-dbg-status"
+      ],
+      []
+    ]
+  },
+  {
+    "id": "m7-wm",
+    "type": "function",
+    "z": "m7-tab",
+    "name": "watermark-acquisition",
+    "func": "// watermark-acquisition (spec M7 §4.3) — un watermark indipendente per valvola.\n// msg.topic è il node_id del mapping; il trigger utile è sempre\n// valveNN.last_cycle_id. Le notifiche degli altri tag aggiornano solo lo store.\nvar mapping = flow.get('m7.tagMapping');\nvar index = flow.get('m7.nodeIndex');\nif (!Array.isArray(mapping) || !index) {\n    node.warn('[watermark] mapping assente nel context — skip');\n    return null;\n}\nvar logical = index[msg.topic];\nif (!logical) {\n    node.warn('[watermark] nodeId non presente nel mapping: ' + msg.topic);\n    return null;\n}\n\nvar dv = msg.payload || {};\nvar sc = dv.statusCode;\nvar good = true;\nif (sc !== undefined && sc !== null) {\n    good = (typeof sc.value === 'number') ? (sc.value === 0) : true;\n}\nvar raw = null;\nif (dv.value !== undefined && dv.value !== null) {\n    raw = (typeof dv.value === 'object' && 'value' in dv.value) ? dv.value.value : dv.value;\n}\nvar val = null;\nif (good) {\n    try {\n        if (Array.isArray(raw) && raw.length === 2) {\n            val = raw[0] * 4294967296 + raw[1];\n        } else {\n            val = (typeof raw === 'bigint') ? Number(raw) : raw;\n        }\n    } catch (e) {\n        val = null;\n    }\n}\nvar serverMs = null;\nvar st = dv.serverTimestamp;\nif (st instanceof Date) { serverMs = st.getTime(); }\nelse if (typeof st === 'number') { serverMs = st; }\nelse if (st) { try { serverMs = new Date(st).getTime(); } catch (e) { serverMs = null; } }\n\nvar store = flow.get('m7.tagStore') || {};\nstore[logical] = { v: val, ts: serverMs, good: good };\nflow.set('m7.tagStore', store);\n\nvar triggerMatch = /^valve(\\d{2})\\.last_cycle_id$/.exec(logical);\nif (!triggerMatch || val === null || val === undefined) {\n    return null;\n}\nvar valveGroup = 'valve' + triggerMatch[1];\nvar cycleId = Number(val);\nif (!isFinite(cycleId)) {\n    node.warn('[watermark] LastCycleId non numerico per ' + valveGroup + ' — skip');\n    return null;\n}\n\nvar watermarks = flow.get('m7.watermarks') || {};\nvar state = watermarks[valveGroup];\nif (!state) {\n    watermarks[valveGroup] = { watermark: cycleId, initCycleId: cycleId };\n    flow.set('m7.watermarks', watermarks);\n    node.log('[watermark] init ' + valveGroup + ': LastCycleId = ' + cycleId +\n        ' (nessun backfill)');\n    node.status({ fill: 'green', shape: 'dot',\n        text: valveGroup + ' init: ' + cycleId });\n    return null;\n}\nvar wm = Number(state.watermark);\nif (cycleId < wm) {\n    watermarks[valveGroup] = { watermark: cycleId, initCycleId: state.initCycleId,\n        epochReset: true };\n    flow.set('m7.watermarks', watermarks);\n    node.warn('[watermark] epoch reset ' + valveGroup + ': LastCycleId ' + cycleId +\n        ' < watermark ' + wm + ' (server riavviato)');\n    node.status({ fill: 'yellow', shape: 'ring',\n        text: valveGroup + ' reset: ' + cycleId });\n    return null;\n}\nif (cycleId === wm) {\n    return null;\n}\n\nvar gaps = cycleId - wm - 1;\nif (gaps > 0) {\n    node.warn('[watermark] GAP ' + valveGroup + ': ' + gaps +\n        ' ciclo/i tra watermark ' + wm + ' e LastCycleId ' + cycleId +\n        ' non più leggibili — pubblicato l’ultimo blocco');\n}\nvar block = {};\nvar sourceTs = null;\nmapping.forEach(function (e) {\n    if (!e.logical_name || e.logical_name.indexOf(valveGroup + '.') !== 0) {\n        return;\n    }\n    var saved = store[e.logical_name];\n    block[e.logical_name] = (saved && saved.good) ? saved.v : null;\n    if (saved && saved.ts !== null && saved.ts !== undefined &&\n        (sourceTs === null || saved.ts > sourceTs)) {\n        sourceTs = saved.ts;\n    }\n});\nwatermarks[valveGroup] = { watermark: cycleId, initCycleId: state.initCycleId };\nflow.set('m7.watermarks', watermarks);\nnode.status({ fill: 'green', shape: 'dot',\n    text: valveGroup + ' cycle ' + cycleId });\nreturn {\n    payload: {\n        cycleCounter: cycleId,\n        cycleId: cycleId,\n        valveId: parseInt(triggerMatch[1], 10),\n        valveGroup: valveGroup,\n        block: block,\n        sourceTs: sourceTs\n    }\n};",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 960,
+    "y": 180,
+    "wires": [
+      [
+        "m7-builder"
+      ]
+    ]
+  },
+  {
+    "id": "m7-builder",
+    "type": "function",
+    "z": "m7-tab",
+    "name": "builder-envelope v1.2",
+    "func": "// builder-envelope (spec M7 §4.2, contratto M9): costruisce l'envelope JSON v1.2.\n// Nessuna logica di business: normalizzazione e impacchettamento.\n// Ingresso: { payload: { cycleId, valveId, valveGroup, block, sourceTs } }.\nvar p = msg.payload || {};\nvar block = p.block || {};\nvar sourceTsMs = p.sourceTs;\n\nvar eventId = null;\ntry { eventId = crypto.randomUUID(); } catch (e) { eventId = null; }\nif (!eventId) {\n    eventId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {\n        var r = Math.random() * 16 | 0;\n        var v = (c === 'x') ? r : ((r & 0x3) | 0x8);\n        return v.toString(16);\n    });\n}\nvar eventTs = new Date().toISOString();\nvar sourceTs = eventTs;\nif (sourceTsMs !== null && sourceTsMs !== undefined) {\n    try {\n        var d = (sourceTsMs instanceof Date) ? sourceTsMs : new Date(sourceTsMs);\n        if (!isNaN(d.getTime())) { sourceTs = d.toISOString(); }\n    } catch (e) { /* fallback: event_ts */ }\n}\n\n// Il gruppo arriva dal trigger LastCycleId. Non si sceglie una valvola fissa.\nvar valveGroup = (typeof p.valveGroup === 'string' &&\n    /^valve\\d{2}$/.test(p.valveGroup)) ? p.valveGroup : null;\nif (!valveGroup) {\n    var blockKeys = Object.keys(block);\n    for (var i = 0; i < blockKeys.length; i += 1) {\n        if (/^valve\\d{2}\\./.test(blockKeys[i])) {\n            valveGroup = blockKeys[i].slice(0, 6);\n            break;\n        }\n    }\n}\nif (!valveGroup) {\n    node.warn('[builder] valveGroup assente — envelope non emesso');\n    return null;\n}\nvar valveMatch = /^valve(\\d{2})$/.exec(valveGroup);\nvar valveId = valveMatch ? parseInt(valveMatch[1], 10) : Number(p.valveId);\nif (!isFinite(valveId)) {\n    node.warn('[builder] valveId non valido per ' + valveGroup);\n    return null;\n}\nvar prefix = valveGroup;\n\n// data.* — i 15 campi del contratto envelope v1.2, senza prefisso valveNN.\nvar DATA_KEYS = ['filling_time_ms', 'tail_time_ms', 'tail_pulse', 'pulse_count',\n    'target', 'delta_pulse', 'filling_step_out', 'filling_ok',\n    'fill_quality_ok', 'sequence_ok', 'sample_valid', 'diagnostic_status',\n    'close_reason', 'position_limit', 'filling_overtime'];\nvar data = {};\nvar complete = true;\nDATA_KEYS.forEach(function (k) {\n    var v = block[prefix + '.' + k];\n    if (v === undefined || v === null) {\n        data[k] = null;\n        complete = false;\n    } else {\n        try { data[k] = (typeof v === 'bigint') ? Number(v) : v; }\n        catch (e) { data[k] = null; complete = false; }\n    }\n});\n\nvar cycleId = block[prefix + '.last_cycle_id'];\nif (cycleId === undefined || cycleId === null) {\n    cycleId = p.cycleId;\n}\nif (cycleId === undefined || cycleId === null) {\n    node.error('[builder] LastCycleId assente per ' + valveGroup +\n        ' — envelope non emesso');\n    return null;\n}\ntry {\n    if (Array.isArray(cycleId) && cycleId.length === 2) {\n        cycleId = cycleId[0] * 4294967296 + cycleId[1];\n    } else {\n        cycleId = Number(cycleId);\n    }\n} catch (e) {\n    node.error('[builder] LastCycleId non convertibile per ' + valveGroup +\n        ' — envelope non emesso');\n    return null;\n}\nif (!isFinite(cycleId)) {\n    node.error('[builder] LastCycleId non numerico per ' + valveGroup +\n        ' — envelope non emesso');\n    return null;\n}\n\nvar env = {\n    schema_version: '1.2',\n    event_id: eventId,\n    event_type: 'valve_cycle',\n    event_ts: eventTs,\n    source_ts: sourceTs,\n    machine_id: 'filler01',\n    cycle_id: cycleId,\n    valve_id: valveId,\n    data: data,\n    quality: { valid: complete, completeness: complete ? 'complete' : 'partial' }\n};\nnode.status({ fill: 'green', shape: 'dot', text: valveGroup + ' env ' + env.cycle_id });\nmsg.payload = env;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [{"var": "crypto", "module": "crypto"}],
+    "x": 1180,
+    "y": 180,
+    "wires": [
+      [
+        "m7-debug",
+        "m8-mqtt-out"
+      ]
+    ]
+  },
+  {
+    "id": "m7-debug",
+    "type": "debug",
+    "z": "m7-tab",
+    "name": "envelope v1.2 (uscita operativa M9)",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1420,
+    "y": 180,
+    "wires": []
+  },
+  {
+    "id": "m7-dbg-status",
+    "type": "debug",
+    "z": "m7-tab",
+    "name": "client status (out 1)",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 960,
+    "y": 60,
+    "wires": []
+  },
+  {
+    "id": "m8-mqtt-out",
+    "type": "mqtt out",
+    "z": "m7-tab",
+    "name": "MQTT publish — plant/filler01/telemetry/valve (M8)",
+    "topic": "plant/filler01/telemetry/valve",
+    "qos": "1",
+    "retain": "false",
+    "broker": "m8-broker",
+    "x": 1650,
+    "y": 180,
+    "wires": []
+  },
+  {
+    "id": "m8-broker",
+    "type": "mqtt-broker",
+    "name": "mosquitto (M8)",
+    "broker": "mosquitto",
+    "port": "1883",
+    "clientid": "",
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true
+  }
+]

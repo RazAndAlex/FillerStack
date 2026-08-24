@@ -1,0 +1,51 @@
+# Scenario ML test B (D-W1, piano ML §3.1) — come train_b (pressure + flowmeter)
+# ma con valvole/gruppo HELD-OUT: pressure_instability su G0=[0..5] (train usa
+# G2/G5, val G4), dropout {25,29}, glitch {26,28} (mai portatrici in train).
+# G0 NON contiene valve8/20 (ML-F4); nessun overlap local+group: i local
+# (25,29,26,28) sono fuori da G0.
+# Severità nel range train (interpolazione, §1.3.7): pressure train
+# [0.30,0.45] -> test 0.35; dropout [0.15,0.30] -> {0.22,0.28};
+# glitch [0.05,0.15] -> {0.08,0.12}.
+# seed null -> il seed del run viene da --seed (ADR-0013).
+scenario_id: 65
+name: "ML test B — pressure G0, dropout/glitch, valvole held-out"
+seed: null
+faults:
+  - fault_type: pressure_instability
+    scope: group
+    group_id: 0
+    severity: 0.35
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 300
+  - fault_type: flowmeter_dropout
+    scope: local
+    valve_id: 25
+    severity: 0.22
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200
+  - fault_type: flowmeter_dropout
+    scope: local
+    valve_id: 29
+    severity: 0.28
+    onset:
+      mode: abrupt
+      start_cycle: 5000
+  - fault_type: flowmeter_glitch
+    scope: local
+    valve_id: 26
+    severity: 0.08
+    onset:
+      mode: gradual
+      start_cycle: 100
+      ramp_cycles: 200
+  - fault_type: flowmeter_glitch
+    scope: local
+    valve_id: 28
+    severity: 0.12
+    onset:
+      mode: abrupt
+      start_cycle: 5000

@@ -1,0 +1,7 @@
+# Scenario sano M3 — baseline senza fault (equiv M2/M1: percorso sano
+# bit-identico, scenario_id 50).
+# seed: null → seed master del run (--seed).
+scenario_id: 50
+name: "baseline sana M3 (equiv M2/M1)"
+seed: null
+faults: []

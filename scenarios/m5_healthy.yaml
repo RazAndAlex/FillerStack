@@ -1,0 +1,10 @@
+# Scenario sano M5 — baseline senza fault (percorso sano bit-identico
+# a M1/M2/M3/M4: nessun fault flowmeter dichiarato -> il wrapper per-scan
+# NON viene installato, zero draw dallo stream sensori; scenario_id 61).
+# Unica differenza vs m4_healthy.yaml: scenario_id (41 -> 61) e name
+# (bit-identità compressa M5 ≡ M4 verificata in tests/test_m5_integration.py).
+# seed: null -> seed master del run (--seed).
+scenario_id: 61
+name: "baseline sana M5"
+seed: null
+faults: []

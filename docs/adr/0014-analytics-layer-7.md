@@ -1,0 +1,11 @@
+# Analytics: layer 7 post-processing READ-ONLY sopra la telemetria
+
+L'analytics (feature engineering, layer 7) è un layer **post-processing READ-ONLY** su `valve_cycles.parquet` + `events.parquet`: zero modifiche al percorso di simulazione → bit-identità healthy per costruzione (poi verificata, protocollo §4). La **baseline healthy è congelata alla costruzione** (fit su run healthy 1-day stessa generazione, path `work/m5_healthy_1d`, scenario_id 61, seed 42): mai auto-aggiornante durante il degrado, che verrebbe mascherato. Metriche: **top-10** (10 valvole più stabili per σ_FT, tie-break σ_FT ascendente poi machine_code); **XmR** UCL/LCL = x̄ ± 2,66·MR̄ sulle medie di finestra; **soglie fisse FT≤2000/TT≤600 = DIAGNOSTICHE** (flag per-ciclo), mentre gli **alert FT/TT sono rate-based** (rate di finestra > rate sano + margine) perché la coda sana FT>2000 esiste (max 2130, valve12 ~15,7% dei cicli). **Alert a doppia semantica**: (a) aggregato — media top-10 +6% (deriva macchina); (b) per-valvola (fault locali), semantica (b) autoritativa per i fault locali. **Detector** 3σ·√2/√n (port D5, `test_fault_integration.py:587`; √2 esatto solo se n_analyzed=n_baseline, conservativo altrimenti, ~40%); **σ-ratio** per degrado solo-σ classe M3 (σ_FT finestra / σ_FT baseline ≥ 1,35). La ground truth **non entra mai nel percorso decisionale** dell'analytics (anti-leakage, ADR-0012). Il **FP rate è criterio di accettazione** (su run healthy con seed ≠ seed baseline, unità per-finestra). **MachineStable** (da events `STATE:*` MACHINE, Running ≥ 30 min) ≠ MachineHealthy (baseline + nessun alert): mapping parziale documentato — la "ricetta fissa, velocità stabilizzata" (CONTEXT.md:78) non è rappresentata negli eventi.
+
+## Considered Options
+- Layer in-process nel PLC — rifiutato: contamina il percorso sano, rompe la bit-identità.
+- Analytics post-processing separato — **scelto**: read-only, zero impatto sul simulatore, riproducibile.
+- Baseline auto-aggiornante — rifiutato: maschera il degrado (handoff §3.3).
+
+## Consequences
+File `plcsim/analytics.py`; CLI `python -m plcsim.analytics`; test `tests/test_m5_*`; criteri congelati `work/m5-frozen-criteria.md` (+ sidecar json); bit-identità e determinismo verificati; FP misurabile come criterio di accettazione.
