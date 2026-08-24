@@ -9,10 +9,16 @@ Updated: 2026-08-24
 
 ## Project
 
-PLC Sim V is a causal, layered simulator of an isobaric rotary can-filler. It
-models a 35-valve carousel (26 active filling positions), virtual sensors, a
-virtual PLC, cycle validation, telemetry, analytics, machine-learning inference,
-and an IIoT path. Ground truth remains separate from every operational input used
+FillerStack is the whole chain behind an isobaric rotary can-filler. It models a
+35-valve carousel (26 active filling positions), virtual sensors, a virtual PLC,
+cycle validation, telemetry, analytics, machine-learning inference, and an IIoT
+path, ending in a supervision dashboard.
+
+The name changed on 2026-08-24: «PLC Sim V» named the instrument and readers
+consistently took the project for a simulator and nothing else. Internal
+identifiers — the `plcsim` package, the `plcsim-*` containers, the MQTT client
+id — were deliberately left alone: nobody reads them as the project's name, and
+renaming them touches two frozen core files for no gain. Ground truth remains separate from every operational input used
 by the virtual PLC or ML.
 
 Canonical GitHub repository: `RazAndAlex/PLC-Sim-V`, private,

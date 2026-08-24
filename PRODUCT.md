@@ -46,7 +46,7 @@ Il meccanismo differenziante rispetto a uno SCADA o a un cruscotto OEE: un **cas
 
 ## Brand Commitments
 
-- Fedeltà al dominio industriale: il linguaggio (unità, nomi segnali, OMAC) viene dal progetto "PLC Sim V", non dall'inventiva del designer.
+- Fedeltà al dominio industriale: il linguaggio (unità, nomi segnali, OMAC) viene dal dominio, non dall'inventiva del designer.
 - Registro visivo scelto dall'utente (2026-08-14): **tecnico per l'operatore** — sobrio, gerarchico, tollerante all'uso a bordo macchina; l'espressione visiva non può mai oscurare compito, stato o affordance familiare (modo Operate).
 - Nessun numero inventato: tutto ciò che la UI mostra deve provenire dal contratto dati o da fixture dichiarate fedeli al contratto.
 

@@ -1,14 +1,18 @@
-# PLC Sim V
+# FillerStack
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.14](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/downloads/)
 [![tests](https://img.shields.io/badge/tests-567%20passed-brightgreen.svg)](#running-it)
 
-A causal simulator of an isobaric rotary can-filler, and the full industrial data
-chain that watches it: OPC UA server, Node-RED edge client, MQTT, a Python
-consumer writing partitioned Parquet, feature extraction, an online classifier, an
-alert engine, a read-only API, and a supervision dashboard for maintenance and PLC
-technicians.
+The whole stack behind a rotary can-filler, from the valve to the screen: a
+causal simulator of the machine, an OPC UA server, a Node-RED edge client, MQTT,
+a Python consumer writing partitioned Parquet, feature extraction, an online
+classifier, an alert engine, a read-only API, and a supervision dashboard for
+maintenance and PLC technicians.
+
+The simulator is the instrument, not the point. It exists so that the diagnosis
+at the far end can be *scored*: the machine knows which valve it broke, and
+nothing downstream does.
 
 The machine is a 35-valve carousel with 26 active filling positions. Everything
 downstream sees only what a real installation would see. That goes for the PLC
@@ -47,6 +51,12 @@ a real detection, not a lookup.
 
 `CONTEXT.md` is the glossary, `PRODUCT.md` describes the dashboard and who it is
 for, and `AGENTS.md` holds the working protocol.
+
+The Python package is still called `plcsim`, and the containers still carry a
+`plcsim-` prefix. That is deliberate. The project was renamed once the old name
+started doing the wrong job — it named the simulator, and readers took the whole
+thing for one. Internal identifiers do not have that job, and renaming them would
+touch two frozen core files and break a persistent MQTT session for nothing.
 
 ## Running it
 

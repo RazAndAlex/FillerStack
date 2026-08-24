@@ -4,9 +4,11 @@ Stable purpose, boundaries, and vocabulary. For current status read `STATE.md`.
 
 ## What this project is
 
-PLC Sim V is a **causal simulator of an isobaric rotary can filler** with 35
-valves (26 active filling positions), together with a **diagnostic dashboard**
-built on top of it.
+FillerStack is the **whole chain behind an isobaric rotary can filler** with 35
+valves (26 active filling positions): a causal simulator of the machine, the IIoT
+path that carries its signals, the model that reads them, and the **diagnostic
+dashboard** at the far end. The simulator is what makes the diagnosis
+measurable — it knows the fault, and nothing downstream does.
 
 The simulator is layered and deterministic: explicit clock, scenario and fault
 engine, physical plant, virtual sensors, virtual PLC state machines, and cycle
