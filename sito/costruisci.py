@@ -66,6 +66,11 @@ def monta(sorgente: Path) -> Path:
     testa = testa.replace("__NOME__", TAPPE[indice])
     coda = coda.replace("__QUI__", str(indice))
 
+    # `build/` e' ignorata da git, quindi su un clone fresco non esiste e la
+    # scrittura falliva con FileNotFoundError. In locale il difetto restava
+    # invisibile, perche' la cartella c'era gia' dalle corse precedenti: se ne
+    # e' accorta la prima esecuzione su GitHub Actions.
+    (QUI / "build").mkdir(parents=True, exist_ok=True)
     esito = QUI / "build" / sorgente.name
     # La codifica va dichiarata dalla pagina: servita da un server che non la
     # manda, senza questa riga gli accenti si rompono. Sta quasi prima di tutto,
