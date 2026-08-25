@@ -1,3 +1,10 @@
+# Recent work
+
+> **Fonti citate.** Molte voci rimandano a documenti di lavoro sotto
+> `.scratch/`, `work/`, `Proposte/`, `feedback/` e ai file `HANDOFF-*.md`.
+> Sono materiale locale, git-ignorato: non fa parte del repository
+> pubblicato, e quei percorsi si risolvono solo in una copia di lavoro.
+
 ## 2026-08-21 (tardi) — L'aggregazione ritarata a 5 su 150, e chiusa
 
 Ultimo dei quattro passaggi a Codex. `AlertConfig` passa da N=100 a **N=150**,
@@ -2534,7 +2541,7 @@ costanti derivate `10197b433edba12c`, **258 passed** sulla suite del simulatore.
 ### La ricerca a mano ha trovato due cose, e una era mia
 
 - **`edge/tests/mqtt_parity_check.py:377`** aveva cablato
-  `C:/Users/Utente/AppData/Local/Programs/DockerDesktop/...`. Sostituito con
+  il percorso assoluto dell'installazione di Docker Desktop. Sostituito con
   `LOCALAPPDATA`: funziona per chiunque, e non pubblica il percorso di nessuno.
 - **L'ADR-0022 che avevo scritto io** spiegava per esteso che il vecchio prefisso
   era il marchio dell'azienda, e lo ripeteva dodici volte. Era l'unico documento

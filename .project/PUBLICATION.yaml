@@ -2,7 +2,7 @@ protocol: PROJECT_MEMORY_V1
 mode: full-source
 repository:
   visibility: private
-  name: RazAndAlex/PLC-Sim-V
+  name: RazAndAlex/FillerStack
 publication:
   include:
     - ".project/**"

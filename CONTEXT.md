@@ -1,6 +1,6 @@
-# Simulatore PLC V — Riempitrice rotativa isobarica causale a layer
+# FillerStack — Riempitrice rotativa isobarica causale a layer
 
-Progetto: simulatore a layer causali di una riempitrice rotativa isobarica, evoluzione del reverse engineering di un simulatore PLC preesistente (V1/V2 in `Comprensione PLC Sim`). Il simulatore genera un processo, i sensori producono segnali, il PLC produce i KPI, e la ground truth resta nascosta al PLC e al ML. Singolo contesto.
+Progetto: simulatore a layer causali di una riempitrice rotativa isobarica, nato dal reverse engineering di un simulatore PLC precedente dello stesso autore, che resta fuori da questo repository. Il simulatore genera un processo, i sensori producono segnali, il PLC produce i KPI, e la ground truth resta nascosta al PLC e al ML. Singolo contesto.
 
 ## Macchina e processo
 

@@ -38,3 +38,42 @@ Desktop.ini
 .idea/
 .vscode/
 *.swp
+
+# --- Segreti -------------------------------------------------------------
+# Nessuno di questi e' mai esistito nel repository: la riga sta qui perche'
+# un file di ambiente si crea per sbaglio, e allora e' tardi.
+.env
+.env.*
+*.pem
+*.key
+
+# --- Appunti di lavoro ---------------------------------------------------
+# Passaggi di consegne e istruzioni per gli agenti: contengono percorsi
+# locali e note personali. Fino a oggi stavano in .git/info/exclude, che pero'
+# non viaggia col clone: chi riclona il repository perdeva la protezione, e
+# i nomi erano comunque gia' citati in AGENTS.md e PRODUCT.md.
+HANDOFF-*.md
+CLAUDE.md
+CONTEXT-local.md
+.scratch/
+.agents/
+.claude/
+.pi-subagents/
+skills-lock.json
+
+# --- Materiale di partenza e archivio ------------------------------------
+Proposte/
+Archive/
+feedback/
+risposte/
+
+# --- Abbozzo Node mai usato ----------------------------------------------
+# `npm init` l'ha creato e nessuno l'ha piu' toccato: questo progetto e'
+# Python, e quel file dichiara "license": "ISC", che contraddice LICENSE.
+package.json
+
+# --- Rumore --------------------------------------------------------------
+*.log
+*.tmp
+*.bak
+node_modules/

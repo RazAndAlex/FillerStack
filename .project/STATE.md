@@ -2,6 +2,11 @@
 
 Updated: 2026-08-24
 
+> **Cited sources.** Many entries point at working documents under
+> `.scratch/`, `work/`, `Proposte/`, `feedback/` and the `HANDOFF-*.md`
+> files. Those are local, git-ignored material: they are not part of the
+> published repository, and the paths resolve only in a working copy.
+
 > Le sezioni sono in ordine cronologico e **l'ultima vince**. Il paragrafo
 > «Current objective and milestone» qui sotto e' del 2026-08-13 e descrive uno
 > stato superato: per lo stato di oggi si legge l'ultima sezione, «Stato al
@@ -21,11 +26,14 @@ id — were deliberately left alone: nobody reads them as the project's name, an
 renaming them touches two frozen core files for no gain. Ground truth remains separate from every operational input used
 by the virtual PLC or ML.
 
-Canonical GitHub repository: `RazAndAlex/PLC-Sim-V`, private,
-<https://github.com/RazAndAlex/PLC-Sim-V>. Local `main` tracks `origin/main`.
-The repository follows a memory-only publication policy: project source,
-datasets, generated outputs, screenshots, issue evidence, and local
-infrastructure state are not part of the published history.
+Canonical GitHub repository: `RazAndAlex/FillerStack`,
+<https://github.com/RazAndAlex/FillerStack>. Local `main` tracks `origin/main`.
+Publication mode is `full-source` (see `.project/PUBLICATION.yaml`): the
+project source, the dashboard and the site are all in the published history.
+What stays out is working material and regenerable output: datasets, run
+outputs, the local issue tracker, handover notes, and local infrastructure
+state. The memory-only policy this file described until 2026-08-24 was
+superseded when the code entered the repository.
 
 ## Current objective and milestone
 
@@ -60,8 +68,7 @@ Three pages — `MACCHINA · VALVOLE · OEE` — all accepted by the user, after
 versions rejected. Final verdict, verbatim, after using them linked together:
 *"si mi piace e funzionano bene. oee mi va bene cosi come e'"*.
 
-Live at `.scratch/dashboard-v7/` (`python .scratch/dashboard-v7/server.py`, port
-8077): `/a/` how the machine is doing · `/v1/` which valve to open (the carousel,
+Live at `dashboard/` (`python dashboard/server_api.py`, port 8077): `/a/` how the machine is doing · `/v1/` which valve to open (the carousel,
 35 valves in their physical positions) · `/oee/` why the OEE is what it is (a
 waterfall of the day's time). Shared grammar in `LESSICO.md` and
 `comune/lessico.css`, extracted from the approved page so later pages inherit it.
@@ -429,7 +436,7 @@ esplicito passato anche all'inference.
 
 **Come si accende tutto**: `docker start plcsim-postgres`, poi
 `python -m uvicorn pipeline.api:app --port 8123`, poi
-`python .scratch/dashboard-v7/server_api.py --port 8078`. Riavvia sempre tutti e
+`python dashboard/server_api.py --port 8078`. Riavvia sempre tutti e
 due: l'elenco delle route ammesse vive dentro il processo del proxy, e un proxy
 vecchio contro un'API nuova dà 404 che sembrano route mancanti.
 

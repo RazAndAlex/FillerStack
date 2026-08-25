@@ -5,6 +5,11 @@ Updated: 2026-08-21
 This file summarizes active decisions evidenced by `CONTEXT.md`, `docs/adr/`, and
 the current implementation. The ADRs remain authoritative for detail.
 
+> **Fonti citate.** Molte voci rimandano a documenti di lavoro sotto
+> `.scratch/`, `work/`, `Proposte/`, `feedback/` e ai file `HANDOFF-*.md`.
+> Sono materiale locale, git-ignorato: non fa parte del repository
+> pubblicato, e quei percorsi si risolvono solo in una copia di lavoro.
+
 ## Alert operativi score-only K=5/N=150
 
 - L'apertura operativa usa almeno 5 punteggi `anomaly_score >= 0.5` negli ultimi
@@ -204,8 +209,8 @@ dashboard/prototype/checks/v3-branch-report.md` and `v3-p0…p6-*.md`,
   `.scratch/dashboard-iteration-v3/` are not present in the worktree. No
   dashboard visual system is registered as active.
 - The next session restarts the visual work from scratch: the new design is
-  chosen independently (impeccable new-work — skill at
-  `C:/Users/Utente/.agents/skills/impeccable/`, used read-only), the contract
+  chosen independently (impeccable new-work — a skill installed outside this
+  repository, used read-only), the contract
   is saved before build, and plan and direction pass independent review
   before implementation. The previous design is not a style source.
 - The old BLIND rule ("do not look at the existing dashboard") is obsolete:

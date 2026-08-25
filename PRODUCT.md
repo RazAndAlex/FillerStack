@@ -1,7 +1,22 @@
 
 # Product
 
-<!-- impeccable:product-schema 1 -->
+> **Cos'e' questo documento, e cosa non e'.** Questo e' il **briefing di
+> prodotto ratificato il 2026-08-14**, prima che la dashboard venisse
+> costruita. Descrive un prodotto imperniato su un «caso diagnostico», con due
+> lenti professionali e una gerarchia L0-L3.
+>
+> **Non e' la dashboard spedita.** Sei versioni costruite su questo briefing
+> sono state respinte, e la settima, quella accettata il 2026-08-19, ha una
+> forma diversa: cinque pagine affiancate, MACCHINA, VALVOLE, OEE, TEMPO e
+> CARTA, senza caso diagnostico, senza lenti e senza scheda di handoff.
+> Le cinque pagine sono in `dashboard/`, catturate in `dashboard/shots/`.
+>
+> Il documento resta qui perche' e' il termine di paragone: il racconto di cosa
+> era stato pianificato e cosa e' invece sopravvissuto al contatto con chi la
+> dashboard doveva usarla. Va letto come un verbale datato, non come una
+> specifica da cui partire. La cronaca delle sei bocciature sta in
+> `.project/RECENT_WORK.md`.
 
 ## Platform
 
@@ -40,7 +55,7 @@ Il meccanismo differenziante rispetto a uno SCADA o a un cruscotto OEE: un **cas
 - Prediction: predicted_label e anomaly_score esposti come IPOTESI (classe soggetta a rumore, con versioni modello e feature schema e probabilità), mai come verdetto. L'alert resta una decisione separata che la dashboard contesta.
 - I gruppi ValveGroupMap non sono un dato operativo interrogabile: non promettere diagnosi "per gruppo PLC" finché non esiste.
 - Pubblico italiano; UI in italiano con i nomi dei segnali (FT, TT, TP, Step Out, OMAC) mantenuti nel gergo tecnico reale.
-- Contratti dati reali per il prototipo (`.scratch/dashboard/fase0-data-map.md`, 2026-08-13): 8 route GET; tabelle `machine_state` (KV), `machine_state_history` (OMAC append-only), `cycles` (21 colonne inclusi event_ts nullable), `predictions` (12 colonne), `alerts` (11 colonne, senza severità esplicita), `alert_transitions` (persistita ma non esposta da API); BottleCounter è il KV `bottle_counter`. Gap noti W1 (writer KV `omac_state` assente in produzione → `/machine/state` 404), W2 (probabilities solo in last_prediction), W3 (alert_transitions senza endpoint). Un problema di data quality non deve apparire come guasto meccanico (DoD).
+- Contratti dati reali per il prototipo (verificati sul codice il 2026-08-13; il documento di lavoro resta fuori dal repository): 8 route GET; tabelle `machine_state` (KV), `machine_state_history` (OMAC append-only), `cycles` (21 colonne inclusi event_ts nullable), `predictions` (12 colonne), `alerts` (11 colonne, senza severità esplicita), `alert_transitions` (persistita ma non esposta da API); BottleCounter è il KV `bottle_counter`. Gap noti W1 (writer KV `omac_state` assente in produzione → `/machine/state` 404), W2 (probabilities solo in last_prediction), W3 (alert_transitions senza endpoint). Un problema di data quality non deve apparire come guasto meccanico (DoD).
 - Vincolo di dominio: tail time e tail pulse restano segnali contestuali sensibili alla calibrazione; non devono da soli determinare l'ambito suggerito; non devono mai essere mostrati come numero assoluto per la macchina.
 - Fatto/ipotesi sempre separati: "Ambito suggerito: X · Confidenza: media" con perché e non-ancora-verificato; mai "CAUSA: X".
 
@@ -52,10 +67,12 @@ Il meccanismo differenziante rispetto a uno SCADA o a un cruscotto OEE: un **cas
 
 ## Evidence on Hand
 
-- Piano ratificato: `Proposte/Nuova revisione piano per dashboard.txt` (survey agent 2026-08-14) — definisce caso diagnostico, lenti, journey, gerarchia L0–L3, scheda handoff, scenari e Definition of Done.
-- Spec visiva locale: `.scratch/dashboard/spec.md` (tassonomia di affidabilità, AC-D1…D5, perimetro dati).
-- Wire OEE backend: `.scratch/dashboard/oee-backend-spec.md`.
-- Contratto dati verifica su codice reale: `.scratch/dashboard/fase0-data-map.md` (route, tabelle, colonne, shape JSON, fixture fedeli).
+I documenti di lavoro elencati qui sotto restano fuori dal repository: sono materiale locale, non pubblicato.
+
+- Piano ratificato (survey agent 2026-08-14) — definisce caso diagnostico, lenti, journey, gerarchia L0–L3, scheda handoff, scenari e Definition of Done.
+- Spec visiva locale (tassonomia di affidabilità, AC-D1…D5, perimetro dati).
+- Wire OEE backend: specifica locale.
+- Contratto dati verificato sul codice reale (route, tabelle, colonne, shape JSON, fixture fedeli).
 - Glossario: `CONTEXT.md`.
 - Fonti visive industriali esterne (SCADA/condition monitoring/OEE): il piano non le nomina come riferimenti estetici; da raccogliere solo come benchmark anti-pattern, in una fase successiva del piano (§9 fase 3), non vincolanti per la prima versione.
 

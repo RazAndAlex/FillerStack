@@ -79,7 +79,7 @@ from pipeline.cycle_rollup import floor_hour as _floor_ora
 from pipeline.storage import ALERT_STATUSES, Storage, make_engine
 
 app = FastAPI(
-    title="PLC Sim V3 — Operational API",
+    title="FillerStack — Operational API",
     description="API read-only sullo storico operazionale (Prediction/Alert/KPI).",
     version="1.0.0",
 )
@@ -200,7 +200,7 @@ def _resolve_run(st: Storage, run_id: str | None = None) -> tuple[str | None, st
 # (oee-backend-spec §D; `hour` aggiunto il 2026-08-19).
 #
 # Perche' esiste `hour` — e perche' NON esiste `15min` (misure in
-# `.scratch/backend-2026-08-19/MISURE-b-c.md` §c.5, su due run reali):
+# misure del 2026-08-19 §c.5, su due run reali; il documento resta locale):
 # - a 1 h la finestra contiene ~39.374 cicli, quindi il rumore binomiale sulla
 #   Quality vale 0,0022 e sta SOTTO l'escursione reale della Q su una giornata
 #   (0,0071–0,0090); a 15 min il rumore sale a 0,0042 e a 5 min a 0,0072, cioe'
@@ -1250,7 +1250,7 @@ def machine_oee(
 # --- serie temporale di OEE --------------------------------------------------
 # Passo e ampiezza massima per finestra. Il passo di `shift` e `day` e' quello
 # della serie gia' consumata dalla dashboard accettata
-# (`.scratch/dashboard-v6/fixtures/oee_series.py`); per `hour` il passo e' pari
+# (generatore di fixture locale, `oee_series.py`); per `hour` il passo e' pari
 # all'ampiezza, cioe' sovrapposizione 0% fra punti consecutivi (MISURE §c.5).
 SERIES_STEP: dict[str, timedelta] = {
     "hour": timedelta(hours=1),
