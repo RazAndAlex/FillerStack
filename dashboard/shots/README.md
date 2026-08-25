@@ -15,5 +15,5 @@ Si rifanno aprendo le cinque pagine in modalita' demo:
 
     python dashboard/server_demo.py --port 8078
 
-Prima di oggi non ne esisteva nessuna: le 284 catture in `.scratch/` sono
+Prima di oggi non ne esisteva nessuna: le 284 catture tenute in locale sono
 tutte della versione precedente, quella respinta.
