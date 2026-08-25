@@ -1,8 +1,8 @@
 """Registra una fotografia delle risposte dell'API, per la modalita' demo.
 
-La dashboard legge SOLO le route GET di `pipeline/api.py` (CLAUDE.md). Questo
-script non aggira quella regola: registra cio' che quelle route rispondono e
-`server_demo.py` lo ripropone alla pagina senza toccarlo.
+La dashboard legge SOLO le route GET di `pipeline/api.py`: e' un vincolo di
+progetto. Questo script non lo aggira: registra cio' che quelle route
+rispondono e `server_demo.py` lo ripropone alla pagina senza toccarlo.
 
 Registra **attraverso `server_api.py`**, non dall'API cruda, e il motivo non e'
 una comodita'. Il proxy fa due traduzioni che la pagina da' per scontate:

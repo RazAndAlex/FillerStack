@@ -1,7 +1,7 @@
 # V3 — Design del simulatore causale a layer
 
 > Cristallizzazione della sessione di grilling (skill `grill-with-docs` + `domain-modeling`).
-> Decisioni radice: ADR 0001-0013. Glossario: `CONTEXT.md`. Riferimento: `Proposte/HANDOFF_PROPOSTA_EVOLUZIONE_SIMULATORE_IIOT_ML.md`, cartella `Comprensione PLC Sim` (read-only).
+> Decisioni radice: ADR 0001-0013. Glossario: `CONTEXT.md`. Riferimento: la proposta di evoluzione IIoT/ML e il repository di comprensione del PLC V2, entrambi materiale locale fuori dal repository (read-only).
 > Stato: **in attesa di conferma del committente** — non implementare prima dell'OK.
 
 ---
@@ -71,7 +71,7 @@ IDLE → FLUSHING → PRESSURIZING → FILLING → TAIL → VALIDATE_FILL → PA
 | IDLE | presenza lattina in slot + macchina Running + zona utile → FLUSHING |
 | FLUSHING | timer (0,2-0,3 s) → PRESSURIZING |
 | PRESSURIZING | raggiunta pressione di equilibrio (o timer) → FILLING |
-| FILLING | D1 — Aggiornato al gate M1 (work/GATE-DECISIONS.md): target=normale; pseudologica IF TargetReached→CLOSE ELSE IF EncoderLimitReached→CLOSE (PositionLimit=TRUE, FillQualityOK=FALSE) ELSE IF SafetyTimeoutReached→SAFE_DEPRESSURIZATION (SequenceOK=FALSE) ELSE continua; FT>2000→FillingOvertime/SUSPECT; close_reason=target\|encoder_limit\|safety_timeout |
+| FILLING | D1 — Aggiornato al gate M1 (verbale del gate, documento locale): target=normale; pseudologica IF TargetReached→CLOSE ELSE IF EncoderLimitReached→CLOSE (PositionLimit=TRUE, FillQualityOK=FALSE) ELSE IF SafetyTimeoutReached→SAFE_DEPRESSURIZATION (SequenceOK=FALSE) ELSE continua; FT>2000→FillingOvertime/SUSPECT; close_reason=target\|encoder_limit\|safety_timeout |
 | TAIL | SilenceTimer scaduto (default 150 ms senza impulsi) → VALIDATE_FILL |
 | VALIDATE_FILL | cristallizza il record ciclo (1 scan) → PAUSE |
 | PAUSE | timer 300-500 ms → SNIFT |
@@ -97,7 +97,7 @@ volume(t) += flow(t) × dt
 ```
 
 - **Serbatoio condiviso debole** (ADR-0010): `pressure_factor` = fattore lento condiviso (oscillazione, driver della firma a due pile del FT) + pressione locale per-valvola con rumore. Coupling calibrato debole → valvole sane quasi indipendenti (rispetta baseline V2).
-- **Dinamica valvola** — Aggiornato al gate M1 D2 (work/GATE-DECISIONS.md): apertura/chiusura = ritardo (150-200 ms) + rampa; chiusura estesa da snap_ms=|N(0, settle_jitter_ms)| σ 33 ms fino a tau_ramp+snap_ms (σ_TT≈σ(snap), TP coerente — impulsi snap contati, ricalibrare tau_close/k_ramp per TT mean 301/TP mean 221, niente rumore additivo su TT); `valve_open_factor` tra 0 e 1.
+- **Dinamica valvola** — Aggiornato al gate M1 D2 (verbale del gate, documento locale): apertura/chiusura = ritardo (150-200 ms) + rampa; chiusura estesa da snap_ms=|N(0, settle_jitter_ms)| σ 33 ms fino a tau_ramp+snap_ms (σ_TT≈σ(snap), TP coerente — impulsi snap contati, ricalibrare tau_close/k_ramp per TT mean 301/TP mean 221, niente rumore additivo su TT); `valve_open_factor` tra 0 e 1.
 - **Restriction** (fault): `restriction_factor` ↓ → portata ↓ → target più tardi → FT ↑, StepOut ↑, margine ↓.
 - La grandezze interne (pressione, restrizione, portata reale) appartengono alla ground truth, non al PLC.
 
@@ -111,7 +111,7 @@ volume(t) += flow(t) × dt
 ## 9. Logica PLC
 
 - Ricetta: `target=2500` impulsi (250 ml), `filling_time_limit=2000` ms (soglia diagnostica FillingOvertime, NON chiusura), SafetyTimeout=fill_time_limit+fill_safety_margin default 2500 ms, limite encoder geometrico ≈2123 ms.
-- Chiusura FILLING D1 — Aggiornato al gate M1 (work/GATE-DECISIONS.md): pseudologica IF TargetReached→CLOSE ELSE IF EncoderLimitReached→CLOSE (FillQualityOK=FALSE, PositionLimit=TRUE) ELSE IF SafetyTimeoutReached→SAFE_DEPRESSURIZATION (SequenceOK=FALSE) ELSE continua; IF FT>2000→FillingOvertime=TRUE/DiagnosticStatus=SUSPECT; close_reason target|encoder_limit|safety_timeout; step_out=clip(floor(FT/77),26).
+- Chiusura FILLING D1 — Aggiornato al gate M1 (verbale del gate, documento locale): pseudologica IF TargetReached→CLOSE ELSE IF EncoderLimitReached→CLOSE (FillQualityOK=FALSE, PositionLimit=TRUE) ELSE IF SafetyTimeoutReached→SAFE_DEPRESSURIZATION (SequenceOK=FALSE) ELSE continua; IF FT>2000→FillingOvertime=TRUE/DiagnosticStatus=SUSPECT; close_reason target|encoder_limit|safety_timeout; step_out=clip(floor(FT/77),26).
 - Coda: `PulseAtClose` al comando di chiusura; `FinalPulses` a fine coda (SilenceTimer); `TailPulses = FinalPulses − PulseAtClose`; `TailTime` misurato dal comando di chiusura a fine coda.
 - **Late pulse**: dopo `CycleClosed` gli impulsi non modificano `FinalPulses`; generano `LatePulseError`/`LatePulseCount`. La ground truth distingue PHYSICAL_LATE_FLOW / FLOWMETER_GLITCH / DELAYED_DATA.
 - Interlock: macchina non Running → nessuna valvola in FILLING; errori critici → SAFE_DEPRESSURIZATION.

@@ -1,6 +1,6 @@
 """Entry point M6 — simulatore con server OPC UA embedded + pacing loop.
 
-Nuovo punto di ingresso della milestone M6 (spec `.scratch/m6/spec.md`,
+Nuovo punto di ingresso della milestone M6 (spec M6 locale, non pubblicata;
 ADR-0016): il simulatore V3 diventa raggiungibile via OPC UA
 (`opc.tcp://localhost:4840`, porta configurabile) con clock
 realtime/accelerato/stepped e comandi scrivibili (causa-effetto). Il core
@@ -61,7 +61,7 @@ def build_parser() -> argparse.ArgumentParser:
     """Parser CLI (help in italiano)."""
     ap = argparse.ArgumentParser(
         prog="python -m plcsim.serve",
-        description=("Simulatore PLC Sim V con server OPC UA embedded "
+        description=("Simulatore FillerStack con server OPC UA embedded "
                      "(M6, ADR-0016). Endpoint di default: "
                      "opc.tcp://localhost:4840."),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -81,8 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
                     help="host di bind dell'endpoint OPC UA (default "
                          "'localhost' — invariato rispetto al passato). "
                          "Es. '0.0.0.0' per raggiungere il server da altri "
-                         "host/container Docker (vedi collaudo M7, "
-                         ".scratch/m6/issues/02-host-bind.md).")
+                         "host/container Docker (vedi collaudo M7).")
     ap.add_argument("--mode", choices=("realtime", "accelerated", "stepped"),
                     default="realtime",
                     help="modalità di clock (spec §6): realtime = pacing "
@@ -262,7 +261,7 @@ def _run(args) -> None:
                          host=args.host)
 
     # -- messaggi di avvio ---------------------------------------------------
-    print("PLC Sim V — serve (M6: server OPC UA embedded + pacing loop)",
+    print("FillerStack — serve (M6: server OPC UA embedded + pacing loop)",
           flush=True)
     print(f"  endpoint : {server.endpoint}", flush=True)
     print(f"  modalità : {mode}"

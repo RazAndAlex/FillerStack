@@ -168,7 +168,7 @@ class OpcuaServer:
       port: porta TCP (default 4840).
       host: host di bind dell'endpoint (default "localhost"; es.
           "0.0.0.0" per esporre il server alla rete/ai container Docker —
-          vedi deviazione collaudo M7, .scratch/m6/issues/02-host-bind.md).
+          vedi deviazione registrata nel collaudo M7).
       endpoint: URL endpoint opc.tcp; se contiene ``{port}`` viene
           formattato con la porta (default
           ``opc.tcp://{host}:{port}/filler01/``).
@@ -301,7 +301,7 @@ class OpcuaServer:
         self._stop_evt = asyncio.Event()
         server = Server()
         server.set_endpoint(self.endpoint)
-        server.set_server_name("PLC Sim V — Filler01 (M6 POC)")
+        server.set_server_name("FillerStack — Filler01 (M6 POC)")
         # POC: anonymous su localhost, security policy a M11 (contesto §69)
         server.set_security_policy([ua.SecurityPolicyType.NoSecurity])
         await server.init()          # PRIMA di register_namespace (probe M6)

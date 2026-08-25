@@ -40,6 +40,9 @@ Il perimetro è fissato dalla spec M9 §4-§6 (feature service live con riuso, p
 
 ## Riferimenti
 
+Le fonti citate come `.scratch/...`, `work/...` e `Proposte/...` sono documenti
+di lavoro locali: restano fuori dal repository pubblicato (vedi ADR-0023).
+
 - `.scratch/m9/spec.md` §4 (feature service), §5 (prediction schema), §6 (inference), §2 (invarianti), §8 (accettazione), §11 (domande aperte)
 - `work/ml-feature-schema.md` (ML-F1, 43 feature congelate) · `work/ml_dataset/manifest.yaml` (manifest v0)
 - `plcsim/ml_dataset.py` (window_cycles/compute_window_features/transform_zscore) · `plcsim/ml_model.py` (MLModel.save/load, sidecar)

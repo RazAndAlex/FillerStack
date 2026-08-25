@@ -70,7 +70,7 @@ class MachineTemplate:
 
 @dataclass(frozen=True)
 class PlantConstants:
-    """Costanti fisiche globali (calibrate, vedi work/calibrate.py).
+    """Costanti fisiche globali (calibrate con lo script di taratura locale).
 
     driver_amp e flow_noise sono valori BASE: in SimConfig.build() vengono
     materializzati come array per-valvola (35) applicando le mappe
@@ -86,7 +86,7 @@ class PlantConstants:
     driver_amp: float = 0.060          # ampiezza base driver condiviso (→ σ_FT ~71;
     # 0.0628 dava 74 ma supera la tolleranza ±5% del test di integrazione
     # fisica (p_local di valvola aperta nella finestra del test) — vedi
-    # work/calibrate.py; 70.8 resta entro ±10% del target per tutte le sane)
+    # script di taratura; 70.8 resta entro ±10% del target per tutte le sane)
     driver_period_rot: float = 46.0    # periodo reale (FFT, spec V2)
     driver_shape: float = 0.6          # nonlinearità (appiattimento picchi)
     flow_noise: float = 0.032          # σ rumore di portata base
@@ -107,13 +107,13 @@ class PlantConstants:
         8: 1.35, 20: 1.35,          # ampiezza driver per-valvola (calibrato)
     })
 
-    # Correzioni empiriche per-valvola delle medie TT/TP (work/calibrate.py,
+    # Correzioni empiriche per-valvola delle medie TT/TP (script di taratura,
     # fase 5): residui di quantizzazione del flussimetro (0,1 ml) e della
     # griglia di scan (10 ms) sulle code lunghe. tau_close_corr_ms in ms
     # (sommati a tau_close), k_ramp_corr moltiplicativo. Deterministiche:
     # stesso seed -> stessi output (verificato in pytest).
     tau_close_corr_ms: dict[str, float] = field(default_factory=lambda: {
-        # residui di quantizzazione (work/calibrate.py fase 5)
+        # residui di quantizzazione (script di taratura, fase 5)
         "valve0": 0.19, "valve1": -0.18, "valve2": -0.16, "valve3": -0.14,
         "valve4": -1.02, "valve5": 2.67, "valve6": -0.55, "valve7": 0.44,
         "valve8": -2.56, "valve9": -2.78, "valve10": -1.97, "valve11": 0.67,
@@ -175,7 +175,7 @@ def _derive(
     GATE-DECISIONS D2: la rampa effettiva è tau_close·jitter + snap,
     E[snap] = settle_jitter·√(2/π). tau_close compensa il valor medio dello
     snap (S = tau_close + E[snap] = tt_mean/(1-x) resta invariato → anche
-    k_ramp resta quello pre-snap); la verifica numerica è in work/calibrate.py.
+    k_ramp resta quello pre-snap); la verifica numerica è nello script di taratura.
     """
     volume_ml = pc_mean * 0.1
     flow_base = volume_ml / ((ft_mean - tau_open_ms / 2.0) / 1000.0)

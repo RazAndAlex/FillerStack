@@ -6,10 +6,10 @@
 # e probabilmente comune (ricetta, pressione, velocita) invece di annunciare N guasti.
 #
 # Rispetto a m3_global.yaml (severity 0.5, misurate 10/35 valvole deviate rispetto alla
-# baseline sana con il criterio congelato in .scratch/dashboard-v6/checks/criterio.md):
+# baseline sana con il criterio congelato durante la taratura, in locale):
 # qui la severita e portata al massimo consentito. Il criterio NON e stato toccato — si
 # cambia lo scenario, non la soglia, altrimenti l'acceptance perde valore
-# (feedback/feedback m2-m3-m4.txt: calibration run -> criterio congelato -> acceptance run).
+# (protocollo di accettazione: calibration run -> criterio congelato -> acceptance run).
 #
 # Meccanismo: scope global, nessun valve_id ne group_id, onset abrupt. E' il caso
 # diagnostico in cui NON ci sono 35 valvole rotte ma una condizione comune di processo.

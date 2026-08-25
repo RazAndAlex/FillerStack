@@ -1,6 +1,6 @@
 # edge/flows/ — flow Node-RED versionati (M7)
 
-Flow JSON versionati dell'edge integration layer (spec `.scratch/m7/spec.md` §5):
+Flow JSON versionati dell'edge integration layer (spec M7 §5):
 caricati dall'immagine ufficiale Node-RED all'avvio del container (montati su
 `/data/flows` in `edge/docker-compose.yml`). Formato importabile Node-RED v4:
 array di nodi con `id`/`type`/`z`/`wires`/`x`/`y` + tab + commenti.

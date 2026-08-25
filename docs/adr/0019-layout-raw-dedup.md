@@ -42,6 +42,9 @@ Il perimetro è fissato dalla spec §6 (responsabilità del consumer: subscribe 
 
 ## Riferimenti
 
+Le fonti citate come `.scratch/...`, `work/...` e `Proposte/...` sono documenti
+di lavoro locali: restano fuori dal repository pubblicato (vedi ADR-0023).
+
 - `.scratch/m8/spec.md` §2-§6 (contratto M8; §6 consumer/ADR 0019), §9 (budget dati), §10 (accettazione)
 - `.scratch/handoffs/plc-sim-v3-handoff-2026-08-12-m8-mqtt.md` (punto 4: prerequisiti d'ambiente, decisioni già prese — `ingest_ts` REQUIRED da M8, dedup su `event_id`)
 - `.scratch/m8/issues/04-ingest-consumer.md` (implementazione consumer) · `02-envelope-v11-ingest-ts.md` (schema v1.1 + validatore `pipeline/validator.py`) · `06-dedup-budget-tests.md` (T3 dedup + script budget)

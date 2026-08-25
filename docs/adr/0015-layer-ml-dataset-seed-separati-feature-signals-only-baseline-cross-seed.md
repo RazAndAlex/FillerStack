@@ -22,6 +22,10 @@ Decisioni ratificate dal root il 2026-08-11 (D-ML-1..5, contratto `work/reviews/
 La simulazione è intoccata: il layer è read-only sui moduli sim (nessun write su `plcsim/{plc,validation,config,plant,sensors,scenario,telemetry,run,clock}.py`) → bit-identità preservata per costruzione. `requirements.txt` guadagna +2 pin (scikit-learn==1.9.0, scipy==1.18.0) con commento lockfile. Determinismo pipeline: lbfgs + random_state fissi, sort stabile su provenance, hash sul CONTENUTO dei frame (non sui byte dei file); AC-ML-2 = doppia esecuzione byte-identica. Deviazioni env-safe implementative del 2026-08-11: `multi_class` e `n_jobs` non accettati dall'API sklearn 1.9.0 dell'ambiente → omessi via ispezione firma (`_accepts`), modello matematicamente identico (lbfgs è multinomial-only; HistGBM moderno single-threaded) — documentate nei moduli e da riportare nel report di accettazione (protocollo §5.3).
 
 ## Riferimenti
+
+Le fonti citate come `.scratch/...`, `work/...` e `Proposte/...` sono documenti
+di lavoro locali: restano fuori dal repository pubblicato (vedi ADR-0023).
+
 - `work/reviews/plan-ml/converged-feedback.md` — contratto firmato root 2026-08-11 (D-ML-1..5 RATIFICATI, fix ML-F1..F7)
 - `work/plan-ml-v2.md` §14 — deviazioni post-review con esito per riga
 - `work/ml-feature-schema.md` — schema feature congelato (ML-F1)

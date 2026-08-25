@@ -1,5 +1,5 @@
-# edge/docker-compose.yml — stack edge M7→M10 (spec .scratch/m7/spec.md §3,
-# spec .scratch/m10/spec.md §1, roadmap docs/roadmap-iiot.md §3)
+# edge/docker-compose.yml — stack edge M7→M10 (spec M7 §3, spec M10 §1,
+# roadmap docs/roadmap-iiot.md §3)
 #
 # Ruolo: stack edge COMPLETO. Node-RED (integrazione edge, M7) sottoscrive
 # l'OPC UA del simulatore (opc.tcp://localhost:4840, server avviato con
@@ -69,7 +69,7 @@ services:
       - ./mosquitto/log:/mosquitto/log
 
   postgres:
-    # Storico operazionale M10 (spec .scratch/m10/spec.md §1, ADR 0021): KPI, cicli,
+    # Storico operazionale M10 (spec M10 §1, ADR 0021): KPI, cicli,
     # predictions ML, alert, stato macchina — fonte unica per le query live. Il raw
     # ad alta frequenza resta in Parquet partizionato (M8); la config locale app in
     # SQLite. Immagine PINNATA postgres:17. POC: credenziali dev esplicite

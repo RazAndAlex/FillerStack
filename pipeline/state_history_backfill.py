@@ -11,9 +11,9 @@ esplicito: "nessuna transizione OMAC nella finestra"). Questo modulo ricava le
 transizioni dagli eventi `STATE:` del run e le persiste con gli stessi metodi
 di Storage — nessuna scrittura SQL propria, nessuno schema nuovo.
 
-Semantica: identica a `state_history(run)` di
-`.scratch/dashboard-v6/fixtures/generate.py`, che è la definizione già
-funzionante e usata dall'oracolo della dashboard:
+Semantica: identica a `state_history(run)` del generatore di fixture usato
+dall'oracolo della dashboard (script locale, fuori dal repository), che è la
+definizione già funzionante:
 
 - si prendono SOLO gli eventi con `event` che inizia per `STATE:`, ordinati
   per `ts_beg`; l'etichetta è la parte dopo i due punti;
@@ -69,7 +69,7 @@ class StateBackfillError(Exception):
 
 def read_state_transitions(run_dir: Path) -> list[dict[str, Any]]:
     """Transizioni OMAC dagli eventi `STATE:` — semantica di
-    `.scratch/dashboard-v6/fixtures/generate.py::state_history`."""
+    `state_history` nel generatore di fixture locale."""
     path = run_dir / "events.parquet"
     if not path.exists():
         raise StateBackfillError(f"eventi assenti: {path}")

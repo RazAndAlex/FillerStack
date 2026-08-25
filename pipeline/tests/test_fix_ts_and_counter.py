@@ -3,8 +3,8 @@
 1. `prediction_ts` deve essere il tempo del DATO — l'`event_ts` del ciclo che
    chiude la finestra — non l'orologio di parete (`now()`).
    Misura del difetto: 12.060/12.060 righe con ts entro 55,7 s di esecuzione
-   contro 15 h 20 m di dati reali, scostamento 78 giorni
-   (`.scratch/backend-2026-08-19/CONFRONTO-API-FIXTURE.md` §2.2).
+   contro 15 h 20 m di dati reali, scostamento 78 giorni (confronto
+   API/fixture del 2026-08-19, §2.2).
 
 2. La chiusura di un alert NON incrementa `n_cycles_above` (una chiusura
    avviene sotto soglia); il sustain SÌ (ibidem §5.2).

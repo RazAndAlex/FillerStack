@@ -2,6 +2,11 @@
 
 Updated: 2026-08-23 (terzo aggiornamento)
 
+> **Fonti citate.** Molte voci rimandano a documenti di lavoro sotto
+> `.scratch/`, `work/`, `Proposte/`, `feedback/` e ai file `HANDOFF-*.md`.
+> Sono materiale locale, git-ignorato: non fa parte del repository
+> pubblicato, e quei percorsi si risolvono solo in una copia di lavoro.
+
 > **Come si legge questo file.** Il titolo di una sezione dice il suo stato, e va
 > creduto solo se porta una data. Fino al 2026-08-23 molte sezioni sono rimaste
 > intitolate «APERTA» per giorni dopo essere state chiuse da un altro lavoro:

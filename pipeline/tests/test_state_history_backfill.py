@@ -7,8 +7,8 @@ Copertura della parte pura (nessun DB, nessuna scrittura su `plcsim`):
 - `state_code` da `plcsim.realtime.OMAC_CODES`; etichetta sconosciuta →
   errore chiaro;
 - `exited_ts` = entered_ts della transizione successiva, l'ultima resta
-  aperta (None) — semantica identica a
-  `.scratch/dashboard-v6/fixtures/generate.py::state_history`;
+  aperta (None) — semantica identica a `state_history` nel generatore di
+  fixture locale;
 - `source` dichiara la provenienza backfill (non finge il percorso MQTT);
 - eventi assenti / nessun STATE: → StateBackfillError.
 """

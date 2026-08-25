@@ -94,6 +94,9 @@ il contratto di confine macchina↔IT:
 
 ## Riferimenti
 
+Le fonti citate come `.scratch/...`, `work/...` e `Proposte/...` sono documenti
+di lavoro locali: restano fuori dal repository pubblicato (vedi ADR-0023).
+
 - `docs/roadmap-iiot.md` §3-§4 · `Proposte/contesto_progetto_IIoT_ML_OPCUA_pipeline_aggiornato_2026-08-12.md` §14-§21, §55-§58, §84-§87, §89-§92
 - `.scratch/m7/spec.md` §2-§6 (contratto M7) · `work/acceptance-protocol.md` (calibration → freeze → acceptance)
 - `work/m7_acceptance/calibration.md` (evidenza di calibration; emendamento T6)

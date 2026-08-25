@@ -1,13 +1,13 @@
 # Roadmap IIoT — da OPC UA alla pipeline ML completa
 
 > **Data:** 2026-08-12 · **Stato:** proposta di piano, da ratificare milestone per milestone
-> **Fonte:** `Proposte/contesto_progetto_IIoT_ML_OPCUA_pipeline_aggiornato_2026-08-12.md` (§74-§79 in particolare)
+> **Fonte:** documento di contesto IIoT/ML/OPC UA del 2026-08-12 (§74-§79 in particolare), materiale di lavoro locale fuori dal repository
 > **Prerequisiti coperti:** simulatore V3 causale (M1-M4), analytics layer (M5), ML baseline/modello (Track D, ADR-0015)
 
 Questa roadmap porta il progetto dallo stato attuale (simulatore bulk → Parquet → analytics → ML offline)
 alla pipeline completa `simulatore → OPC UA → Node-RED → MQTT → storage → ML inference → dashboard`,
-seguendo l'ordine §74 del documento di contesto. Ogni milestone ha spec propria in `.scratch/`,
-ADR per le decisioni architetturali, e accettazione secondo `work/acceptance-protocol.md` (vincolante M5+).
+seguendo l'ordine §74 del documento di contesto. Ogni milestone ha spec propria (documento locale),
+ADR per le decisioni architetturali, e accettazione secondo il protocollo di accettazione (vincolante M5+).
 
 ## 0. Punto di partenza (verificato 2026-08-12)
 
@@ -26,7 +26,7 @@ ADR per le decisioni architetturali, e accettazione secondo `work/acceptance-pro
 Decisioni d'ambiente già prese con il committente (2026-08-12):
 - **Node-RED e Mosquitto in Docker locale** (Docker Desktop), stack versionato in `edge/`.
 - **Collaudo OPC UA doppio binario**: test automatici pytest con client `asyncua` + checklist manuale UAExpert.
-- Deliverable di piano in `docs/` + spec in `.scratch/<milestone>/`, ADR in `docs/adr/`.
+- Deliverable di piano in `docs/` + spec di milestone in locale, ADR in `docs/adr/`.
 
 ## 1. Panoramica milestone
 
@@ -51,7 +51,7 @@ Il ramo bulk (generazione dataset accelerata) resta intatto e convive col ramo r
 
 ## 2. M6 — OPC UA server + real-time adapter
 
-**Spec:** `.scratch/m6/spec.md` · **ADR:** 0016
+**Spec:** spec M6 (locale) · **ADR:** 0016
 
 **Obiettivo.** Il simulatore V3 espone un namespace OPC UA piccolo ma significativo (~25 tag:
 macchina, una valvola completa, controlli simulazione), con clock real-time (o accelerato/stepped),
@@ -203,8 +203,8 @@ nessun alert sulle altre), rientro del fault (alert si chiude con isteresi). Scr
 
 ## 10. Metodo di lavoro per ogni milestone
 
-1. Spec in `.scratch/m<N>/spec.md` (questa roadmap è la fonte; la spec la dettaglia e la può correggere).
-2. Issue atomiche in `.scratch/m<N>/issues/NN-*.md`.
+1. Spec di milestone, tenuta in locale (questa roadmap è la fonte; la spec la dettaglia e la può correggere).
+2. Issue atomiche, una per file, nel tracker locale.
 3. Implementazione delegata a worker con packet bounded (core congelato ⇒ write scope dichiarato in spec).
 4. Review indipendente + test.
 5. Acceptance run secondo protocollo; report in `work/m<N>_*`.

@@ -1,7 +1,7 @@
 # edge/ — Node-RED edge integration layer (M7)
 
-Stack Docker dell'edge integration layer (spec `.scratch/m7/spec.md`, roadmap
-`docs/roadmap-iiot.md` §3): Node-RED sottoscrive l'OPC UA del simulatore e
+Stack Docker dell'edge integration layer (spec M7 locale, non pubblicata;
+roadmap `docs/roadmap-iiot.md` §3): Node-RED sottoscrive l'OPC UA del simulatore e
 normalizza i cicli valvola nell'**envelope JSON v1.0** (`edge/schemas/envelope-v1.json`).
 
 ## Struttura
@@ -89,7 +89,7 @@ l'immagine base NON include — senza palette installata il canvas mostra i nodi
 come tipi mancanti e il log riporta `Waiting for missing types` (nessuna
 acquisizione). Nel collaudo la palette è stata installata via admin API
 (POST /nodes); a M8 verrà pinnata nello step di build del compose
-(vedi `work/m7_acceptance/checklist_manual.md`).
+(vedi la checklist manuale del collaudo M7, documento locale).
 
 ### Palette OPC UA (installazione nel container, ephemeral)
 
@@ -102,8 +102,8 @@ docker exec plcsim-nodered npm install --prefix /data node-red-contrib-opcua
 ```
 
 Nota M8: lo step di build del compose pinnarà la palette (elimina
-l'installazione manuale) — azione già documentata in
-`work/m7_acceptance_report.md` §7 (finding #1) e checklist manuale.
+l'installazione manuale) — azione già documentata nel report di accettazione
+M7 §7 (finding #1, documento locale) e nella checklist manuale.
 
 ## M8
 

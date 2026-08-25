@@ -1,7 +1,7 @@
 """M8 MQTT parity check — collaudo E2E: raw via MQTT vs telemetria diretta.
 
-Riferimenti: spec .scratch/m8/spec.md §8 (T0/T1/T5) e §10 (AC-M8-1);
-issue .scratch/m8/issues/05-parity-e2e-tests.md.
+Riferimenti: spec M8 §8 (T0/T1/T5) e §10 (AC-M8-1); issue M8-05.
+Spec e issue sono documenti di lavoro locali, fuori dal repository.
 
 La pipeline M8 pubblica l'envelope v1.0 su MQTT (edge Node-RED, M7 —
 topic v1, QoS 1) e il consumer ``pipeline/ingest.py`` (issue M8-04) lo

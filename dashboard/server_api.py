@@ -13,12 +13,13 @@ reale costa solo cambiare porta.
     python -m uvicorn pipeline.api:app --port 8123
 
     # istante = fine della run nel database (default)
-    python .scratch/dashboard-v7/server_api.py --port 8078
+    python dashboard/server_api.py --port 8078
 
     # istante = adesso vero: pagine degradate, percorso "dato vecchio"
-    python .scratch/dashboard-v7/server_api.py --port 8079 --at now
+    python dashboard/server_api.py --port 8079 --at now
 
-Regole rispettate (CLAUDE.md, HANDOFF-api-vera.md):
+Regole rispettate (vincoli fissati nei documenti di lavoro locali, fuori
+dal repository):
 - non riempie buchi e non ripiega MAI sulle fixture: se l'API vera risponde
   vuoto o `degraded`, quello arriva alla pagina tale e quale;
 - l'istante di osservazione e' DICHIARATO in un log all'avvio, mai cablato;
@@ -55,8 +56,8 @@ SCENARI = [
 ]
 
 # Le nove route che le tre pagine chiamano davvero
-# (.scratch/backend-2026-08-19/DIVARIO-ROUTE.md). `alerts/pareto` e `manifest`
-# sono helper morti di versioni precedenti: nessuna pagina li usa.
+# (censimento fatto sul codice delle pagine il 2026-08-19). `alerts/pareto` e
+# `manifest` sono helper morti di versioni precedenti: nessuna pagina li usa.
 ROUTE_AMMESSE = {
     "machine/state",
     "machine/oee",

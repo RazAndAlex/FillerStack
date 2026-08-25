@@ -21,7 +21,7 @@ architetturali esplicite PRIMA di implementare:
    la dashboard consuma, machine-agnostic (legge dal DB, mai dal simulatore), separata dal
    control plane (OPC UA) e dall'analytics plane (ML che osserva, non controlla).
 
-Il perimetro è fissato dalla spec M10 (`.scratch/m10/spec.md`) e dagli invarianti
+Il perimetro è fissato dalla spec M10 (documento locale) e dagli invarianti
 trasversali (core congelato; GT mai nel percorso decisionale; bit-identità bulk). Restano
 aperte per questo ADR: *dove* vive lo storico operazionale, *come* si accede (driver),
 *come* evolve la persistenza delle prediction M9, e *quali* sono i confini tra prediction,
@@ -119,6 +119,9 @@ decisione (alert) e visualizzazione.
   `docker compose up -d postgres`); un DB di test dedicato `plcsim_test` isola i test CRUD.
 
 ## Riferimenti
+
+Le fonti citate come `.scratch/...`, `work/...` e `Proposte/...` sono documenti
+di lavoro locali: restano fuori dal repository pubblicato (vedi ADR-0023).
 
 - `.scratch/m10/spec.md` (§1 storage, §2 schema, §3 alert, §4 migrazione, §5 API, §6 dashboard, §7 collaudo, §8 criteri)
 - `docs/roadmap-iiot.md` §6 (M10) · `docs/adr/0020-feature-store-unico-model-versioning.md` §Decisione 7 (invertita)

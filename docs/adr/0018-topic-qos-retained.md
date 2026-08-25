@@ -52,6 +52,9 @@ Tre ragioni impongono il congelamento del contratto PRIMA dell'implementazione:
 
 ## Riferimenti
 
+Le fonti citate come `.scratch/...`, `work/...` e `Proposte/...` sono documenti
+di lavoro locali: restano fuori dal repository pubblicato (vedi ADR-0023).
+
 - `docs/roadmap-iiot.md` §4 (ADR attesi 0018/0019; proposta topic/QoS/retained) · §7 (hardening M11: auth/ACL)
 - `.scratch/m8/spec.md` §4 (contratto MQTT), §5.1-§5.3 (v1.1 delta, validazione wire/stored), §6 (consumer, dedup), §7 (flow MQTT + compose mosquitto), §10 (calibration)
 - `Proposte/contesto_progetto_IIoT_ML_OPCUA_pipeline_aggiornato_2026-08-12.md` §18-§21 (event_id/dedup, ruolo MQTT, topic, retained), §58 (schema versionato), §77 (M8), §84-§86 (contratto macchina-agnostico, namespace OPC UA)

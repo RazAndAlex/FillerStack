@@ -12,7 +12,7 @@ scipy==1.18.0
 asyncua==2.0.1
 # M8 (ADR-0019): consumer MQTT (pipeline/ingest.py) — pin verificato 2026-08-12 (pip index versions: ultima 2.x = 2.1.0)
 paho-mqtt==2.1.0
-# M10 (ADR-0021): storage operazionale PostgreSQL + API (spec .scratch/m10/spec.md §8)
+# M10 (ADR-0021): storage operazionale PostgreSQL + API (spec M10 §8)
 # Pin verificato 2026-08-13 (pip show sqlalchemy psycopg fastapi uvicorn httpx pytest)
 # — lockfile normativo: nessun intervallo >=.
 sqlalchemy==2.0.52
