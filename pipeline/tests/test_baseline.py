@@ -300,6 +300,7 @@ def test_sigma_media_46_null_con_motivo_se_i_blocchi_non_bastano(client):
     assert ft["mean"] is not None and ft["ucl"] is not None
 
 
+@requires_postgres
 def test_n_cicli_per_valvola_e_mediana_dei_conteggi(client):
     """Il campo che la dashboard cita in chiaro esiste ed e' coerente.
 

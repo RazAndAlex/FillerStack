@@ -55,6 +55,34 @@ def _ensure_test_database() -> None:
         admin.dispose()
 
 
+def _pg_raggiungibile() -> bool:
+    """Vero se il PostgreSQL di sviluppo risponde.
+
+    Senza questa guardia i venti test qui sotto non venivano saltati: erravano.
+    Chi clona il repository e lancia `pytest` senza aver alzato i container si
+    trovava ventuno errori rossi al posto di altrettanti «skipped», e nessun
+    modo di capire dal risultato che gli mancava solo Docker.
+    """
+    url = make_url(TEST_DB_URL)
+    admin = make_engine(url.set(database="postgres")
+                        .render_as_string(hide_password=False))
+    try:
+        with admin.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
+    finally:
+        admin.dispose()
+
+
+requires_postgres = pytest.mark.skipif(
+    not _pg_raggiungibile(),
+    reason="PostgreSQL non raggiungibile (avvia `docker compose up -d postgres`)")
+
+pytestmark = requires_postgres
+
+
 @pytest.fixture()
 def cs():
     _ensure_test_database()
