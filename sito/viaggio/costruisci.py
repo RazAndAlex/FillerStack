@@ -3,13 +3,49 @@
 Stessa idea del montatore della guida: il corpo sta in tappe/, la
 grammatica in comune/, e nessuna variante duplica tinte o barra.
 
-Uso:  python .scratch/presentazione/viaggio/costruisci.py
+Uso:  python sito/viaggio/costruisci.py
 """
 
 import sys
 from pathlib import Path
 
 QUI = Path(__file__).parent
+
+# Il doctype mancava: senza, il browser sceglie la modalita' "quirks" e alcune
+# misure cambiano in silenzio. La lingua serve a chi legge con un lettore di
+# schermo, che altrimenti pronuncia l'italiano all'inglese.
+TESTA_HTML = (
+    '<!doctype html>\n'
+    '<html lang="it">\n'
+    '<meta charset="utf-8">\n'
+)
+
+# Questa e' l'unica pagina che il sito pubblica davvero, quindi e' l'unica che
+# qualcuno incolla in una chat o in un messaggio. Senza queste righe l'anteprima
+# mostra l'indirizzo nudo, e la descrizione la scrive il motore di ricerca
+# pescando la prima frase che trova.
+INDIRIZZO = "https://razandalex.github.io/FillerStack/"
+DESCRIZIONE = (
+    "Un numero nato dentro una lattina, seguito per undici passaggi fino "
+    "alla schermata di un tecnico: la catena IIoT di una riempitrice "
+    "rotativa a 35 valvole, raccontata per intero."
+)
+
+
+def testa_sociale(titolo: str) -> str:
+    """Le righe che decidono l'anteprima quando l'indirizzo viene condiviso."""
+    nome = titolo.replace("<title>", "").replace("</title>", "").strip()
+    return (
+        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        f'<meta name="description" content="{DESCRIZIONE}">\n'
+        '<meta property="og:type" content="website">\n'
+        f'<meta property="og:title" content="{nome}">\n'
+        f'<meta property="og:description" content="{DESCRIZIONE}">\n'
+        f'<meta property="og:url" content="{INDIRIZZO}">\n'
+        '<meta property="og:locale" content="it_IT">\n'
+        '<meta name="twitter:card" content="summary">\n'
+    )
+
 
 
 def monta(sorgente: Path) -> Path:
@@ -21,9 +57,10 @@ def monta(sorgente: Path) -> Path:
         raise SystemExit(f"{sorgente.name}: la prima riga deve essere il <title>")
     esito = QUI / "build" / sorgente.name
     # La codifica va dichiarata dalla pagina: servita da un server che non la
-    # manda, senza questa riga gli accenti si rompono. Sta prima di tutto il
-    # resto, perche' il browser decide leggendo i primi byte.
-    esito.write_text('<meta charset="utf-8">\n' + titolo + "\n"
+    # manda, senza questa riga gli accenti si rompono. Sta quasi prima di tutto,
+    # perche' il browser decide leggendo i primi byte, e il doctype con la
+    # lingua che la precedono occupano quaranta byte.
+    esito.write_text(TESTA_HTML + titolo + "\n" + testa_sociale(titolo)
                      + testa + corpo + coda, encoding="utf-8")
     return esito
 

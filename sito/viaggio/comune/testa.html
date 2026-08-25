@@ -125,6 +125,28 @@ a:focus-visible{ outline:2px solid var(--attenz); outline-offset:2px; border-rad
                text-transform:uppercase; color:var(--muto); }
 .riepilogo .v{ font-size:16px; font-weight:600; }
 
+/* ---------- piede ----------
+   La pagina viveva senza un solo collegamento: chi ci arrivava da un link
+   vedeva il viaggio e non aveva modo di raggiungere il codice. */
+.piede{ border-top:1px solid var(--bordo); background:var(--sup-2); }
+.piede-dentro{ max-width:760px; margin:0 auto; padding:26px 20px 40px; }
+.piede h2{ margin:0 0 10px; font-size:17px; font-weight:600; }
+.piede p{ margin:0 0 14px; max-width:60ch; font-size:15px; color:var(--dato); }
+.piede-vie{ display:grid; gap:1px; background:var(--bordo); border:1px solid var(--bordo);
+            border-radius:3px; overflow:hidden; margin:0 0 18px;
+            grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); }
+.piede-vie a{ background:var(--sup); padding:12px 13px; display:block;
+              text-decoration:none; color:var(--ink); }
+.piede-vie a:hover{ background:var(--sup-2); }
+.piede-vie a:focus-visible{ outline:2px solid var(--attenz); outline-offset:-2px; }
+.piede-vie .k{ display:block; font-size:10px; letter-spacing:.09em;
+               text-transform:uppercase; color:var(--muto); margin-bottom:3px; }
+.piede-vie .v{ font-size:15px; font-weight:600; }
+.piede-vie .d{ display:block; font-size:13px; color:var(--muto); margin-top:3px;
+               font-weight:400; line-height:1.4; }
+.piede .firma{ font-size:13px; color:var(--muto); margin:0; }
+.piede .firma a{ color:var(--muto); }
+
 @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
 </style>
 

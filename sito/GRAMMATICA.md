@@ -30,7 +30,7 @@ riguardano l'altra pagina.
 ## 1. Le tinte vengono dalla dashboard, non da qui
 
 Il blocco `:root` di `comune/testa.html` e' copiato da
-`.scratch/dashboard-v7/comune/lessico.css`. Non si ritoccano i valori: chi passa
+`dashboard/comune/lessico.css`. Non si ritoccano i valori: chi passa
 dalla guida alla dashboard non deve accorgersi di aver cambiato mondo.
 
 Vale intera anche la **regola del colore** della dashboard: il colore lo prende
@@ -142,7 +142,7 @@ solo). `prefers-reduced-motion` spegne tutto il movimento.
 
 1. si scrive `tappe/NN-nome.html`: prima riga il `<title>`, poi il solo
    `<div class="foglio">`, senza `<style>` e senza barra;
-2. `python .scratch/presentazione/costruisci.py NN` monta il file in `build/`;
+2. `python sito/costruisci.py NN` monta il file in `build/`;
 3. si pubblica `build/NN-nome.html` come artefatto e si manda l'indirizzo.
 
 Nessuna tappa duplica le tinte o la mappa. Se qualcosa va cambiato per tutte, si
@@ -184,18 +184,24 @@ della sua spiegazione**, e le parole tecniche entrano solo dopo che il concetto
 
 ## 11. Il controllo prima di pubblicare
 
-`python .scratch/presentazione/verifica.py` gira su tutte le pagine montate,
+`python sito/verifica.py` gira su tutte le pagine montate,
 quelle della guida e quelle del viaggio. Blocca:
 
 1. em dash e en dash nel testo;
 2. segnaposto non sostituiti dal montatore;
-3. il `<title>` mancante o doppio nella testa del file;
+3. la testa incompleta: servono `<!doctype html>`, `<html lang="it">`,
+   `<meta charset>` e un `<title>` solo, in quest'ordine, più il `viewport`;
 4. un `<svg>` informativo senza descrizione;
 5. una nota che punta a una riga di codice che non esiste;
 6. la mappa che punta fuori dalla catena, o una pagina senza mappa e senza filo;
-7. risorse esterne diverse dal carattere;
+7. risorse esterne diverse dal carattere. Un `<a>` non conta: non viene
+   caricato, e la pagina regge anche se l'indirizzo è morto;
 8. uno dei tre blocchi di tema mancante;
 9. tag aperti e mai chiusi fra `section`, `div`, `pre` e `button`.
+
+Il `viewport` e il `doctype` sono entrati il 2026-08-25, insieme al piede con i
+collegamenti: prima la pagina non ne aveva nemmeno uno, e chi ci arrivava da un
+link non aveva modo di raggiungere il codice.
 
 La sintassi del JavaScript va controllata a parte, con `node --check` sul
 contenuto degli `<script>`: il verificatore non la vede, e un apostrofo dentro

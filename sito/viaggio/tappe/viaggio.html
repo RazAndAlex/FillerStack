@@ -5,7 +5,7 @@
   <p>Questa pagina segue un numero solo, dall'istante in cui nasce dentro una macchina fino al
   momento in cui un tecnico lo guarda. Il numero è <b>2505</b>, ed è la quantità di bevanda finita
   in una lattina il 22 agosto alle 10:03.</p>
-  <p>Non serve sapere niente in anticipo. Nessuna sigla viene usata prima di essere spiegata.</p>
+  <p>Non serve sapere niente in anticipo. Ogni sigla la spiego prima di usarla.</p>
   <p class="min">A destra c'è una scena che cambia man mano che scorri. È sempre lo stesso numero,
   che cambia forma.</p>
   <p class="giu">Scorri per partire ↓</p>
@@ -16,7 +16,7 @@
 <div class="colonna-scena">
   <div class="scena">
     <svg id="scena" viewBox="0 0 424 300" role="img"
-      aria-label="Scena che cambia mentre si scorre: la giostra della riempitrice, una valvola che riempie, la riga di dati, l'albero degli indirizzi, la busta, lo smistatore, l'archivio, il modello e la schermata finale."></svg>
+      aria-label="Scena che cambia mentre scorri. Segue un numero dalla giostra della riempitrice fino allo schermo del tecnico."></svg>
     <div class="scena-piede">
       <span class="k">il dato, adesso</span>
       <span class="v" id="scena-dato"></span>
@@ -59,7 +59,7 @@
   <p>La bevanda scende. Lungo il tubo c'è uno strumento che conta il passaggio del liquido a
   piccoli scatti: ogni scatto vale un decimo di millilitro.</p>
   <p>Nessuno pesa la lattina e nessuno la guarda. La macchina sa quanto ha versato solo perché
-  <b>conta gli scatti</b>, e questo dettaglio tornerà utile più avanti.</p>
+  <b>conta gli scatti</b>.</p>
 </section>
 
 <section class="tappa">
@@ -68,7 +68,7 @@
   <p>Il conto arriva a 2505 e il rubinetto si chiude. La ricetta ne chiedeva 2500, che fanno 250
   millilitri esatti.</p>
   <p>Cinque scatti in più vuol dire mezzo millilitro in più. È dentro la tolleranza, quindi il
-  ciclo è buono. Ma quel <b>+5</b> è nato, ed è un numero che qualcuno conserverà.</p>
+  ciclo è buono. Il <b>+5</b> resta scritto.</p>
 </section>
 
 <section class="tappa">
@@ -81,7 +81,8 @@
   <div class="nota-lat">
     <h3>Il computer della macchina</h3>
     <p>Si chiama PLC. È un computer semplice e robusto che sta dentro il quadro elettrico, legge i
-    sensori e comanda le valvole. Non ragiona sui dati. Esegue e registra.</p>
+    sensori e comanda i rubinetti. Esegue e registra quello che succede. Le conclusioni le
+    tira qualcun altro, piu' avanti nella catena.</p>
   </div>
 </section>
 
@@ -90,9 +91,9 @@
   <h2>La macchina si fa interrogare</h2>
   <p>Quella riga esiste, ma solo dentro la macchina. Perché serva a qualcosa qualcuno da fuori
   deve poterla chiedere.</p>
-  <p>Le macchine industriali espongono i propri numeri come una specie di cartelle da sfogliare:
-  si apre la macchina, dentro c'è la postazione 29, dentro ci sono i suoi valori. Chiunque conosca
-  questo modo di chiedere può leggere, senza sapere niente di come è fatta la macchina dentro.</p>
+  <p>Le macchine industriali espongono i propri numeri come una specie di cartelle da
+  sfogliare. Si apre la macchina, dentro c'è la postazione 29, dentro ci sono i suoi valori.
+  Chiunque conosca questo modo di chiedere può leggere, senza sapere com'è fatta la macchina.</p>
   <p class="min">Il nome di questo modo di chiedere è OPC UA. In questa macchina gli indirizzi
   leggibili sono 567.</p>
 </section>
@@ -110,11 +111,10 @@
 <section class="tappa">
   <p class="conta">Tappa 8 di 11</p>
   <h2>La busta va a uno smistatore</h2>
-  <p>Il programma non consegna a un destinatario preciso. Consegna a uno smistatore, dicendo solo
-  di che genere di busta si tratta.</p>
-  <p>Chi vuole quelle buste si iscrive allo smistatore e le riceve. Oggi le riceve l'archivio;
-  domani si può aggiungere un cruscotto in reparto, e chi consegna non deve cambiare niente. Non
-  si conoscono e non si aspettano.</p>
+  <p>Il programma consegna a uno smistatore e dichiara solo di che genere di busta si tratta.
+  Il destinatario lo sceglie chi la busta la vuole.</p>
+  <p>Chi vuole quelle buste si iscrive allo smistatore e le riceve. Oggi le riceve l'archivio.
+  Domani si può aggiungere una schermata in reparto, e chi consegna non cambia niente.</p>
   <div class="nota-lat">
     <h3>I nomi che sentirai</h3>
     <p>Il modo di consegnare si chiama MQTT: un linguaggio pensato per messaggi piccoli e tanti,
@@ -129,8 +129,10 @@
   <p>Chi riceve la busta la controlla, verifica di non averla già vista, e la scrive in un file.
   I file sono divisi per giorno, come i cassetti di uno schedario.</p>
   <p>Nel cassetto del 22 agosto ci sono 18 511 righe. Una di quelle è la nostra.</p>
-  <p class="min">Dividere per giorno serve a chi cerca. Per guardare un giorno si apre un cassetto
-  solo, invece di scorrere due mesi.</p>
+  <p>Quel giorno la macchina ha girato per mezz'ora, dalle 10:03 alle 10:33. In quella mezz'ora
+  tutte e trentacinque le postazioni hanno scritto una riga a ogni giro.</p>
+  <p class="min">Dividere per giorno serve a chi cerca. Per guardare un giorno basta aprire un
+  cassetto. Senza i cassetti bisognerebbe scorrere due mesi di righe.</p>
 </section>
 
 <section class="tappa">
@@ -138,15 +140,15 @@
   <h2>Un programma guarda cinquanta righe insieme</h2>
   <p>Una riga da sola dice poco. Anche una postazione perfetta ogni tanto sbaglia di qualche
   scatto, ed è normale.</p>
-  <p>Quindi le righe si guardano a gruppi di cinquanta, e di ogni gruppo si calcolano
-  quarantatré misure: la media dei tempi, quanto ballano, e soprattutto <b>se stanno crescendo</b>.
-  Un tempo che sale piano piano è il segnale che qualcosa si sta consumando, e si vede prima che
-  la lattina esca male.</p>
+  <p>Quindi il programma guarda le righe a gruppi di cinquanta. Di ogni gruppo calcola
+  quarantatré misure: la media dei tempi, quanto ballano, e soprattutto <b>se stanno
+  crescendo</b>. Un tempo che sale piano piano è il segnale che qualcosa si sta consumando, e
+  si vede prima che la lattina esca male.</p>
   <p>Il programma confronta quelle misure con migliaia di gruppi che ha già visto e dice cosa gli
   somiglia di più. Per il nostro gruppo dice «sana», con una fiducia dell'87 per cento.</p>
   <div class="nota-lat">
     <h3>Un'ipotesi, e chi decide è il tecnico</h3>
-    <p>La risposta arriva sempre con la sua percentuale di fiducia, e nella schermata è presentata
+    <p>La risposta arriva sempre con la sua percentuale di fiducia, e la schermata la mostra
     come un'ipotesi. Chi decide se fermare la macchina è il tecnico.</p>
   </div>
 </section>
@@ -157,13 +159,13 @@
   <p>Il viaggio finisce qui, e la schermata somiglia alla macchina: una giostra vista dall'alto,
   con le trentacinque postazioni al loro posto. Ogni trattino dice quanto quella postazione si
   discosta dal proprio normale. La corona esterna si accende dove c'è un allarme aperto, e in
-  questo momento sono nove su trentacinque.</p>
-  <p>Il colore compare solo lì, quindi una sola occhiata basta a capire dove guardare. Le altre
-  ventisei non chiedono niente a nessuno.</p>
-  <p>Apri la postazione 29 e trovi il nostro riempimento, arrivato in fondo. Ha una durata di
-  <b>1980 ms</b> e <b>2505</b> scatti, <b>cinque in più</b> del bersaglio. Il programma la
-  giudica <b>sana all'87 per cento</b>. La 29 non è fra le nove: sta dentro il suo normale,
-  quindi resta grigia.</p>
+  questo momento sono accese nove postazioni. Sono un gruppo diverso dalle nove che non
+  riempiono mai: quelle sono chiuse per posizione, queste chiedono attenzione.</p>
+  <p>Il colore compare solo lì, quindi una sola occhiata basta a capire dove guardare.</p>
+  <p>Apri la postazione 29 e trovi il nostro riempimento, arrivato in fondo. È durato <b>un
+  secondo e 98 centesimi</b>, con <b>2505</b> scatti, <b>cinque in più</b> del bersaglio. Il
+  programma lo giudica <b>sano all'87 per cento</b>. La 29 resta grigia, perché sta dentro il
+  suo normale.</p>
   <p class="min">È lo stesso numero della prima schermata di questa pagina. Ha attraversato undici
   passaggi e adesso vale una riga sola davanti a una persona che deve decidere se fermare la
   macchina.</p>
@@ -176,15 +178,41 @@
   <h2>Undici passaggi, dalla lattina allo schermo</h2>
   <p>Il numero 2505 è nato dentro una lattina, è diventato una riga, poi una busta, poi un file,
   poi una misura in mezzo ad altre quarantadue, poi un giudizio, poi un rettangolo su uno schermo.
-  A ogni passaggio ha cambiato forma e ha perso qualcosa: alla fine il tecnico non vede più
-  duemilacinquecentocinque, vede che la postazione 29 sta bene.</p>
+  A ogni passaggio ha cambiato forma e ha perso qualcosa. Al tecnico arriva già digerito, in
+  una riga sola: la postazione 29 sta bene.</p>
   <div class="riepilogo">
     <div><span class="k">Postazioni</span><span class="v">35</span></div>
     <div><span class="k">Giro</span><span class="v">3,2 s</span></div>
     <div><span class="k">Uno scatto</span><span class="v">0,1 ml</span></div>
-    <div><span class="k">Righe quel giorno</span><span class="v">18 511</span></div>
+    <div><span class="k">Righe in mezz'ora</span><span class="v">18 511</span></div>
     <div><span class="k">Misure per gruppo</span><span class="v">43</span></div>
   </div>
-  <p class="min">Tutti i numeri di questa pagina vengono dal progetto vero. Il ciclo 417 della
-  postazione 29 esiste, ed è registrato nell'archivio del 22 agosto 2026.</p>
+  <p class="min">Tutti i numeri di questa pagina vengono dal progetto vero. Il riempimento che
+  hai seguito è registrato nell'archivio del 22 agosto 2026, con il suo numero d'ordine.</p>
 </div>
+
+<footer class="piede">
+  <div class="piede-dentro">
+    <h2>Da qui in poi</h2>
+    <p>Questa pagina racconta la catena. Il codice che la fa girare sta tutto in un posto
+    solo: la macchina simulata, i due programmi che ne portano fuori i numeri, quello che li
+    giudica, e la schermata del tecnico.</p>
+    <div class="piede-vie">
+      <a href="https://github.com/RazAndAlex/FillerStack">
+        <span class="k">Il codice</span>
+        <span class="v">github.com/RazAndAlex/FillerStack</span>
+        <span class="d">Tutto quello che hai letto qui, in codice. È scritto in Python, e la
+        licenza è aperta: chiunque può leggerlo e riusarlo.</span>
+      </a>
+      <a href="https://www.linkedin.com/in/andrei-razvan-alexandru-35879721b">
+        <span class="k">Chi l'ha fatto</span>
+        <span class="v">Andrei Razvan Alexandru</span>
+        <span class="d">Su LinkedIn. Se vuoi chiedermi come funziona un pezzo, o
+        perché l'ho fatto così, scrivimi da lì.</span>
+      </a>
+    </div>
+    <p class="firma">Andrei Razvan Alexandru ha scritto questo progetto per conto proprio,
+    sulla propria macchina. Il nome della macchina e della linea che hanno ispirato il
+    modello restano fuori.</p>
+  </div>
+</footer>

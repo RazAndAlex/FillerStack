@@ -6,8 +6,8 @@ comportamenti stanno in comune/ e non si duplicano: e' l'unico modo per cui
 otto tappe restano la stessa pagina invece di diventare otto pagine simili.
 
 Uso:
-    python .scratch/presentazione/costruisci.py            # tutte le tappe
-    python .scratch/presentazione/costruisci.py 02         # solo la tappa 02
+    python sito/costruisci.py            # tutte le tappe
+    python sito/costruisci.py 02         # solo la tappa 02
 
 L'esito finisce in build/NN-nome.html, pronto da pubblicare come artefatto
 (un solo file, nessuna risorsa esterna a parte il carattere da Google Fonts).
@@ -18,6 +18,22 @@ import sys
 from pathlib import Path
 
 QUI = Path(__file__).parent
+
+# Il doctype mancava: senza, il browser sceglie la modalita' "quirks" e alcune
+# misure cambiano in silenzio. La lingua serve a chi legge con un lettore di
+# schermo, che altrimenti pronuncia l'italiano all'inglese.
+TESTA_HTML = (
+    '<!doctype html>\n'
+    '<html lang="it">\n'
+    '<meta charset="utf-8">\n'
+)
+
+# Senza viewport un telefono finge di essere largo 980 px e rimpicciolisce
+# tutto: la pagina si legge solo con le dita.
+VIEWPORT = (
+    '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+)
+
 
 # Le otto tappe, nell'ordine della catena vera del progetto. L'indice di
 # posizione serve alla mappa in cima per accendere il riquadro giusto.
@@ -52,9 +68,10 @@ def monta(sorgente: Path) -> Path:
 
     esito = QUI / "build" / sorgente.name
     # La codifica va dichiarata dalla pagina: servita da un server che non la
-    # manda, senza questa riga gli accenti si rompono. Sta prima di tutto il
-    # resto, perche' il browser decide leggendo i primi byte.
-    esito.write_text('<meta charset="utf-8">\n' + titolo + "\n"
+    # manda, senza questa riga gli accenti si rompono. Sta quasi prima di tutto,
+    # perche' il browser decide leggendo i primi byte, e il doctype con la
+    # lingua che la precedono occupano quaranta byte.
+    esito.write_text(TESTA_HTML + titolo + "\n" + VIEWPORT
                      + testa + corpo + coda, encoding="utf-8")
     return esito
 

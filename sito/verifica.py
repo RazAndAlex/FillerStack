@@ -5,8 +5,8 @@ bocciatura o che rompono la pagina in silenzio. Ogni regola qui dentro
 corrisponde a una riga di GRAMMATICA.md.
 
 Uso:
-    python .scratch/presentazione/verifica.py            # tutto build/
-    python .scratch/presentazione/verifica.py 03         # solo la tappa 03
+    python sito/verifica.py            # tutto build/
+    python sito/verifica.py 03         # solo la tappa 03
 """
 
 import io
@@ -37,12 +37,21 @@ def controlla(p: Path) -> list[str]:
     #    Piu' avanti <title> ricompare dentro gli <svg> della mappa, dove e'
     #    il testo del suggerimento: quello va lasciato stare.
     # Dal 2026-08-24 la prima riga e' la dichiarazione di codifica: servite da
-    # un server che non manda il charset, le pagine rompevano gli accenti. Il
-    # titolo resta subito dopo, e resta unico.
-    if not s.startswith('<meta charset="utf-8">' + chr(10) + '<title>'):
-        errori.append("in testa manca <meta charset> seguito dal <title>")
+    # un server che non manda il charset, le pagine rompevano gli accenti. Dal
+    # 2026-08-25 la precedono il doctype e la lingua, e il titolo resta subito
+    # dopo, e resta unico.
+    APERTURA = ('<!doctype html>' + chr(10)
+                + '<html lang="it">' + chr(10)
+                + '<meta charset="utf-8">' + chr(10)
+                + '<title>')
+    if not s.startswith(APERTURA):
+        errori.append("in testa manca doctype, lingua, charset e <title>")
     if s.count("<title>", 0, 8192) != 1:
         errori.append("piu' di un <title> nella testa del file")
+
+    # 3b. il viewport: senza, un telefono rimpicciolisce tutta la pagina.
+    if 'name="viewport"' not in s[:2048]:
+        errori.append("manca il <meta name=viewport> nella testa")
 
     # 4. ogni <svg> informativo va descritto (GRAMMATICA.md §7).
     #    Gli <svg> vuoti riempiti da JavaScript portano l'etichetta nel markup,
@@ -83,12 +92,19 @@ def controlla(p: Path) -> list[str]:
     elif 'id="filo"' not in s:
         errori.append("la pagina non ha ne' mappa ne' filo di avanzamento")
 
-    # 7. niente risorse esterne oltre al carattere: un artefatto e' un file solo
-    for m in re.finditer(r'(?:src|href)="(https?://[^"]+)"', s):
-        url = m.group(1)
-        if not url.startswith(("https://fonts.googleapis.com",
-                               "https://fonts.gstatic.com")):
-            errori.append("risorsa esterna non ammessa: " + url)
+    # 7. niente risorse esterne oltre al carattere: un artefatto e' un file solo.
+    #    Un <a> non e' una risorsa: non viene caricato, e la pagina regge lo
+    #    stesso se l'indirizzo e' morto. La regola serve contro gli asset che
+    #    fanno dipendere il file da un altro server, non contro i collegamenti,
+    #    che fino al 2026-08-25 non c'erano e sono il modo di uscire da qui.
+    for m in re.finditer(r"<([a-zA-Z][\w-]*)\b([^>]*)>", s):
+        etichetta, attributi = m.group(1).lower(), m.group(2)
+        if etichetta == "a":
+            continue
+        for url in re.findall(r'(?:src|href)="(https?://[^"]+)"', attributi):
+            if not url.startswith(("https://fonts.googleapis.com",
+                                   "https://fonts.gstatic.com")):
+                errori.append("risorsa esterna non ammessa: " + url)
 
     # 8. i tre temi devono esserci tutti (GRAMMATICA.md §1)
     for atteso in (":root{", "prefers-color-scheme: dark",
