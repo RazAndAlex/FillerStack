@@ -142,6 +142,13 @@ explains every acronym before it uses one.
 | `scenarios/` | Fault scenario definitions. Each fault ramps up in severity over time |
 | `tests/` | The simulator's tests. The rest of the suite lives next to what it covers, in `pipeline/tests/` and `edge/tests/` |
 | `.project/` | Project memory: state, decisions, open questions, recent work |
+| `AGENTS.md` | House rules for the coding agents that work here. It sits in the root because that is where the tools look for it |
+| `CONTEXT.md` | The domain glossary, so a reader never has to guess what a tail pulse is |
+
+Two of those are unusual to find in a public repository, and they are there on
+purpose. `AGENTS.md` and `.project/` are how this project was actually built:
+the decisions, the questions left open, the things measured and rejected. You
+can read the reasoning, not just the result.
 
 The Python package is still called `plcsim`, and the containers still carry a
 `plcsim-` prefix. That is deliberate. I renamed the project once the old name

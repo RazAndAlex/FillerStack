@@ -41,6 +41,15 @@ def _csv_bytes(df: pl.DataFrame) -> bytes:
     return df.write_csv().encode()
 
 
+@pytest.mark.skipif(
+    not (REF / "valve_cycles.parquet").exists(),
+    reason=(
+        "manca il riferimento pinnato M5 in work/m5_healthy_1d. È materiale di "
+        "lavoro, escluso dal repository di proposito (.gitignore, "
+        "PUBLICATION.yaml): senza, la bit-identità non ha un termine di "
+        "paragone. In locale il test gira normalmente."
+    ),
+)
 def test_bulk_regression(tmp_path):
     """Test 9 spec: run healthy 1gg bit-identico al riferimento M5.
 
