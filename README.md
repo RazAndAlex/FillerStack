@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.14](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/downloads/)
-[![tests](https://img.shields.io/badge/tests-567%20with%20PostgreSQL-brightgreen.svg)](#quickstart)
+[![test](https://github.com/RazAndAlex/FillerStack/actions/workflows/test.yml/badge.svg)](https://github.com/RazAndAlex/FillerStack/actions/workflows/test.yml)
 
 The whole stack behind a rotary can-filler, from the valve to the screen.
 

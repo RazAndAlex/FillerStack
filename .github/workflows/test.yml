@@ -1,0 +1,75 @@
+name: test
+
+# La suite gira qui, non solo sulla macchina di chi scrive. Il README dichiara
+# 567 test: senza una corsa pubblica quel numero e' una parola, e chi legge il
+# repository non ha modo di controllarlo.
+#
+# Il servizio postgres c'e' perche' i test che toccano lo storico operazionale
+# si saltano da soli quando il database non risponde. Saltati passano, quindi
+# una CI senza postgres direbbe "verde" su una suite piu' corta di quella
+# dichiarata. Le credenziali sono le stesse di `edge/docker-compose.yml`:
+# i test costruiscono l'URL su `plcsim:plcsim@localhost:5432` quando
+# `PLCSIM_TEST_DATABASE_URL` non e' impostata, e creano da soli il database
+# effimero di cui hanno bisogno.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'sito/**'
+      - 'docs/**'
+      - '**.md'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        # Stessa immagine e stesse credenziali di edge/docker-compose.yml.
+        image: postgres:17
+        env:
+          POSTGRES_DB: plcsim
+          POSTGRES_USER: plcsim
+          POSTGRES_PASSWORD: plcsim
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U plcsim -d plcsim"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Stessa versione dell'ambiente verificato in requirements.txt.
+          python-version: '3.14'
+          cache: pip
+
+      - name: Installa le dipendenze
+        # `requirements.txt` e' un lockfile: nessun intervallo, versioni esatte.
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Conta i test raccolti
+        # La raccolta e' un controllo a se': se un modulo non importa, pytest
+        # lo direbbe qui invece che a meta' corsa.
+        run: python -m pytest --collect-only -q
+
+      - name: Esegui la suite
+        run: python -m pytest -q
