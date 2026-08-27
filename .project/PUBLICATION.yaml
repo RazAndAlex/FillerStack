@@ -1,7 +1,7 @@
 protocol: PROJECT_MEMORY_V1
 mode: full-source
 repository:
-  visibility: private
+  visibility: public
   name: RazAndAlex/FillerStack
 publication:
   include:
