@@ -23,3 +23,8 @@ uvicorn[standard]==0.51.0
 # Presente nel lockfile così che pipeline/tests/test_api.py raccolga in un env
 # fresco (FINDING M10-H1: senza httpx il modulo fallisce alla collection).
 httpx==0.28.1
+# M8/M9: validazione dell'envelope JSON (pipeline/prediction_schema.py,
+# pipeline/ingest.py). Stessa storia di httpx sopra: in locale c'era e nessuno
+# se ne era accorto, la prima corsa su un runner pulito si è fermata a 509 test
+# raccolti su 567. Pin = versione verificata in locale il 2026-08-27.
+jsonschema==4.26.0
