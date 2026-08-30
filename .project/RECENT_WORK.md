@@ -2708,3 +2708,64 @@ giustifica il modulo Predictive Analytics.
 Prodotto `.scratch/v2-predittiva/REPORT-v2-predittiva.html` (skill
 artifact-design, its-writing, unslop). Nessun altro file toccato. In attesa di
 conferma dell'utente prima di qualunque implementazione.
+
+---
+
+## 2026-08-30 — Passi 2 e 3 della v2 eseguiti: la deriva lenta esiste, l'anticipo si misura
+
+Esecuzione e verifica dei passi 2 e 3 del piano confermato il 2026-08-27.
+Evidenze complete: `.scratch/v2-predittiva/passo-2/PASSO2-EVIDENZA.md` (passo 2)
+e `.scratch/v2-predittiva/passo-3/PASSO3-MISURA-ANTICIPO.md` con i risultati in
+`risultati_anticipo.json` (passo 3).
+
+### Passo 2 — la run della deriva lenta
+
+Scenario nuovo `scenarios/deriva_lenta_60d.yaml` (scenario_id 62, seed 43): gli
+stessi quattro guasti dello storico, stesse sedi e stesse severita' finali,
+cambia solo l'onset. Rampe di **241.766 cicli (14 giorni)** e **362.649 cicli
+(21 giorni)** contro il massimo di 40.000 cicli dello storico, partenze
+scaglionate fra il giorno 12 e il giorno 40. Run di 60 giorni: **36.224.625
+cicli** in 13.226 s (3 h 40 m). Ricaricamento completo sotto
+`run_id='deriva_lenta_60d'`: 60 partizioni di raw canonico in
+`data/raw_deriva_lenta_60d/`, backfill con 36.224.625 righe inserite su
+36.224.625 lette, **722.768 predizioni**, 33.565 righe di rollup orario.
+Allarmi: **14, di cui 9 sustained — esattamente le 9 valvole guaste** — e 5
+chiusi spontanei su valvole sane. Verifica pre-run: 21 controlli tutti verdi;
+PRIMA/DOPO sul database: ogni storia esistente invariata al numero di riga.
+
+`state_history_backfill` non eseguito di proposito: `machine_state_history` e'
+append-only senza `run_id`, e il backfill con `--replace` avrebbe distrutto le
+300 transizioni OMAC che servono all'OEE della run corrente. KV invariati
+(`current_run_id` resta `storico_60d`), nessun file di prodotto toccato,
+ambiente lasciato come da procedura (Postgres acceso, mosquitto e nodered
+spenti).
+
+### Passo 3 — la misura dell'anticipo
+
+Misura in sola lettura con definizioni dichiarate a priori (degrado di
+qualita' = primo regime sotto μ−3σ della finestra sana che duri almeno 24 ore;
+primo segnale = prima predizione sopra il 99,9° percentile degli score sani
+della valvola). Risultati:
+
+| guasto | L1 deriva (rampe 14-21 gg) | L1 storico (rampe brevi) |
+|---|---|---|
+| restriction v8 | **75,5 h** | 5,3 h |
+| flowmeter_dropout v30 | **47,0 h** | 7,5 h |
+
+Con rampe lunghe l'anticipo misurabile vale **2-3 giorni**; con rampe veloci
+5-7 ore. La saturazione del punteggio e' confermata sui dati nuovi: primo score
+≥ 0,9 al **0,9-1,5%** della rampa per v8 e v30 — il punteggio dice *che*, non
+*quanto*.
+
+**I due vuoti, dichiarati e provati.** `closing_delay` v21 e
+`pressure_instability` 13-18 non hanno un degrado di qualita' in nessuna delle
+due run: `fill_quality_ok` diventa FALSE solo sui cicli chiusi per
+`encoder_limit` (`plcsim/plc.py`), quindi il momento di degrado da anticipare
+non esiste. Non e' un limite del modello: e' l'assenza del momento. Caso onesto
+dallo storico: sulla v21 in `opening_delay` (gradino) l'allarme operativo e'
+arrivato **34 giorni dopo** il degrado (L2 = −821,0 h). La sensibilita' a
+k = 2 e k = 5 non cambia nessuna conclusione; riproducibilita' verificata con
+una seconda esecuzione indipendente dello script (risultato identico).
+
+Resta del piano: passo 4 in corso (trend sulle grandezze nominali, la strada
+per i canali che la qualita' non vede), poi i passi 5 e 6.

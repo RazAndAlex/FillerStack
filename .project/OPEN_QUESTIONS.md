@@ -276,7 +276,17 @@ L'utente ha scelto di **dichiarare la finestra parziale**. In lavorazione.
   effetto su niente di guardabile.
 
 
-## Una deriva lunga settimane — RIAPERTA il 2026-08-27 (riproposta e rifiutata il 2026-08-23)
+## Una deriva lunga settimane — ESEGUITA il 2026-08-30 (riaperta il 2026-08-27, riproposta e rifiutata il 2026-08-23)
+
+> **ESEGUITA il 2026-08-30 — non rifare ne' la run ne' la misura.** I passi 2
+> e 3 del piano v2 sono eseguiti e verificati: scenario
+> `scenarios/deriva_lenta_60d.yaml` (rampe di 14-21 giorni), run ricaricata
+> per intero sotto `run_id='deriva_lenta_60d'`, anticipo misurato (75,5 h su
+> restriction v8, 47,0 h su flowmeter_dropout v30; vuoti dichiarati su
+> `closing_delay` v21 e `pressure_instability` 13-18, dove la qualita' non
+> degrada mai). Evidenze: `.scratch/v2-predittiva/passo-2/PASSO2-EVIDENZA.md`
+> e `.scratch/v2-predittiva/passo-3/PASSO3-MISURA-ANTICIPO.md` (con
+> `risultati_anticipo.json`). Vedi `RECENT_WORK.md`, 2026-08-30.
 
 > **RIAPERTA il 2026-08-27.** L'utente ha confermato la direzione della v2
 > (**analisi predittiva vera**, sul report

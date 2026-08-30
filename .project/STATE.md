@@ -1,6 +1,6 @@
 # Project state
 
-Updated: 2026-08-24
+Updated: 2026-08-30
 
 > **Cited sources.** Many entries point at working documents under
 > `.scratch/`, `work/`, `Proposte/`, `feedback/` and the `HANDOFF-*.md`
@@ -10,7 +10,7 @@ Updated: 2026-08-24
 > Le sezioni sono in ordine cronologico e **l'ultima vince**. Il paragrafo
 > «Current objective and milestone» qui sotto e' del 2026-08-13 e descrive uno
 > stato superato: per lo stato di oggi si legge l'ultima sezione, «Stato al
-> 2026-08-24».
+> 2026-08-30».
 
 ## Project
 
@@ -675,3 +675,22 @@ avviato il 21 agosto. Non c'entra col lanciatore e non viene toccato.
   non c'e' un danno: c'e' un documento mancante. Va scritto, o va dichiarata una
   deroga.
 - Evidenza della giornata in `work/ricollaudo-20260824/`.
+
+## Stato al 2026-08-30 — supera tutte le sezioni precedenti
+
+- **I passi 2 e 3 del piano v2 (analisi predittiva vera) sono eseguiti e
+  verificati.** Passo 2: run della deriva lenta su scenario nuovo
+  `scenarios/deriva_lenta_60d.yaml` (rampe di 14-21 giorni, seed 43) —
+  36.224.625 cicli in 60 giorni, ricaricati per intero sotto
+  `run_id='deriva_lenta_60d'`: 722.768 predizioni e 14 allarmi (9 sustained,
+  esattamente le 9 valvole guaste). Passo 3: anticipi misurati — restriction
+  v8 **75,5 h** e flowmeter_dropout v30 **47,0 h** (contro 5,3 h e 7,5 h dello
+  storico); vuoti dichiarati dove la qualità non degrada mai (`closing_delay`
+  v21, `pressure_instability` 13-18).
+- **Le evidenze vivono sotto `.scratch/`** (git-ignorato):
+  `.scratch/v2-predittiva/passo-2/PASSO2-EVIDENZA.md` e
+  `.scratch/v2-predittiva/passo-3/PASSO3-MISURA-ANTICIPO.md` con
+  `risultati_anticipo.json` nella stessa cartella. Il dettaglio è in
+  `RECENT_WORK.md`, 2026-08-30.
+- **Cosa resta del piano**: passo 4 in corso (trend sulle grandezze nominali,
+  la strada per i guasti che la qualità non vede), poi i passi 5 e 6 davanti.
