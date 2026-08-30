@@ -417,6 +417,16 @@ la qualita': la valvola 13 resta a 0,80 per due mesi, mentre gli altri tre guast
 si vedono benissimo. Dice che quel guasto va cercato in una grandezza diversa. Non
 e' stato approfondito.
 
+> **Aggiornato il 2026-08-30 (passo 4 della v2).** L'approfondimento c'e': la
+> qualita' resta cieca sul guasto in ENTRAMBE le run (conferma dei passi 3 e 4),
+> ma la progressione ora si legge sulla dispersione: la σ oraria di
+> `filling_time_ms` e' in progressione su tutte e sei le valvole 13-18
+> (Spearman 0,995-0,997 su `deriva_lenta_60d`, 0,978-1,000 su `storico_60d`),
+> mentre le medie orarie di tutti i canali restano vuote. La nota qui sopra
+> resta valida sulla qualita'. Evidenza:
+> `.scratch/v2-predittiva/passo-4/PASSO4-PROGRESSIONE.md` (con
+> `risultati_progressione.json`). Vedi `RECENT_WORK.md`, 2026-08-30.
+
 **Il modello non ha riconosciuto il ritardo di apertura della valvola 21.** Emerso
 nella sessione precedente, mai indagato. Sulla qualita' quel guasto si vede
 (0,60 → 0,51): la domanda e' perche' la catena di inferenza no.

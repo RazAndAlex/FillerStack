@@ -694,3 +694,26 @@ avviato il 21 agosto. Non c'entra col lanciatore e non viene toccato.
   `RECENT_WORK.md`, 2026-08-30.
 - **Cosa resta del piano**: passo 4 in corso (trend sulle grandezze nominali,
   la strada per i guasti che la qualità non vede), poi i passi 5 e 6 davanti.
+- **Il passo 4 del piano v2 è eseguito e verificato**: tutti e quattro i tipi
+  di guasto hanno una progressione leggibile della severità su canali fisici
+  esistenti, senza toccare il modello — restriction v8 via media
+  `filling_time_ms` (esce di banda 10,5 h dopo l'onset, 78,0 h prima del
+  crollo della qualità), closing_delay v21 via media `tail_time_ms` (pendenza
+  +45,2 ms/rampa contro 45 ms di severità dichiarata), pressure_instability
+  13-18 via σ oraria di `filling_time_ms` (in progressione su tutte e sei le
+  valvole in entrambe le run, Spearman 0,995-1,000), flowmeter_dropout v30 via
+  media `filling_time_ms` (0,86 h dopo l'onset, 48,0 h prima della qualità).
+  Vuoto dichiarato: le pressioni di gruppo non sono persistite su DB
+  (`TankPressure` è ground truth interna), dei driver resta solo l'effetto
+  sulla portata.
+- **Verdetto di gate sul passo 5**: per rendere leggibile la progressione il
+  lavoro sul modello NON è imposto dai dati; il passo 5 resta una decisione
+  utente (i contratti congelati ML-F1 + provenienza del modello restano tali,
+  nessun lavoro sul modello avviato). Cinque dei sei canali hanno già baseline
+  API e carta CARTA; solo σ(filling_time) richiede un'aggregazione non
+  precalcolata.
+- Evidenza del passo 4: `.scratch/v2-predittiva/passo-4/PASSO4-PROGRESSIONE.md`
+  con `risultati_progressione.json` (verifica: secondo run indipendente,
+  JSON identico a parte il timestamp). Dettaglio in `RECENT_WORK.md`,
+  2026-08-30. **Cosa resta del piano**: passo 5 (decisione utente) e passo 6
+  davanti.

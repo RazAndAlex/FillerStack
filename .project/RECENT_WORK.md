@@ -2769,3 +2769,50 @@ una seconda esecuzione indipendente dello script (risultato identico).
 
 Resta del piano: passo 4 in corso (trend sulle grandezze nominali, la strada
 per i canali che la qualita' non vede), poi i passi 5 e 6.
+
+---
+
+## 2026-08-30 — Passo 4 della v2 eseguito: la progressione si legge senza toccare il modello
+
+Domanda del passo (fissata dal passo 3): il punteggio satura al 0,9-1,5% della
+rampa e la qualità è cieca su due guasti — esiste, nei dati e negli strumenti
+GIÀ presenti, senza toccare il modello, una grandezza fisica la cui deriva
+SEGUE la rampa di severità? Evidenze: `.scratch/v2-predittiva/passo-4/PASSO4-PROGRESSIONE.md`
+con i risultati in `risultati_progressione.json` (script
+`passo4_progressione.py`, ri-eseguito indipendentemente: JSON identico a parte
+il timestamp di generazione).
+
+**Risposta: sì, per tutti e quattro i tipi di guasto**, su canali che esistono
+già (le medie orarie del riepilogo, più una σ oraria calcolata con UNA
+aggregazione SQL su `cycles`):
+
+| guasto | canale di riferimento (`deriva_lenta_60d`) | prima uscita definitiva | rispetto alla qualità |
+|---|---|---|---|
+| restriction v8 | media `filling_time_ms` (Spearman in salita 0,864) | 10,5 h da onset (2,1% della rampa) | **78,0 h prima** |
+| closing_delay v21 | media `tail_time_ms` (Spearman 0,895, pendenza **+45,2 ms/rampa** contro 45 ms di severità dichiarata) | 48,9 h da onset (14,5%) | qualità cieca per sempre; anche media `tail_pulse` in progressione dal 4,4% della rampa |
+| pressure_instability 13-18 | σ oraria di `filling_time_ms` (Spearman 0,995-0,997; su `storico_60d` 0,978-1,000: in progressione su tutte e sei le valvole in ENTRAMBE le run) | 16,5-32,5 h da onset (3,3-6,5%) | qualità cieca per sempre |
+| flowmeter_dropout v30 | media `filling_time_ms` (Spearman 0,981) | 0,86 h da onset (0,3% della rampa) | **48,0 h prima** |
+
+Sui due guasti per cui la qualità non degrada mai (`closing_delay`,
+`pressure_instability`) la progressione ESISTE ed è monotona, su canali
+diversi dalla qualità: la coda per il ritardo di chiusura, la dispersione per
+l'instabilità di pressione. Le medie orarie di tutti i canali restano vuote su
+`pressure_instability` (escono e rientrano): senza σ(FT) quel guasto
+resterebbe senza gradazione.
+
+**Vuoto dichiarato**: le pressioni di gruppo NON sono persistite su database
+(`TankPressure` è ground truth interna del simulatore). Dei driver di
+pressione esiste sul DB solo l'EFFETTO sulla portata, cioè i canali sopra.
+
+**Verdetto di gate per il passo 5** (evidenza, non decisione): per rendere
+leggibile la progressione il lavoro sul modello NON è imposto dai dati. Cinque
+dei sei canali medi hanno già profilo di baseline pubblicato dall'API
+(`/valves/baseline`) e la CARTA disegna già `filling_time_ms` contro banda
+μ±3σ; il solo canale non precalcolato è la σ oraria di `filling_time_ms`, che
+si ottiene con un'aggregazione SQL su `cycles` (un'eventuale colonna in più
+nel riepilogo orario è lavoro di implementazione, non di modello). Restano
+aperte le decisioni utente su dove mostrare la gradazione e se volere un
+punteggio che gradua; i contratti congelati (ML-F1 + provenienza del modello)
+restano congelati. Nessun lavoro sul modello avviato.
+
+Resta del piano: passo 5 (decisione utente, davanti) e passo 6.
