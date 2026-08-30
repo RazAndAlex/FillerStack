@@ -2689,3 +2689,22 @@ Docker spento, clone in cartella vuota, Python di sistema, nessun ambiente
 virtuale: le cinque pagine rispondono 200 e la MACCHINA disegna OEE 47,3%,
 602.821 cicli e le nove valvole in allarme. Verificato a schermo, non solo con
 `curl`. A fine lavoro non resta acceso niente.
+
+---
+
+## 2026-08-27 — Ricognizione per la v2, report consegnato, progetto intatto
+
+Ricerca su memoria di progetto, `PRODUCT.md`, `Proposte/` e vault carriera,
+chiesta dall'utente prima di qualunque lavoro sulla v2. Conclusione: il sistema
+oggi **rileva** e non **predice** — il punteggio satura a 1,000 per settimane e
+ogni guasto dello storico viene scoperto in circa due ore, quindi l'anticipo
+non e' nemmeno misurabile. La v2 come «analisi predittiva vera» richiede:
+scenari con derive lente (il motore li sa gia' fare, rampe max oggi 40.000
+cicli), una misura dell'anticipo, un segnale di progressione, e la chiusura
+della provenienza del modello prima di spedirne uno nuovo. Ponte con la
+roadmap professionale: la manutenzione predittiva e' il caso concreto che li'
+giustifica il modulo Predictive Analytics.
+
+Prodotto `.scratch/v2-predittiva/REPORT-v2-predittiva.html` (skill
+artifact-design, its-writing, unslop). Nessun altro file toccato. In attesa di
+conferma dell'utente prima di qualunque implementazione.

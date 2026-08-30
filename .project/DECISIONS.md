@@ -948,3 +948,31 @@ Alla radice non ne esisteva nessuno: chi apriva il repository trovava undici fil
 di memoria e nessuna frase che dicesse cos'e'. `README.md` e' in inglese e dice
 anche cosa **non** c'e': niente prognosi, il classificatore a 7 classi quasi
 inerte, la sicurezza come POC accettato.
+
+
+## 2026-08-27 · La direzione della v2 e' confermata: analisi predittiva vera
+
+L'utente ha confermato sul report
+`.scratch/v2-predittiva/REPORT-v2-predittiva.html` la direzione presa il
+2026-08-24: **la v2 e' analisi predittiva vera**, cioe' rispondere a *quanto
+manca al guasto* e *quanto il modello anticipa il degrado*, non solo rilevare.
+Il report e' il documento di riferimento del piano, e il primo dei sei passi e'
+compiuto con questa conferma.
+
+**La deriva lunga e' RIAPERTA come passo 2 del piano.** Il 2026-08-23 era stata
+rifiutata «per adesso» (*«per adesso quello della deriva no»*); la conferma
+della v2 la riporta in piano: scenario con derive lente di 2-3 settimane, run
+nuova, poi misura dell'anticipo. L'analisi resta quella scritta in
+`OPEN_QUESTIONS.md`: chi esegue il passo non deve rifarla, deve solo lanciare
+la run.
+
+**Le decisioni congelate restano dell'utente, e il piano non le apre da solo.**
+Lo schema ML-F1 e la provenienza del modello sono i due contratti congelati che
+solo l'utente riapre, quando e se il passo 5 (modello solo se serve) li
+raggiunge. I limiti del simulatore — `severity_at` monotona crescente, un solo
+guasto per valvola, niente guasti che si riparano — non si allargano senza una
+sua decisione.
+
+I confini del progetto reggono intatti: ground truth separata dal percorso
+operativo, dashboard solo sull'API, nessun numero inventato, accettazione solo
+dell'utente.

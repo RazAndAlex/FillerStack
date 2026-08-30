@@ -276,7 +276,15 @@ L'utente ha scelto di **dichiarare la finestra parziale**. In lavorazione.
   effetto su niente di guardabile.
 
 
-## Una deriva lunga settimane — RIPROPOSTA e RIFIUTATA il 2026-08-23
+## Una deriva lunga settimane — RIAPERTA il 2026-08-27 (riproposta e rifiutata il 2026-08-23)
+
+> **RIAPERTA il 2026-08-27.** L'utente ha confermato la direzione della v2
+> (**analisi predittiva vera**, sul report
+> `.scratch/v2-predittiva/REPORT-v2-predittiva.html`) e la deriva lunga e'
+> rientrata nel piano come **passo 2**: scenario con derive lente di 2-3
+> settimane, run nuova, poi misura dell'anticipo. L'analisi qui sotto resta
+> valida e non va rifatta: chi esegue il passo scrive lo scenario e lancia la
+> run. Vedi `DECISIONS.md`, 2026-08-27.
 
 > **Non e' in coda, e non e' una domanda aperta.** Riproposta all'utente il
 > 2026-08-23 come l'unica cosa in elenco che direbbe qualcosa di nuovo sul
