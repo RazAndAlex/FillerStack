@@ -1,0 +1,89 @@
+# Deriva lenta di 60 giorni — passo 2 del piano v2 predittiva.
+#
+# Perche' esiste: in `storico_60d` le rampe piu' lunghe sono di 40.000 cicli
+# (~2,3 giorni) e il modello le rileva in circa due ore, quindi l'anticipo
+# del modello sul degrado non e' misurabile. Questo scenario usa le STESSE
+# quattro condizioni dello storico (stessi tipi, stesse sedi, stesse
+# severita' finali) ma con onset gradual di DUE e TRE SETTIMANE di tempo
+# macchina, per dare spazio alla misura dell'anticipo (passo 3).
+#
+# ARITMETICA DEI CICLI — stessa cadenza misurata per storico_60d
+# (17.269 cicli/valvola/giorno, 24 h di calendario):
+#   1 giorno  -> 17.269        2 settimane (14 gg) -> 241.766
+#   3 settimane (21 gg) -> 362.649             giorno 60 -> 1.036.140 (fine)
+#
+# I QUATTRO GUASTI, uno per sede come nello storico:
+#   meccanico locale   -> restriction  valvola 8  (valve_id 7),  rampe 21 gg
+#   meccanico locale   -> closing_delay valvola 21 (valve_id 20), rampa 14 gg
+#   diffusa di gruppo  -> pressure_instability G2 = operative 13-18, 21 gg
+#   sensore locale     -> flowmeter_dropout valvola 30 (valve_id 29), 14 gg
+#
+# I partenze sono scaglionati (giorni 12, 20, 30, 40) cosicche' ogni onset
+# comincia in una finestra con meno guasti attivi possibili, e TUTTE le
+# rampe si chiudono prima della fine del run (giorno 60), lasciando 6-9
+# giorni a severita' piena a ciascuna.
+#
+# LIMITI RISPETTATI (invariati rispetto allo storico): `severity_at` e'
+# monotoncrescente, ogni valvola ammette un solo fault, nessun guasto si
+# ripara. Le sedi non si sovrappongono: valve 7 sta in G1, valve 20 in G3,
+# valve 29 in G4, il gruppo 2 sono le operative 13-18.
+#
+# valve_id qui e' 0-based (0..34) e diventa la valvola N+1 in operativo:
+#   7 -> valvola 8      20 -> valvola 21      29 -> valvola 30
+scenario_id: 62
+name: "deriva lenta 60 giorni — quattro condizioni, rampe di 2-3 settimane"
+seed: 43
+faults:
+
+  # Giorno 12 -> giorno ~33. La stessa restrizione della valvola 8 dello
+  # storico (stessa severita' finale 0,35), ma la rampa passa da 40.000
+  # cicli (~2,3 giorni) a 362.649 cicli (21 giorni). E' il caso su cui
+  # l'analisi del 2026-08-27 ha misurato la saturazione in due ore.
+  - fault_type: restriction
+    scope: local
+    valve_id: 7
+    severity: 0.35
+    onset:
+      mode: gradual
+      start_cycle: 207228
+      ramp_cycles: 362649
+
+  # Giorno 20 -> giorno ~34. La sede della valvola 21 (G3, il caso rado ma
+  # persistente) con un difetto meccanico di chiusura invece che di apertura:
+  # stessa natura (offset meccanico in ms), stessa severita' finale (45 ms),
+  # rampa di 14 giorni invece del gradino brusco dello storico.
+  - fault_type: closing_delay
+    scope: local
+    valve_id: 20
+    severity: 45
+    onset:
+      mode: gradual
+      start_cycle: 345380
+      ramp_cycles: 241766
+
+  # Giorno 30 -> giorno ~51. La condizione DIFFUSA del gruppo 2 (operative
+  # 13-18), stessa dello storico, con la rampa portata da 25.000 cicli
+  # (~1,4 giorni) a 362.649 cicli (21 giorni). Nota nota: su QUALITA' questo
+  # guasto non si vede (OPEN_QUESTIONS) — si cerca nelle altre grandezze;
+  # qui interessa comunque l'onset lento sul canale che lo rileva.
+  - fault_type: pressure_instability
+    scope: group
+    group_id: 2
+    severity: 0.30
+    onset:
+      mode: gradual
+      start_cycle: 518070
+      ramp_cycles: 362649
+
+  # Giorno 40 -> giorno ~54. Il guasto di SENSORE sulla valvola 30, come
+  # nello storico ma con la rampa a 14 giorni invece di 60.000 cicli: resta
+  # il guasto "ancora in salita" per una parte della corsa, ma con onset
+  # lento misurabile.
+  - fault_type: flowmeter_dropout
+    scope: local
+    valve_id: 29
+    severity: 0.30
+    onset:
+      mode: gradual
+      start_cycle: 690760
+      ramp_cycles: 241766
