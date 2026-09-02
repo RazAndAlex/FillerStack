@@ -1012,7 +1012,24 @@ nei due temi.
 due perdenti del giro 2, wa e wc, in
 `.scratch/v2-predittiva/passo-6/varianti-r2/` accanto a wb.
 
-**Segue il graft, poi la pagina vera.** Prima che la superficie diventi una
-pagina reale della dashboard, le parti piu' forti di ciascuna perdente (wa,
-wc) vengono innestate dentro wb. La scelta della forma non e' ancora una
-pagina in produzione. Esecuzione del giro in `RECENT_WORK.md`, 2026-08-30.
+**Il graft e' eseguito e la forma innestata e' APPROVATA dall'utente.**
+Verdetto testuale: *«okay, la approvo»*. I due innesti dentro wb:
+
+- **da wa «mosaico»**: il margine come numero grande dominante (27px/700,
+  unita' `h` a corpo minore);
+- **da wc «banda»**: il territorio delle zone di deriva sopra +3σ ai gradini
+  3·10·30·100 e la traiettoria ricolorata per zona nel pannello di
+  dettaglio.
+
+Il glifo dashed-void di wc **non e' stato innestato**, deliberatamente: wb
+ne aveva gia' un equivalente. Verifica rieseguita a 1536×770 nei due temi
+dopo l'innesto: 70 parole di landing invariate, zero errori console, 12/12
+righe intere nel viewport. Evidenza:
+`.scratch/v2-predittiva/passo-6/verifica-r2/REPORT.md` (sezione graft) e
+`.scratch/handoffs/graft-wb-strisce-r2.md`.
+
+**La decisione sulla forma e' ora FINALE.** Cio' che resta e' la pagina vera
+della dashboard costruita su di essa; l'accettazione dell'utente a schermo
+resta pendente per la pagina stessa.
+
+Esecuzione del giro in `RECENT_WORK.md`, 2026-08-30.

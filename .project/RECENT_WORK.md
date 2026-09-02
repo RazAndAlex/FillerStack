@@ -2858,3 +2858,23 @@ screenshot mostra).
 restano su disco. Segue il **graft** — le parti piu' forti di ciascuna
 perdente innestate dentro wb — prima che la superficie diventi una pagina
 vera della dashboard. Decisione registrata in `DECISIONS.md`, 2026-08-30.
+
+### Addendum 2026-08-30 — graft eseguito, forma innestata APPROVATA
+
+Il graft su wb «strisce» e' eseguito: **da wa «mosaico»** il margine come
+numero grande dominante (27px/700, unita' `h` a corpo minore); **da wc
+«banda»** il territorio delle zone di deriva sopra +3σ ai gradini
+3·10·30·100 e la traiettoria ricolorata per zona nel pannello di dettaglio.
+Il glifo dashed-void di wc **non e' stato innestato**, deliberatamente: wb
+ne aveva gia' un equivalente. Verifica di fase rieseguita a 1536×770 px CSS
+nei due temi: **70 parole di landing invariate, zero errori console, 12/12
+righe intere nel viewport**, zero NaN/undefined/null. Evidenza:
+`.scratch/v2-predittiva/passo-6/verifica-r2/REPORT.md` (sezione graft, con
+screenshot `wb-chiaro.png` e `wb-scuro.png` sovrascritti) e handoff
+`.scratch/handoffs/graft-wb-strisce-r2.md`.
+
+**L'utente ha approvato la forma innestata**: *«okay, la approvo»*. La
+decisione sulla forma «strisce» e' ora **finale**; cio' che resta e' la
+pagina vera della dashboard costruita su di essa, con l'accettazione a
+schermo ancora pendente per la pagina stessa. Decisione registrata in
+`DECISIONS.md`, 2026-08-30.

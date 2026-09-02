@@ -726,6 +726,17 @@ avviato il 21 agosto. Non c'entra col lanciatore e non viene toccato.
   Entrambe le tornate restano archiviate su disco sotto
   `.scratch/v2-predittiva/passo-6/`. Decisione in `DECISIONS.md`,
   2026-08-30; esecuzione del giro in `RECENT_WORK.md`, 2026-08-30.
-- **Cosa resta**: il **graft in corso** — innestare dentro «strisce» le parti
-  piu' forti delle due perdenti (wa, wc) — poi la superficie diventa una
-  pagina vera della dashboard.
+- **Cosa restava**: il graft — fatto. **Il graft su wb «strisce» e' eseguito
+  e la forma innestata e' APPROVATA dall'utente**: *«okay, la approvo»*.
+  Innestati il margine come numero grande dominante (da wa «mosaico») e il
+  territorio delle zone di deriva con la traiettoria ricolorata per zona nel
+  pannello di dettaglio (da wc «banda»); il glifo dashed-void di wc non e'
+  stato innestato perche' wb ne aveva gia' un equivalente. Verifica a
+  1536×770 nei due temi: 70 parole di landing invariate, zero errori
+  console, 12/12 righe intere nel viewport. Evidenza:
+  `.scratch/v2-predittiva/passo-6/verifica-r2/REPORT.md` (sezione graft) e
+  `.scratch/handoffs/graft-wb-strisce-r2.md`.
+- **La decisione sulla forma e' FINALE** (DECISIONS.md, 2026-08-30).
+  **Cosa resta**: il ramo pagina vera e' avviato — la superficie diventa una
+  pagina reale della dashboard costruita sulla forma «strisce» innestata;
+  l'accettazione dell'utente a schermo resta pendente per la pagina stessa.
