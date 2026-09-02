@@ -20,6 +20,12 @@ Endpoint (spec M10 §5):
 - GET /valves/quality/series    qualita' (good/total) di OGNI valvola in
                                 secchielli CONTIGUI (hour|day|week), letta dal
                                 riepilogo `cycle_rollup_hour`
+- GET /valves/progression/series
+                                serie di PROGRESSIONE oraria per valvola (passo
+                                6): medie di filling_time_ms / tail_time_ms /
+                                tail_pulse e qualita' dal riepilogo, piu' la
+                                sigma oraria di filling_time_ms calcolata al
+                                volo su `cycles` (STDDEV_POP)
 - GET /valves                   catalogo fisso valvole 1..35 + ultima
                                 prediction + alert attivi + ultimo KPI
 - GET /valves/baseline          riferimento sano per valvola (media, sigma,
@@ -1851,6 +1857,250 @@ def _leggi_qualita_coda(
     for valve_id, b, total, good in rows:
         acc.setdefault(int(valve_id), {})[_as_utc(b)] = (int(total), int(good))
     return acc
+
+
+# ---------------------------------------------------------------------------
+# Serie di progressione oraria (passo 6 — guscio v2 predittiva, 2026-08-30)
+# ---------------------------------------------------------------------------
+# I canali della progressione misurati al passo 4
+# (`.scratch/v2-predittiva/passo-4/PASSO4-PROGRESSIONE.md`): per restriction e
+# flowmeter_dropout grada il degrado la MEDIA oraria di `filling_time_ms`; per
+# closing_delay le medie di `tail_time_ms` e `tail_pulse`; per
+# pressure_instability la SIGMA oraria di `filling_time_ms` — le medie per
+# quel guasto restano nella banda (l'oscillazione del driver esce e rientra
+# senza lasciarla): senza il canale di dispersione il guasto non ha
+# gradazione. Questa route serve quelle serie, run per run, valvola per
+# valvola, nella stessa forma secchiello-per-secchiello di
+# `/valves/quality/series`.
+#
+# Dove abita ogni canale: le tre medie e la qualita' vengono dal riepilogo
+# `cycle_rollup_hour`, che le ha gia' (rileggerle da `cycles` costerebbe la
+# scansione da ~53 s misurata in `pipeline/cycle_rollup.py`); la sigma NON e'
+# precalcolata ed e' una STDDEV_POP interrogata al volo su `cycles`, aggregata
+# per ora — lo stesso precedente di `_baseline_sql`/`_sigma_media_sql`
+# (STDDEV_* su `cycles`, nessuna migrazione, nessun modello).
+_PROGRESSIONE_MEDIE = ("filling_time_ms", "tail_time_ms", "tail_pulse")
+
+_PROGRESSIONE_CANALI = tuple(f"mean_{m}" for m in _PROGRESSIONE_MEDIE) + (
+    "sigma_filling_time_ms", "quality_rate")
+
+
+def _progressione_medie(
+        st: Storage, run: str | None, valve_id: int | None,
+        lo: datetime, hi: datetime,
+) -> dict[int, dict[datetime, dict[str, Any]]]:
+    """Medie e qualita' per (valvola, ora) dal riepilogo, sul run.
+
+    `{valve_id: {bucket_ts: {"total": int, "good": int,
+                             metrica: (somma, conteggio)}}}` — una riga del
+    riepilogo per (run, ora, valvola): l'intero run sono ~34.000 righe e la
+    lettura costa millisecondi. I nomi di colonna vengono da
+    `_PROGRESSIONE_MEDIE`, mai dalla richiesta.
+    """
+    cond = ["bucket_ts >= :lo", "bucket_ts < :hi"]
+    params: dict[str, Any] = {"lo": lo, "hi": hi}
+    if valve_id is not None:
+        cond.insert(0, "valve_id = :v")
+        params["v"] = valve_id
+    if run is not None:
+        cond.insert(0, "run_id = :run")
+        params["run"] = run
+    sel = ", ".join(f"{_sum_col(m)}, {_n_col(m)}" for m in _PROGRESSIONE_MEDIE)
+    with st.engine.connect() as conn:
+        rows = conn.execute(text(
+            f"SELECT valve_id, bucket_ts, total, good, {sel} "
+            f"FROM {ROLLUP_TABLE} WHERE " + " AND ".join(cond)),
+            params).all()
+    out: dict[int, dict[datetime, dict[str, Any]]] = {}
+    for row in rows:
+        per_ora = out.setdefault(int(row[0]), {})
+        per_ora[_as_utc(row[1])] = {
+            "total": int(row[2]), "good": int(row[3]),
+            **{m: (row[4 + 2 * i], int(row[5 + 2 * i] or 0))
+               for i, m in enumerate(_PROGRESSIONE_MEDIE)},
+        }
+    return out
+
+
+def _progressione_sigma(
+        st: Storage, run: str | None, valve_id: int | None,
+        lo: datetime, hi: datetime,
+) -> tuple[dict[int, dict[datetime, float]], str | None]:
+    """Sigma oraria di `filling_time_ms` da `cycles`, interrogata al volo.
+
+    → `({valve_id: {bucket_ts: sigma}}, motivo)`. `motivo` non-None = query
+    non eseguibile: le sigma escono `null` e la risposta si dichiara
+    degradata — il canale nuovo non deve mai potere rompere la risposta
+    (stesso spirito della `sigma_media_46` della baseline, che in errore esce
+    `null` + motivo).
+
+    STDDEV_POP (ddof=0) sulla popolazione dei cicli dell'ora: e' la
+    dispersione CICLO-CICLO dentro l'ora, il canale dichiarato per
+    `pressure_instability` (passo 4 §2.3), non la dispersione delle medie.
+
+    Il secchio e' `extract(epoch ...)/3600` e non il `date_trunc(... AT TIME
+    ZONE 'UTC')` del riepilogo: l'epoca e' per definizione UTC, quindi il
+    confine d'ora e' lo STESSO istante con un costo per riga minore (su 36,2 M
+    di cicli la differenza si vede: v. evidenza passo 6). I bucket coincidono
+    cifra per cifra con quelli del riepilogo, che e' troncato in UTC.
+
+    COSTO (misurato 2026-08-30 sul run `deriva_lenta_60d`, 36,2 M di cicli):
+    ~3-5 s con `valve_id` (scan filtrato), ~3 min per TUTTE le 35 valvole in
+    una aggregazione sola — il costo e' per riga su `cycles`
+    (`filling_time_ms` non sta in nessun indice coprente): non e' un indice
+    mancante, e' il prezzo del canale non precalcolato. Chi serve UNA valvola
+    passa da qui; chi servono tutte e 35 le legga una volta e le conservi (i
+    fixture del passo 6 fanno cosi').
+    """
+    cond = ["event_ts >= :lo", "event_ts < :hi"]
+    params: dict[str, Any] = {"lo": lo, "hi": hi}
+    if valve_id is not None:
+        cond.insert(0, "valve_id = :v")
+        params["v"] = valve_id
+    if run is not None:
+        cond.insert(0, "run_id = :run")
+        params["run"] = run
+    try:
+        with st.engine.connect() as conn:
+            rows = conn.execute(text(
+                "SELECT valve_id, "
+                "  (extract(epoch from event_ts)::bigint / 3600) AS ora_utc, "
+                "  STDDEV_POP(filling_time_ms::double precision) AS sigma "
+                "FROM cycles WHERE " + " AND ".join(cond) +
+                " GROUP BY valve_id, ora_utc"), params).all()
+    except SQLAlchemyError as exc:
+        return {}, (f"sigma non calcolabile (query su cycles): "
+                    f"{exc.__class__.__name__}")
+    out: dict[int, dict[datetime, float]] = {}
+    for valve_r, ora_utc, sigma in rows:
+        if sigma is None:      # una sola misurazione nell'ora: non definita
+            continue
+        # epoch/3600 → l'inizio dell'ora UTC, stesso `datetime` del riepilogo.
+        bucket = datetime.fromtimestamp(int(ora_utc) * 3600, tz=timezone.utc)
+        out.setdefault(int(valve_r), {})[bucket] = float(sigma)
+    return out, None
+
+
+@app.get("/valves/progression/series")
+def valves_progression_series(
+    run_id: str | None = Query(
+        None, description="run da interrogare; default: KV `current_run_id`, "
+        "oppure l'unico run presente"),
+    valve_id: int | None = Query(
+        None, ge=1, le=35,
+        description="singola valvola 1-35; omessa = tutte le valvole "
+                    "presenti nel run"),
+) -> dict[str, Any]:
+    """Serie di progressione oraria per valvola: i canali del passo 4.
+
+    Perche' esiste: il punteggio satura e la qualita' e' cieca su due dei
+    quattro guasti (passo 3), ma la progressione del degrado si legge sulle
+    grandezze fisiche — medie orarie di `filling_time_ms` / `tail_time_ms` /
+    `tail_pulse`, qualita', e sigma oraria di `filling_time_ms`. Questa route
+    le rende servibili senza riscrivere le aggregazioni del passo 4: chi
+    disegna la shell predittiva legge qui la serie completa del run.
+
+    **Canali** (un valore per valvola e ora, `null` quando non misurato):
+
+    - `mean_filling_time_ms`, `mean_tail_time_ms`, `mean_tail_pulse`
+      — `sum/n` del riepilogo `cycle_rollup_hour` (somma e conteggio propri
+      di ogni grandezza: le colonne KPI sono nullable, il denominatore e'
+      `COUNT(colonna)`, non `total`);
+    - `quality_rate` — `good/total` dello stesso secchiello, `null` a
+      `total == 0` (zero cicli = non misurata, mai 0.0);
+    - `sigma_filling_time_ms` — STDDEV_POP dei cicli dell'ora, interrogata
+      al volo su `cycles` (vedi `_progressione_sigma` per costo e formula);
+      con un solo ciclo misurato nell'ora e' `null`.
+
+    **Finestra: le ore COMPLETE del run** — la copertura del riepilogo
+    (`MIN`/`MAX(bucket_ts)`), stessa disciplina di tutto il progetto: un
+    secchiello del riepilogo e' sempre un'ora finita, quindi ogni bucket
+    porta medie, qualita' e sigma della STESSA popolazione di cicli. L'ora in
+    corso non c'e': niente riga di riepilogo, e una sigma calcolata li'
+    accanto a medie assenti sarebbe un bucket meta' pieno e meta' vuoto.
+    `from`/`to` in risposta sono gli effettivi bordi (il secondo esclusivo).
+
+    **Ore senza cicli ci sono lo stesso** (`total: 0`, canali a `null`): la
+    fermata e' un fatto, toglierla la nasconde — la `REGOLA_OMISSIONE` di
+    `/valves/quality/series`. Tutte le valvole presenti condividono la STESSA
+    lista di istanti, cosi' un grafico sovrappone le curve senza indovinare.
+
+    **Run**: stesso contratto delle altre route che toccano `cycles` —
+    `run_id` esplicito, altrimenti KV `current_run_id`, poi l'unico run;
+    con piu' run e nessuno indicato la risposta e' 200 degradata con il
+    motivo (`_resolve_run`): mai un 500, mai due run mescolati.
+
+    **Costo**: medie e qualita' sono millisecondi (riepilogo); la sigma paga
+    la scansione di `cycles` — ~3-5 s a valvola sul run da 36,2 M di cicli,
+    ~3 min per tutte e 35 in una chiamata (misurato, v.
+    `_progressione_sigma`). Con `valve_id` si interroga una valvola sola;
+    senza, la risposta resta completa ma il chiamante aspetta la scansione
+    intera.
+    """
+    st = _storage()
+    run, run_reason = _resolve_run(st, run_id)
+    out: dict[str, Any] = {
+        "run_id": run, "valve_id": valve_id,
+        "channels": list(_PROGRESSIONE_CANALI),
+        "from": None, "to": None,
+        "valves": {},
+        "degraded": True, "reason": None,
+    }
+    if run_reason:
+        out["reason"] = f"{run_reason} ({RUN_AMBIGUO_HINT})"
+        return out
+    cov_lo, cov_hi, _cicli_prima = _copertura_riepilogo(st, run)
+    if cov_lo is None or cov_hi is None:
+        out["reason"] = (
+            f"nessuna ora riassunta in {ROLLUP_TABLE} per il run {run!r}: "
+            "riempire il riepilogo con `python -m pipeline.cycle_rollup "
+            f"--run-id {run} --since-last`")
+        return out
+    lo, hi = cov_lo, cov_hi + ROLLUP_BUCKET
+    out["from"], out["to"] = _iso(lo), _iso(hi)
+
+    motivi: list[str] = []
+    medie = _progressione_medie(st, run, valve_id, lo, hi)
+    sigma, sigma_ko = _progressione_sigma(st, run, valve_id, lo, hi)
+    if sigma_ko:
+        motivi.append(sigma_ko)
+
+    valvole = (sorted({*medie, *sigma}) if valve_id is None
+               else [valve_id])
+    n_ore = int((hi - lo) // ROLLUP_BUCKET)
+    istanti = [lo + k * ROLLUP_BUCKET for k in range(n_ore)]
+    for v in valvole:
+        per_ora_medie = medie.get(v, {})
+        per_ora_sigma = sigma.get(v, {})
+        if valve_id is not None and not per_ora_medie and not per_ora_sigma:
+            out["reason"] = (
+                f"nessun ciclo riassunto per la valvola {v} nel run "
+                f"{run!r} nella finestra {_iso(lo)} → {_iso(hi)}")
+            return out
+        serie: list[dict[str, Any]] = []
+        for t in istanti:
+            riga = per_ora_medie.get(t)
+            punto: dict[str, Any] = {
+                "at": _iso(t), "total": 0, "good": 0,
+                **{c: None for c in _PROGRESSIONE_CANALI},
+            }
+            if riga is not None:
+                total, good = riga["total"], riga["good"]
+                punto["total"], punto["good"] = total, good
+                for m in _PROGRESSIONE_MEDIE:
+                    s, n = riga[m]
+                    if n:
+                        punto[f"mean_{m}"] = _round3(s / n)
+                if total:
+                    punto["quality_rate"] = round(good / total, 3)
+            sig = per_ora_sigma.get(t)
+            if sig is not None:
+                punto["sigma_filling_time_ms"] = _round3(sig)
+            serie.append(punto)
+        out["valves"][str(v)] = serie
+    out["degraded"] = bool(motivi)
+    out["reason"] = "; ".join(motivi) or None
+    return out
 
 
 def _sql_ultima_prediction(preds) -> str:

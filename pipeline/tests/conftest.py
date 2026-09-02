@@ -35,6 +35,7 @@ _PREFISSI_EFFIMERI = ("plcsim_test_fix_", "plcsim_test_oee_",
                       "plcsim_test_baseline_cache_", "plcsim_test_baseline_",
                       "plcsim_test_run_",
                       "plcsim_test_rollup_", "plcsim_test_qser_",
+                      "plcsim_test_prog_",
                       "plcsim_test_prof_")
 
 _EFFIMERO = re.compile(
