@@ -1,6 +1,6 @@
 # Project state
 
-Updated: 2026-08-30
+Updated: 2026-09-02
 
 > **Cited sources.** Many entries point at working documents under
 > `.scratch/`, `work/`, `Proposte/`, `feedback/` and the `HANDOFF-*.md`
@@ -740,3 +740,16 @@ avviato il 21 agosto. Non c'entra col lanciatore e non viene toccato.
   **Cosa resta**: il ramo pagina vera e' avviato — la superficie diventa una
   pagina reale della dashboard costruita sulla forma «strisce» innestata;
   l'accettazione dell'utente a schermo resta pendente per la pagina stessa.
+- **La pagina PREDITTIVA esiste nella dashboard ed e' ACCETTATA dall'utente
+  a schermo** (2026-09-02, verdetto testuale *«si va bene»*): vive in
+  `dashboard/predittiva/` (index.html, pagina.js, stile.css), la voce di nav
+  e' presente su tutte le pagine esistenti (a, v1, oee, pc, k1) e la route
+  `valves/progression/series` e' nella whitelist di `dashboard/server_api.py`.
+  Verifica indipendente superata: margini ricalcolati dall'API identici a
+  quelli mostrati, suite da 578 test verde, entrambi i temi a schermo.
+- **Il milestone v2 e' CHIUSO**: il piano v2 e' completo — passi 1-4
+  eseguiti e verificati, passo 5 rinviato per decisione utente (i dati non
+  lo impongono), passo 6 chiuso (forma scelta, innestata, pagina accettata).
+- **Cosa resta aperto**: niente di pianificato. SpeedActual e la provenienza
+  del modello restano differiti con le loro condizioni di riapertura,
+  invariati.

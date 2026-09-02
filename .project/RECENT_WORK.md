@@ -2878,3 +2878,22 @@ decisione sulla forma «strisce» e' ora **finale**; cio' che resta e' la
 pagina vera della dashboard costruita su di essa, con l'accettazione a
 schermo ancora pendente per la pagina stessa. Decisione registrata in
 `DECISIONS.md`, 2026-08-30.
+
+## 2026-09-02 — La pagina PREDITTIVA entra in dashboard, il piano v2 e' chiuso
+
+La superficie «strisce» innestata e' diventata la pagina vera della
+dashboard: `dashboard/predittiva/` (index.html, pagina.js, stile.css),
+voce di nav aggiunta su tutte le pagine esistenti (a, v1, oee, pc, k1),
+route `valves/progression/series` aggiunta alla whitelist di
+`dashboard/server_api.py`. La pagina legge dati live dall'API, una valvola
+per volta.
+
+**Verifica indipendente superata**: margini ricalcolati dall'API identici a
+quelli mostrati a schermo (75,5 h su v8, 47,0 h su v30, vuoti dichiarati
+sulle altre); suite da 578 test verde dopo le modifiche del costruttore;
+entrambi i temi verificati a schermo.
+
+**Accettazione utente a schermo**: *«si va bene»*. Il piano v2 e' COMPLETO:
+passi 1-4 eseguiti e verificati, passo 5 rinviato per decisione utente (i
+dati non lo impongono), passo 6 chiuso — forma scelta, innestata, pagina
+accettata. Decisione registrata in `DECISIONS.md`, addendum 2026-09-02.

@@ -1,6 +1,6 @@
 # Active decisions
 
-Updated: 2026-08-30
+Updated: 2026-09-02
 
 This file summarizes active decisions evidenced by `CONTEXT.md`, `docs/adr/`, and
 the current implementation. The ADRs remain authoritative for detail.
@@ -1033,3 +1033,16 @@ della dashboard costruita su di essa; l'accettazione dell'utente a schermo
 resta pendente per la pagina stessa.
 
 Esecuzione del giro in `RECENT_WORK.md`, 2026-08-30.
+
+**Addendum 2026-09-02 — la pagina vera e' costruita su dati live e ACCETTATA
+dall'utente a schermo**: verdetto testuale *«si va bene»*. La pagina
+PREDITTIVA vive in `dashboard/predittiva/` (index.html, pagina.js,
+stile.css), con la voce di nav su tutte le pagine esistenti e la route
+`valves/progression/series` aggiunta alla whitelist di
+`dashboard/server_api.py`. Verifica indipendente superata: margini ricalcolati
+dall'API identici a quelli mostrati (75,5 h su v8, 47,0 h su v30), suite da
+578 test verde dopo le modifiche, entrambi i temi a schermo.
+
+**Il piano v2 e' COMPLETO.** Passi 1-4 eseguiti e verificati; passo 5
+rinviato per decisione utente (i dati non impongono lavoro sul modello);
+passo 6 chiuso — forma scelta, innestata, pagina accettata.
