@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Predittiva — strisce</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/comune/lessico.css">
+<link rel="stylesheet" href="stile.css">
+<script>
+  // tema applicato prima del primo disegno, per non far lampeggiare la pagina
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('tema-v7pred'); } catch (e) {}
+    if (t) document.documentElement.setAttribute('data-tema', t);
+  })();
+</script>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-marca">filler01</span>
+  <ul class="nav-voci">
+    <li><a id="v-macchina" href="/a/">MACCHINA</a></li>
+    <li><a id="v-valvole" href="/v1/">VALVOLE</a></li>
+    <li><a id="v-oee" href="/oee/">OEE</a></li>
+    <li><a id="v-tempo" href="/pc/">TEMPO</a></li>
+    <li><a id="v-carta" href="/k1/">CARTA</a></li>
+    <li class="attiva">PREDITTIVA</li>
+  </ul>
+  <span class="nav-dx">
+    <button id="tema" type="button" class="btn-tema" aria-label="Tema chiaro o scuro"></button>
+    <span id="switch-scenario"></span>
+  </span>
+</nav>
+
+<header class="testata">
+  <h1 class="forma">strisce</h1>
+  <div class="legenda" id="legenda">
+    <span class="leg rampa" id="leg-rampa"></span>
+    <span class="leg"><svg viewBox="0 0 14 12" aria-hidden="true"><rect class="tk" x="6.3" y="7" width="1.4" height="4"/></svg>segnale</span>
+    <span class="leg"><svg viewBox="0 0 14 12" aria-hidden="true"><rect class="tk" x="6.3" y="4" width="1.4" height="7"/></svg>allarme</span>
+    <span class="leg"><svg viewBox="0 0 14 12" aria-hidden="true"><rect class="tk-d" x="6.1" y="1" width="1.8" height="10"/></svg>degrado</span>
+    <span class="leg"><span class="vuoto vuoto-leg" aria-hidden="true"></span>non vedibile</span>
+  </div>
+  <span class="prov" id="prov"></span>
+</header>
+
+<main class="corpo">
+  <div class="riga riga-head" aria-hidden="true">
+    <span class="hh">
+      <span class="h1" id="h-pop"></span>
+      <span class="h2">canale &middot; ms</span>
+    </span>
+    <span class="estremi"><i id="est-a"></i><i id="est-b"></i></span>
+    <span class="mh">margine</span>
+  </div>
+  <div class="elenco" id="elenco"><!-- righe costruite da pagina.js --></div>
+</main>
+
+<div class="velo" id="velo" hidden></div>
+<aside class="pannello" id="pan" hidden role="dialog" aria-modal="true" aria-labelledby="pan-tit">
+  <div class="pan-testa">
+    <h2 id="pan-tit">Valvola</h2>
+    <button class="pan-x" id="pan-x" type="button" aria-label="Chiudi il dettaglio">&#10005;</button>
+  </div>
+  <div class="pan-corpo" id="pan-corpo"></div>
+</aside>
+
+<div class="tip" id="tip" hidden role="status" aria-live="polite"></div>
+
+<script type="module" src="/comune/scenario.js"></script>
+<script type="module" src="pagina.js"></script>
+</body>
+</html>

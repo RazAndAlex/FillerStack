@@ -58,12 +58,18 @@ SCENARI = [
 # Le nove route che le tre pagine chiamano davvero
 # (censimento fatto sul codice delle pagine il 2026-08-19). `alerts/pareto` e
 # `manifest` sono helper morti di versioni precedenti: nessuna pagina li usa.
+# 2026-08-31: si aggiunge `valves/progression/series`, la sorgente della
+# pagina PREDITTIVA (passo 7): serie orarie dei canali fisici per valvola.
+# La pagina la chiede UNA valvola per volta (2,8-5,6 s a valvola misurati
+# sul run da 36,2 M di cicli): mai senza `valve_id`, dove la scansione
+# della sigma su tutte e 35 costa ~3 minuti.
 ROUTE_AMMESSE = {
     "machine/state",
     "machine/oee",
     "machine/oee/series",
     "valves",
     "valves/baseline",
+    "valves/progression/series",
     # Qualita' per valvola in secchielli contigui (2026-08-20): e' l'unica
     # route che porta l'andamento della SINGOLA valvola nel tempo, e nessuna
     # pagina puo' disegnarlo senza.

@@ -1,0 +1,121 @@
+/* wb — forma «strisce». Solo disposizione della pagina; la grammatica
+   (tinte, temi, tipografia, pannello, tip) sta in ../lessico.css. */
+
+/* ---------- testata: nome della forma + legenda + provenienza ---------- */
+.testata{
+  flex:0 0 auto; display:flex; align-items:center; gap:20px;
+  padding:5px 16px 4px;
+}
+.forma{
+  margin:0; font-size:16px; font-weight:600;
+  letter-spacing:.22em; text-transform:uppercase;
+}
+.legenda{ display:flex; align-items:center; gap:14px; }
+.leg{
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:11px; color:var(--muto); white-space:nowrap;
+}
+.leg svg{ width:13px; height:12px; display:block; }
+.rampa{ gap:6px; }
+.rampa .quattro{ display:inline-flex; gap:2px; }
+.rampa .quattro i{ width:11px; height:11px; display:block; border-radius:1px; }
+.rampa .quattro i.s1{ background:var(--sev1); }
+.rampa .quattro i.s2{ background:var(--sev2); }
+.rampa .quattro i.s3{ background:var(--sev3); }
+.rampa .quattro i.s4{ background:var(--sev4); }
+.prov{ margin-left:auto; font-size:11px; color:var(--muto); white-space:nowrap; }
+
+/* ---------- corpo: una riga per valvola ---------- */
+.corpo{
+  flex:1 1 auto; min-height:0;
+  display:flex; flex-direction:column; padding:0 16px 6px;
+}
+.elenco{
+  flex:1 1 auto; min-height:0;
+  display:flex; flex-direction:column; gap:2px;
+}
+.riga{
+  display:grid; grid-template-columns:178px minmax(0,1fr) 118px;
+  align-items:center; gap:14px;
+  flex:1 1 0; min-height:30px; max-height:46px;
+  padding:0 8px; border-radius:2px;
+}
+.riga:not(.riga-head){ cursor:pointer; }
+.riga:not(.riga-head):hover{ background:var(--sup-2); }
+.riga:not(.riga-head):hover .vid{ font-weight:700; }
+.riga:focus{ outline:none; }
+.riga:focus-visible{ outline:2px solid var(--ink); outline-offset:-2px; }
+
+.riga-head{
+  flex:0 0 18px; font-size:10.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muto);
+}
+.hh{ display:flex; gap:14px; }
+.hh .h1{ font-weight:600; }
+.estremi{ display:flex; justify-content:space-between; font-style:normal; }
+.mh{ text-align:right; }
+
+/* etichetta di riga: identita' + guasto + canale */
+.vlab{ display:flex; flex-direction:column; line-height:1.18; min-width:0; }
+.vid{ font-size:13px; font-weight:600; }
+.vsub, .vch{
+  font-size:10.5px; color:var(--muto);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* ---------- la striscia: 60 segmenti contigui, niente assi ---------- */
+.strip-w{ min-width:0; }
+svg.strip{ width:100%; height:18px; display:block; }
+svg.strip:focus{ outline:none; }
+svg.strip:focus-visible{ outline:2px solid var(--rif); outline-offset:1px; }
+rect.hit{ fill:transparent; }
+rect.s0{ fill:var(--traccia); }
+rect.s1{ fill:var(--sev1); }
+rect.s2{ fill:var(--sev2); }
+rect.s3{ fill:var(--sev3); }
+rect.s4{ fill:var(--sev4); }
+rect.morto{
+  fill:var(--sup); stroke:var(--muto); stroke-width:1;
+  stroke-dasharray:2 2; vector-effect:non-scaling-stroke;
+}
+rect.tk{ fill:var(--dato); }
+rect.tk-d{ fill:var(--ink); }
+rect.mirino{ fill:var(--ink); opacity:.85; }
+
+/* ---------- margine: UN numero grande dove esiste (innesto da wa),
+   il vuoto dove no ---------- */
+.margine{ text-align:right; }
+.margine .mnum{
+  font-size:27px; font-weight:700; color:var(--ink); line-height:1;
+}
+.margine .mnum small{
+  font-size:12px; font-weight:600; color:var(--muto); margin-left:4px;
+}
+.vuoto{
+  display:inline-block; width:46px; height:15px;
+  border:1.5px dashed var(--muto); border-radius:2px;
+  vertical-align:middle;
+}
+.vuoto-leg{ width:20px; height:11px; }
+
+/* ---------- pannello: il grafico di dettaglio ---------- */
+.pan-graf svg{ width:100%; display:block; }
+.pan-graf .banda{ fill:var(--traccia); }
+/* innesto da wc: zone di deriva oltre la banda, tinta leggera crescente */
+.pan-graf .z1{ fill:var(--sev1); fill-opacity:.10; }
+.pan-graf .z2{ fill:var(--sev2); fill-opacity:.14; }
+.pan-graf .z3{ fill:var(--sev3); fill-opacity:.18; }
+.pan-graf .z4{ fill:var(--sev4); fill-opacity:.24; }
+.pan-graf .tacca{ stroke:var(--rif); stroke-width:1.5; stroke-dasharray:5 4; }
+.pan-graf .linea{ fill:none; stroke:var(--dato); stroke-width:2; stroke-linejoin:round; }
+/* innesto da wc: la traiettoria si ricolora nella zona che attraversa */
+.pan-graf .ln1{ stroke:var(--sev1); }
+.pan-graf .ln2{ stroke:var(--sev2); }
+.pan-graf .ln3{ stroke:var(--sev3); }
+.pan-graf .ln4{ stroke:var(--sev4); }
+.pan-graf .tk{ fill:var(--dato); }
+.pan-graf .tk-d{ fill:var(--ink); }
+.pan-graf text{ font-size:10.5px; fill:var(--muto); }
+
+/* ---------- attesa: la riga dichiara che i suoi dati stanno arrivando */
+.attesa{ font-size:11px; color:var(--muto); }
