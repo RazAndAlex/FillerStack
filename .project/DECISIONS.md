@@ -1,6 +1,6 @@
 # Active decisions
 
-Updated: 2026-08-21
+Updated: 2026-08-30
 
 This file summarizes active decisions evidenced by `CONTEXT.md`, `docs/adr/`, and
 the current implementation. The ADRs remain authoritative for detail.
@@ -976,3 +976,43 @@ sua decisione.
 I confini del progetto reggono intatti: ground truth separata dal percorso
 operativo, dashboard solo sull'API, nessun numero inventato, accettazione solo
 dell'utente.
+
+## 2026-08-30 · la superficie predittiva v2 e' la forma "strisce"
+
+L'utente ha scelto la forma **wb «strisce»** per la superficie predittiva v2,
+puntando all'indirizzo `http://127.0.0.1:8099/varianti-r2/wb/`. Nessuna
+motivazione e' stata data: qui si registra la scelta, non una ragione.
+
+Le tre forme offerte nel giro 2, costruite sotto
+`.scratch/v2-predittiva/passo-6/varianti-r2/`:
+
+- **wa «mosaico»** — griglia di tile, una per valvola;
+- **wb «strisce»** — una striscia temporale stile statuspage per valvola, con
+  la colonna MARGINE a destra (75,5 h su v8, 47,0 h su v30, vuoti dichiarati
+  sulle altre);
+- **wc «banda»** — la linea del canale dentro la banda attesa μ±3σ (meccanismo
+  Datadog).
+
+Le tre forme sono state giudicate contro una sola domanda di accettazione,
+ratificata dall'utente: *«Guardando la pagina per cinque secondi, senza
+leggere paragrafi: sai dire quali valvole stanno peggiorando, a che ritmo, e
+quanto margine resta?»*
+
+**Il giro 1 era stato respinto dall'utente**: le tre varianti va/vb/vc,
+organizzate per principio di ordinamento (per valvola, per tempo, per
+canale), sono state rifiutate con una frase sola — *«sono tutti fatti male
+design wise, troppo testo»*. Il giro 2 ha girato col metodo del design-round:
+prior art studiato (nove prodotti, rubati i meccanismi e non le estetiche),
+domanda di accettazione ratificata prima di costruire, tre forme distinte
+affidate a tre costruttori, verifica indipendente con screenshot a 1536×770
+nei due temi.
+
+**Le due tornate restano su disco come archivio.** Il giro 1 in
+`.scratch/v2-predittiva/passo-6/varianti/` (va, vb, vc — non si toccano); le
+due perdenti del giro 2, wa e wc, in
+`.scratch/v2-predittiva/passo-6/varianti-r2/` accanto a wb.
+
+**Segue il graft, poi la pagina vera.** Prima che la superficie diventi una
+pagina reale della dashboard, le parti piu' forti di ciascuna perdente (wa,
+wc) vengono innestate dentro wb. La scelta della forma non e' ancora una
+pagina in produzione. Esecuzione del giro in `RECENT_WORK.md`, 2026-08-30.

@@ -2816,3 +2816,45 @@ punteggio che gradua; i contratti congelati (ML-F1 + provenienza del modello)
 restano congelati. Nessun lavoro sul modello avviato.
 
 Resta del piano: passo 5 (decisione utente, davanti) e passo 6.
+
+---
+
+## 2026-08-30 — Passo 6 della v2: giro di design e scelta della forma «strisce»
+
+Esecuzione del passo 6 (la superficie predittiva v2) come giro di design.
+Evidenze sotto `.scratch/v2-predittiva/passo-6/`: briefing del giro
+`PACCHETTO-previsione-r2.md`, verifica indipendente `verifica-r2/REPORT.md`
+con gli screenshot `wa/wb/wc-{chiaro,scuro}.png`.
+
+**Il giro 1 e' stato respinto dall'utente sul design, non sui dati.** Le tre
+varianti va/vb/vc — organizzate per principio di ordinamento (per valvola,
+per tempo, per canale) — sono state rifiutate con una frase sola: *«sono
+tutti fatti male design wise, troppo testo»*. Restano su disco come archivio
+in `.scratch/v2-predittiva/passo-6/varianti/`, non si toccano.
+
+**Fasi del giro 2 (metodo design-round).** Studio di **nove prodotti di prior
+art** prima di costruire (Augury, Senseye, AWS Lookout for Equipment, Vorne
+XL, MachineMetrics, Evocon, Grafana, Datadog, Statuspage: rubati i meccanismi,
+mai le estetiche); **domanda di accettazione ratificata dall'utente** —
+*«Guardando la pagina per cinque secondi, senza leggere paragrafi: sai dire
+quali valvole stanno peggiorando, a che ritmo, e quanto margine resta?»* —
+unico criterio di giudizio; **tre forme costruite** da tre costruttori in
+cartelle neutre sotto `varianti-r2/`: wa «mosaico», wb «strisce», wc «banda»;
+il **giudice ha certificato le tre forme come distinte**; verifica
+indipendente con **screenshot a 1536×770 px CSS in entrambi i temi** (6
+capture, console pulita a parte il 404 automatico del favicon, zero
+NaN/undefined/null, tutti i non-negoziabili del pacchetto tenuti a schermo).
+
+**Fix e correzione sul record.** Il taglio della riga v30 di wb a 770 px era
+**reale** ed e' stato corretto (riverifica con misure `getBoundingClientRect`:
+0 elementi oltre viewport in entrambi i temi, tutte e 12 le righe intere). La
+segnalazione di taglio su wa era invece un **errore di lettura del
+verificatore** — smentita dal suo stesso screenshot originale: corretta sul
+report, con la lezione di misura registrata (riportare solo cio' che lo
+screenshot mostra).
+
+**La scelta dell'utente: wb «strisce»**, puntando a
+`http://127.0.0.1:8099/varianti-r2/wb/`. Nessuna motivazione data. wa e wc
+restano su disco. Segue il **graft** — le parti piu' forti di ciascuna
+perdente innestate dentro wb — prima che la superficie diventi una pagina
+vera della dashboard. Decisione registrata in `DECISIONS.md`, 2026-08-30.

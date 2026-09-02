@@ -717,3 +717,15 @@ avviato il 21 agosto. Non c'entra col lanciatore e non viene toccato.
   JSON identico a parte il timestamp). Dettaglio in `RECENT_WORK.md`,
   2026-08-30. **Cosa resta del piano**: passo 5 (decisione utente) e passo 6
   davanti.
+- **Il passo 6 del piano v2 ha la sua scelta: la superficie predittiva v2 e'
+  la forma «strisce»** (wb del giro 2,
+  `.scratch/v2-predittiva/passo-6/varianti-r2/wb/`), scelta dall'utente fra
+  le tre forme del design-round (wa «mosaico», wb «strisce», wc «banda»)
+  giudicate contro la domanda dei cinque secondi ratificata. Il giro 1
+  (va/vb/vc) era stato respinto: *«fatti male design wise, troppo testo»*.
+  Entrambe le tornate restano archiviate su disco sotto
+  `.scratch/v2-predittiva/passo-6/`. Decisione in `DECISIONS.md`,
+  2026-08-30; esecuzione del giro in `RECENT_WORK.md`, 2026-08-30.
+- **Cosa resta**: il **graft in corso** — innestare dentro «strisce» le parti
+  piu' forti delle due perdenti (wa, wc) — poi la superficie diventa una
+  pagina vera della dashboard.
