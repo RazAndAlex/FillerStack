@@ -1,6 +1,6 @@
 # Open questions
 
-Updated: 2026-08-23 (terzo aggiornamento)
+Updated: 2026-09-14
 
 > **Fonti citate.** Molte voci rimandano a documenti di lavoro sotto
 > `.scratch/`, `work/`, `Proposte/`, `feedback/` e ai file `HANDOFF-*.md`.
@@ -18,6 +18,23 @@ Updated: 2026-08-23 (terzo aggiornamento)
 > cosa era stata considerata un problema — ma il titolo non deve mentire.
 
 
+
+## APERTA dal 2026-09-14 — il prezzo di una valvola isobarica non ha una fonte
+
+Il modello dei costi del Policy Lab ha tutte le voci con fonte tranne una: il
+prezzo di una valvola di riempimento isobarica completa e del suo kit
+guarnizioni, piu' le ore di revisione (queste ultime chiuse con il dato KHS:
+~1,3 ore-persona per valvola). Nessun listino pubblico esiste (15 ricerche, 25
+pagine aperte, Krones.shop solo per clienti commerciali). Richiesta di
+quotazione mandata a Eckenroth (DE) il 14 settembre dall'utente; fallback BBM
+Service (IT), poi HSC e BSC (CN). Un annuncio eBay.de di un kit parti KHS
+(240-91-03-1138-00A) potrebbe dare il primo prezzo vero ma il sito blocca la
+lettura automatica: da aprire a mano.
+
+**Condizione di chiusura**: una cifra scritta con data, fornitore, valuta e
+resa, registrata nel foglio dei costi. Fino ad allora il modello resta
+parametrico nel prezzo e dichiara come limite inferiore la fascia Made-in-China
+(15-350 $/pezzo, altra classe di valvola).
 
 ## CHIUSA il 2026-08-23 — M11 si chiude sull'allarme, e il nome va a schermo
 
@@ -1007,3 +1024,187 @@ progetto.
 Nessuna delle due e' stata declassata perche' scomoda. Sono entrambe rinviate
 perche' hanno un costo certo e un beneficio che oggi non esiste, e in tutti e due
 i casi la condizione che le fa tornare a contare e' scritta qui sopra.
+
+
+## Quale corsa deve essere quella di casa della schermata della decisione — APERTA 2026-09-16
+
+La pagina `dashboard/decisione/` non sceglie la corsa. Chiede la linea del tempo
+senza `run_id` e poi usa il `run_id` che la linea dichiara, quindi mostra
+qualunque corsa il proxy risolva. Senza `--run` il proxy risolve `storico_60d`.
+
+Le due corse coprono lo stesso periodo, 1.407 ore dal 2026-06-22T04:00Z al
+2026-08-19T18:00Z, e danno due storie diverse:
+
+- `storico_60d`: 75 ore con almeno un `intervieni`, 984 con almeno una degradata,
+  tre chiamate alla squadra (v8 il 3 luglio alle 15:00, v21 il 16 luglio alle
+  13:00, v30 il 12 agosto alle 19:00).
+- `deriva_lenta_60d`: 29 ore con almeno un `intervieni`, 909 con almeno una
+  degradata, due chiamate (v8 il 4 luglio alle 07:00, v30 il 1 agosto alle 06:00).
+
+Tutte le anteprime mostrate finora all'utente, compresi i numeri del Policy Lab
+(D 8,14 EUR contro R 2,00 EUR su v8), vengono da `deriva_lenta_60d`. Chi apre la
+pagina oggi vede `storico_60d` e non ritrova quei numeri.
+
+La domanda è dell'utente e non va decisa da me. Se sceglie `deriva_lenta_60d`
+basta avviare il proxy con `--run deriva_lenta_60d`. Se sceglie `storico_60d` non
+serve toccare niente, ma i numeri delle anteprime vanno riletti su quella corsa
+prima di citarli di nuovo.
+
+## CHIUSA il 2026-09-16: dove sta il segno «senza stima» sulla giostra
+
+**Chiusa dall'utente il 16/09 con la forma B.** Ha guardato le quattro forme disegnate su
+`http://127.0.0.1:8091/stima/` e ha risposto: *«okay, vai con la tua raccomandazione»*. La B
+e' entrata nella pagina vera lo stesso giorno.
+
+Che cosa cambia nella pagina, in tre punti:
+
+1. Il contorno della tessera torna sempre pieno e porta soltanto il verdetto. Il tratteggio
+   sparisce dall'anello.
+2. «Senza stima» diventa un quadratino vuoto di 7 unita' appoggiato all'angolo in alto a
+   destra della tessera, con il contorno in `var(--muto)` e il riempimento del fondo.
+3. Il quadratino compare solo dove il verdetto non e' `continua`. Su una valvola sana non
+   compare mai.
+
+Una decisione mia dentro la forma scelta, presa perche' l'anteprima non la esercitava: la
+marca sta in un gruppo annidato `rotate(-ang)` come il numero della valvola, cosi' resta un
+quadrato dritto anche sulle tessere ruotate dell'anello. Senza quel gruppo in alto si
+leggerebbe come un rombo e sembrerebbe un secondo segno.
+
+Misurato da me in un browser vero a 1536x770 nei due temi, alle 02:00 del 04-07 su
+`storico_60d`: zero tessere con `stroke-dasharray`, una sola marca (la valvola 8), la 8 con
+contorno `rgb(143,36,24)` a 3,5 px in chiaro e `rgb(217,96,74)` in scuro, la 21 e la 30
+tessere normali, conteggio 1 intervieni, 1 continua degradata, 33 su 35 continua, zero
+errori di console. Caso ruotato controllato alle 12:00 del 03-07, dove la valvola 8 e'
+`continua degradata` dentro l'anello su una cella `rotate(-18.00)`: la matrice a schermo
+della marca vale [1,0,0,1], cioe' quadrato dritto.
+
+**Confermata sulla pagina vera.** Dopo l'innesto ho rimesso l'anello davanti all'utente e gli
+ho chiesto se il quadratino andasse bene. La sua risposta: *«si va bene il quadrato, lo avevo
+gia approvato questo»*. Aveva ragione due volte. Il segno va bene, e la domanda era di troppo,
+perche' il consenso dato sull'anteprima copre gia' un innesto fedele. Le anteprime si fanno a
+grandezza reale e con la palette del prodotto proprio per questo. Da qui in avanti un innesto
+fedele si consegna come fatto, con l'indirizzo e i numeri della verifica, e il suo occhio si
+chiede solo su cio' che ho deciso io dentro la forma scelta.
+
+Sotto resta il ragionamento che ha portato alla scelta, gia' visto.
+
+
+Nata da una domanda dell'utente su una schermata sola:
+
+> «doamdna in questo, perche' e' con i punti tratteggiati ma c'e' un unto rosso?
+> il messaggio non e' uaguale. dice uno rosos ma 8 non e' rosso, io non capisco»
+
+La parte di codice e' gia' chiusa: il colore del contorno ora dice solo il
+verdetto e il tratteggio non lo copre piu'. Resta la domanda di forma, che e'
+sua.
+
+Sulla tessera convivono due assi diversi:
+
+- il **verdetto**, cioe' cosa conviene fare adesso (`intervieni`,
+  `continua degradata`, `continua`),
+- la **stima del crollo**, cioe' fra quante ore quella valvola cedera', che
+  qualche volta non si riesce a calcolare.
+
+Oggi il secondo asse e' il quarto quadratino della legenda, accostato a tre
+verdetti come se fosse un quarto verdetto. Tre conseguenze misurate nell'ora
+delle 02:00 del 4 luglio su `storico_60d`:
+
+1. le valvole 21 e 30 sono `continua` sane e portano lo stesso segno della 8,
+   quindi l'anello accende un allarme dove non c'e' niente,
+2. la legenda mostra quattro cose e il conteggio al centro ne conta tre,
+3. la valvola piu' grave ha il bordo tratteggiato e la meno grave lo ha pieno,
+   quindi la piu' grave pesa di meno sull'occhio.
+
+Ricognizione fatta prima di proporre (ledger 36). Quattro prodotti veri, e
+nessuno dei quattro mette lo stato e l'incertezza sulla stessa proprieta'
+grafica. Ignition di Inductive Automation sovrappone un overlay separato con una
+icona, Eurostat mette una lettera accanto al numero e lascia il numero intero,
+Datadog fa di «No Data» un quinto stato che cancella gli altri, Grafana usa il
+colore base della scala e nel proprio tracker ha una richiesta aperta perche'
+quella soluzione non basta.
+
+Le quattro forme sono disegnate e da aprire in `work/pezzo7/stima/index.html`:
+oggi (tratteggio sullo stesso contorno), A (marca separata sopra la tessera,
+sempre), B (marca separata solo dove il verdetto non e' `continua`), C (la marca
+esce dall'anello e resta nella scheda, legenda a tre quadratini).
+
+Scartata da me con il motivo dichiarato: la lettera accanto al numero come fa
+Eurostat. Dentro una tessera il numero e' a 15 px e la lettera finirebbe sotto i
+13 px che questo progetto si e' dato come soglia di leggibilita'.
+
+### Trovato il 16/09 controllando i numeri della pagina delle anteprime
+
+Le tre valvole senza stima alle 02:00 del 04-07 non lo sono per lo stesso motivo. La
+rotta dichiara per tutte e tre `stima.esito: dati_insufficienti`, cioe' «meno di 24 h di
+regime dal segnale», ma il campo `segnale` dice 2026-07-03 per la valvola 8, 2026-07-16
+per la 21 e 2026-08-12 per la 30. Le ultime due sono **dopo** l'ora mostrata.
+
+La causa e' una scelta dichiarata nella docstring di `fatti_valvola` a
+`pipeline/decision.py:625`: «Il segnale si cerca sulla serie INTERA della corsa
+registrata, come nelle fixture: la corsa e' storia gia' scritta e la rotta ne serve una
+fotografia a un'ora scelta». Con il solo sapere delle 02:00 del 04-07 l'anello dovrebbe
+marcare una valvola e ne marca tre.
+
+E' una domanda separata da quella della forma, e le due si toccano: la A e la B
+differiscono esattamente sulla 21 e sulla 30. Se un giorno il segnale viene tagliato a
+`adesso`, la A e la B su questi dati diventano la stessa cosa. Il worker della riga 31 del
+ledger aveva gia' misurato l'effetto sul verdetto (8 valvole su 35 cambierebbero segnale,
+e il verdetto cambia in un caso solo su sei istanti), quindi il costo e' noto. Non tocco
+niente prima che l'utente scelga la forma.
+
+Raccomandazione: la **B**. Il verdetto della tessera non e' incerto, perche' i
+costi che lo generano vengono da dati veri. Quello che non sappiamo e' il quando,
+ed e' la domanda a cui risponde la scheda. Con la B il segno resta accanto a un
+verdetto grave, dove avverte che il conto alla rovescia non e' affidabile, e
+sparisce dalle valvole sane.
+
+## CHIUSA il 2026-09-16: il segnale dal futuro, corretto dopo scelta dell'utente
+
+Trovata da me il 16/09 mentre controllavo i numeri delle anteprime, e chiusa lo stesso
+giorno.
+
+**Il difetto.** `decision.fatti_valvola` cercava il primo segno di degrado con
+`inizio_ultimo_regime` sulla serie **intera** della corsa registrata, e lo dichiarava nella
+sua docstring. La risposta a un'ora poteva quindi portare un `stima.segnale` datato **dopo**
+quell'ora. Alle 02:00 del 04-07 su `storico_60d` le tre valvole senza stima erano la 8
+(segnale del 03-07, gia' avvenuto), la 21 (16-07) e la 30 (12-08): due su tre nascevano da
+qualcosa che a quell'ora non era ancora successo.
+
+**Quanto era esteso, misurato sulla copertura totale e non a campione** (worker, riga 39 del
+ledger, script suoi in scratchpad): su `storico_60d` 2.064 coppie (ora, valvola) colpite,
+1.224 ore su 1.407, cioe' l'87 per cento della corsa. Su `deriva_lenta_60d` 1.203 coppie e
+937 ore.
+
+**Quanto arrivava sullo schermo.** Avevo scritto nel pacchetto che secondo me era zero,
+perche' una valvola diventa `intervieni` o `continua degradata` solo dopo l'inizio del
+degrado. Era falso. Il quadratino «senza stima» compariva con un segnale datato nel futuro
+in **96 ore** su `storico_60d` (valvole 21 e 30, dal 05-07 alle 17:00 al 17-07 alle 20:00) e
+in **48 ore** su `deriva_lenta_60d` (solo la 30). Il motivo: `continua degradata` nasce dal
+tasso di scarti fuori banda, non dalla stima, quindi una valvola puo' essere degradata mesi
+prima che il suo regime sopra banda qualifichi come segnale.
+
+**La decisione dell'utente.** Spiegata in un artefatto,
+https://claude.ai/artifact/YbiD5QE6NyNbMu7ph6Jx6p, con tre strade e la mia raccomandazione.
+Risposta sua: «va bene vai con la A», cioe' cercare il segno solo fino all'ora guardata.
+
+**La correzione**, in `pipeline/decision.py`. `segnali_per_ora` costruisce in una passata
+sola la mappa `[(ora, segnale)]` come la conoscerebbe chi guarda a quell'ora.
+`fatti_valvola` la conserva in `segnali_t` e `segnali_v` e prende il proprio `segnale` con
+una bisezione. `stima_piena` legge il segnale **dell'ora** con `_segnale_a`, non quello di
+fine corsa. La mappa serve perche' `decision_rollup.py:302` chiama `fatti_valvola` una volta
+sola per valvola a fine corsa e poi legge da li' tutte le 1.407 ore: una correzione chiusa
+dentro `fatti_valvola` non sarebbe arrivata alla tabella che la rotta serve davvero.
+
+**Il taglio vale per il solo segnale, non per la serie.** La finestra sana finisce il 2
+luglio, cioe' dentro la corsa: tagliare la serie calcolerebbe la baseline su una finestra
+monca e sposterebbe dei verdetti. La baseline resta sulla serie intera, e le cifre di
+`linea()` lo confermano rimanendo identiche.
+
+**Costo, misurato.** Il segno trovato e' lo stesso e compare esattamente 24 ore dopo essere
+avvenuto, per tutte e tre le valvole, perche' `REGIME_MIN_H = 24` pretende un giorno di
+misure che confermano.
+
+**Verifiche.** I due sha256 del metro identici, le cifre di `linea()` identiche su entrambe
+le corse, 67.130 confronti fra la mappa nuova e la regola originale con zero differenze,
+zero segnali datati dopo l'ora su quattro ore campione.
+

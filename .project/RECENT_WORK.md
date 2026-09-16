@@ -2897,3 +2897,664 @@ entrambi i temi verificati a schermo.
 passi 1-4 eseguiti e verificati, passo 5 rinviato per decisione utente (i
 dati non lo impongono), passo 6 chiuso — forma scelta, innestata, pagina
 accettata. Decisione registrata in `DECISIONS.md`, addendum 2026-09-02.
+
+
+---
+
+## 2026-09-14 — Audit del progetto, suite verde con il database, e il Policy Lab
+
+L'utente ha chiesto un audit completo come artefatto: cosa fa il sistema, come
+funziona, lo stack, il ML, se la v2 e' finita, se il codice regge, e cosa
+suggerisce la career map (`~/Downloads/forward-deployed-ai-career-map.html`,
+14 settembre) nel contesto della codebase.
+
+### Audit (artefatto «Audit FillerStack»)
+
+- Mappa statica del codice fatta da un worker: 15 route GET, 19 scenari, 6
+  pagine, un modello (regressione logistica a 7 classi, 43 feature, addestrato
+  l'11 agosto, 4 KB), zero TODO nel codice.
+- **Suite verificata due volte.** Senza database: 390 passati, 188 saltati, 27
+  minuti. Con il container Postgres acceso e sano: **578 passati, 0 saltati, 0
+  falliti, 11 min 34 s**. Nota operativa: al riavvio il container ha impiegato
+  4 min 40 s a diventare `healthy` perche' sincronizza su disco il database da
+  36 M cicli, e in quel tempo il controllo di salute lo dichiara `unhealthy`. Va
+  aspettato: lanciare pytest prima fa saltare le prove DB con esito verde.
+- Incoerenze docs/codice trovate, nessuna bloccante: README dice cinque pagine
+  e sono sei; `dashboard/predittiva/index.html` porta ancora il titolo della
+  variante «Predittiva — strisce» e un `<h1 class="forma">strisce</h1>`;
+  README e pytest.ini dicono 567 test, oggi sono 578 (gli 11 in piu' sono
+  arrivati con la v2); due accessi morti in `dashboard/comune/dati.js`
+  (`alerts/pareto`, `manifest`); il modello in produzione e' anteriore alle run
+  di 60 giorni. La provenienza del modello resta aperta con la sua condizione.
+- Lettura onesta della v2, scritta nell'artefatto: il margine di PREDITTIVA e'
+  **misurato a posteriori** su una run finita (ore fra segnale e degrado). Non
+  e' un conto alla rovescia in tempo reale. E' il ponte verso il Policy Lab.
+- La career map dice di FillerStack: «strong FDE architecture proof. The
+  missing scientist layer is decision optimization» e «a better predictor is
+  still only a predictor». Propone due progetti: Maintenance Policy Lab
+  (scienziato) e Maintenance Workflow Pilot (ingegnere).
+
+### Policy Lab (artefatto «Policy Lab FillerStack»)
+
+L'utente ha accettato la direzione (*«mi va bene fare la policy lab»*) e ha
+corretto il metodo sui costi: **non li sceglie lui e non si inventano**, si
+ricavano da un sistema reale con una ricerca, come si e' fatto per il
+simulatore. Tre ricerche delegate in parallelo (costi reali, teoria delle
+politiche, prodotti PdM), piu' una quarta sui fornitori aftermarket. Risultati
+nella pagina e nei rapporti dei worker; i numeri chiave:
+
+- Fermo non pianificato di una linea alimentare: 4.000-30.000 $/h (Cleanova
+  2026); mediane di stabilimento 36 k$/h (Siemens 2024, FMCG) e 85 k$/h (ABB
+  2023, F&B). Sulla nostra macchina (18.708 lattine/h): 3.700-9.200 €/h,
+  stimato dal fondo della fascia. Fermo medio 81 min = 25.250 lattine.
+- Lattina scartata: ~0,06 € di materiale. Una valvola cattiva per un turno:
+  345 €. Ventun giorni a tre turni: ~21.700 €.
+- Costo del lavoro: **decreto direttoriale 103 del 24/11/2025** (tabella
+  operai metalmeccanica industria, giugno 2025), letto dal PDF: D1 22,10 · D2
+  24,48 · C1 24,97 · C2 25,53 · C3 27,33 · B1 29,27 €/h su 1.600 ore
+  lavorate; turni 24/7 +9,29%. Chiude la voce «stimato».
+- Ore di revisione (KHS, impeller.net, ottobre 2025): revisione tradizionale
+  di ~125 valvole = 2 persone per 2 settimane, ~1,3 ore-persona/valvola;
+  scambio di 20 valvole preparate in 2 h, ~6 min/valvola.
+- Intervallo preventivo: guarnizioni ogni 500 h (Oxmaint 2025) = 21 giorni per
+  valvola al nostro ritmo, ~450 servizi/anno su 26 valvole.
+- **Prezzo di una valvola isobarica e del kit guarnizioni: nessun listino
+  pubblico** dopo 15 ricerche e 25 pagine. Fornitori verificati: Eckenroth (DE),
+  BBM Service (IT), DB Project (IT), HSC e BSC (CN), fillingparts (CN),
+  Krones.shop (solo commerciali). I nomi «Rex-Tech, Tecnoparts, Alfa Ricambi,
+  Fillpack» non esistono per questa cosa.
+- Teoria: rinnovo-ricompensa, Barlow-Proschan (la vita sprecata e' nel
+  denominatore), Makis-Jardine (la soglia ottima sta sull'hazard/costo atteso,
+  non sul segnale), curva P-F con la ragione del «meta'» (due ispezioni per
+  intervallo). Con canali orari e P-F minimo di 47 h, il rilevamento non e' il
+  collo di bottiglia. Soft failure = costo orario di funzionamento degradato.
+- Prodotti (6): rischio sempre come fascia/classifica, costo mai a schermo,
+  incertezza mai mostrata, azione = frase imperativa per tipo di guasto, ordine
+  di lavoro precompilato, cerchio chiuso accetta/modifica/rifiuta solo in Augury.
+
+**L'utente ha mandato la richiesta di quotazione a Eckenroth** (mail ITS, in
+inglese), in attesa di risposta. Fallback: BBM in italiano, poi HSC/BSC.
+
+Artefatti: `https://claude.ai/code/artifact/bc0c95ba-e3ec-4d71-bd10-df35b16d7777`
+(audit) e `https://claude.ai/code/artifact/9f3d9779-c9aa-4687-93ed-5617c65cbe4d`
+(Policy Lab). Sorgenti nello scratchpad della sessione, non nel repository.
+Telemetria delle otto delegazioni nell'Effort Ledger del vault.
+
+
+## 2026-09-15 (notte) — La politica 6c «costo atteso», misurata e verificata
+
+L'utente ha scelto A la sera del 15: scrivere la politica 6c con il banco come metro.
+Tre worker in fila: uno l'ha scritta (`PACCHETTO-6C.md`, ledger riga 13), uno l'ha
+verificata senza averla scritta (`PACCHETTO-VERIFICA-6C.md`, `VERIFICA-6C.md`, riga 14),
+un terzo ha corretto i quattro difetti trovati (`PACCHETTO-CORREZIONE-6C.md`, riga 15).
+
+**La regola.** Ogni ora, per ogni valvola, dalla prima ora in cui la stima 6a puo' parlare
+(segnale + 24 h): D = tasso di scarti delle ultime 24 ore + delta_p x (fermo non
+pianificato meno fermo pianificato, 4.821,10 EUR). delta_p e' la probabilita' che il crollo
+cada proprio nell'ora regalata aspettando, letta dalla retta della stima con la t di
+Student (p(x_lo) = 0,025 e p(x_hi) = 0,975, verificato contro scipy). R = P / 500 h x quota
+di ore di esercizio. Se D > R per K ore di fila la squadra parte e arriva dopo L ore.
+Il codice sta in `work/policy-lab/politica.py` (`p_retta`, `p_crollo_entro`, `verdetto`,
+`interventi_6c`), il ramo 6c del banco in `banco.py`, il report in `RISULTATI-6C.md`.
+
+**I numeri** (deriva_lenta_60d, P 1.500 EUR, fermo 3.700 EUR/h, L 24 h): 6c = 9.333 EUR
+con K 1, 2 o 3, contro 9.312 della stima 6a, 14.094 a guasto, 15.763 soglia di oggi,
+4.452 oracolo. I 21 EUR di differenza sono vita buttata: su v8 la 6c chiama alla seconda
+ora utile (4 luglio 07:00, D 8,14 contro R 2,00) e arriva 29 ore prima del crollo, sei ore
+prima della 6a. Su v30 arriva un'ora dopo il crollo, come tutte. Zero uscite su valvole
+sane da 500 EUR di valvola in su, a ogni K. A 100 EUR il rumore delle sane (fino a 0,22
+EUR/h di scarti) supera R (0,133 EUR/h) e la squadra esce 4 volte su sane piu' una su
+guasto senza crollo per corsa. Pareggio 6c contro soglia di oggi: 589 EUR (3.700, L 24),
+103 (3.700, L 8), 1.348 (9.200, L 24). storico_60d: 6c K2 = 22.079 contro 20.211 a
+guasto e 25.044 per la 6a, con la differenza tutta negli scarti dopo il crollo.
+
+**La verifica** ha confermato le undici domande del pacchetto con scarto 0,00% su D e R e
+ha smentito una frase del costruttore: «il rumore di una valvola sana resta fuori dal
+conto» era falsa a P = 100 EUR. La domanda 11 (la regola chiama alla prima ora utile) e'
+una proprieta' della formula: la soglia di delta_p che fa scattare la regola vale
+R / 4.821 = 0,0004 a P 1.500, e la prima riga di v8 sta a 0,00317. Per aspettare
+servirebbe una valvola da 11.445 EUR.
+
+**La correzione** ha aggiunto la colonna P = 100 in §6 con il paragrafo vero, «un'ora
+dopo» in §2, ha tolto il parametro morto `segnale_mft` da `griglia_6c`, e ha unificato
+p(x) in `politica.p_retta` che `banco.py` importa. `banco.csv` e `banco.json` identici
+byte per byte (copie in `banco_prima6c.*`), sweep 13,1 s, controllo_testo 0/0/0.
+
+**Scelte dichiarate, cambiabili dall'utente:** l'ispezione non e' modellata (sui dati
+registrati non cambia nessun numero), la fermata notturna 19:00-04:00 non e' un momento
+di intervento a costo zero, la regola chiama alla prima ora utile.
+
+Pagina Policy Lab v7 pubblicata sullo stesso URL con la 6c in cima e la decisione sotto:
+A il pezzo 7 (schermata della decisione in dashboard, tre varianti, raccomandata), B altre
+corse del simulatore, C modellare la fermata notturna. In attesa della lettera.
+
+## 2026-09-15 (sera) — Il banco di prova del Policy Lab, verificato e corretto
+
+Sotto `work/policy-lab/`: `costi.py` (ogni costo con fonte e anno), `dati.py` (route GET
+con cache su disco), `banco.py` (sei politiche, il conto, la sweep sul prezzo),
+`relazione.py` (report e figura), `banco.json`, `banco.csv` (2.400 righe),
+`RISULTATI-BANCO.md`, `pareggio.svg`. Riproducibile dalla cache, senza API.
+
+### Il risultato (deriva_lenta_60d, P = 1.500 EUR, F_u = 3.700 EUR/h, L = 24 h, 35 valvole, 60 giorni)
+
+| politica | costo | rimpianto |
+|---|---:|---:|
+| 1 a guasto | 14.094 | 9.642 |
+| 2 calendario 500 h di esercizio (media di 10 fasi, 75.623-133.213) | 120.874 | 116.422 |
+| 3 soglia di oggi 5/150 + L | 15.763 | 11.311 |
+| 4 stima 6a, estremo basso della fascia | 9.312 | 4.861 |
+| 4b stima 6a, estremo alto meno L | 9.321 | 4.870 |
+| 5 oracolo | 4.452 | 0 |
+
+Pareggio 4 contro 3: 587 EUR (F_u 3.700, L 24), 1.345 EUR (F_u 9.200, L 24), nessuno
+con L = 8 h (la 4 sta sempre sotto). Contro 1 e 2 la 4 sta sotto a ogni prezzo da 100
+a 5.000. Su `storico_60d` (margini 6-8 h) la 4 non fa in tempo a decidere: 25.044 contro
+20.211 della 1. Sotto le 24 h di margine nessuna politica risparmia.
+
+### La verifica, e cosa ha corretto
+
+Un secondo worker (fable-low) ha rifatto il conto a mano e ha trovato cinque difetti
+veri, tutti corretti da un terzo worker: ricambio contato due volte sulle valvole sane
+(145.853 EUR di vita buttata sul calendario), calendario in ore di orologio invece che di
+esercizio (la macchina lavora 04:00-19:00, 959 h su 1.430), caso di confine v30 con
+L = 24 (la 4 arriva nell'ora del crollo), politica 4 che leggeva il fault_type dalla
+verita' di scenario, scarti non fermati dopo la sostituzione. Fatti corretti: 35 valvole
+attive (26 sane), 39.375 cicli/h a regime (il «18.708 lattine/h» del 14 non torna),
+allarmi su valvole sane da 3 a 93 minuti.
+
+### Regole del conto, dichiarate nel report
+
+Il caso di confine `t_int = t_c` conta come fermo non pianificato (prudente contro la 4).
+Se contasse come pianificato la 4 costerebbe 4.491 EUR. Vita buttata = 0 su valvola sana
+o senza crollo. Un allarme che rientra prima di L annulla l'uscita. La politica 4 usa la
+soglia di crollo piu' bassa (2.000,3 ms) perche' la classe del modello non e' in cache.
+
+### La pagina
+
+Policy Lab v6 sullo stesso URL, con il banco in cima e la decisione sul pezzo 6c
+(A scrivere la politica con il banco come metro, raccomandata; B altre corse per la
+calibrazione; C aspettare la quotazione). In attesa della lettera dell'utente.
+
+## 2026-09-15 — Lo stimatore del crollo (Policy Lab 6a), e una correzione sui margini
+
+Un worker ha costruito sotto `work/policy-lab/` (comune.py, stima.py,
+verita.py, valuta.py, RISULTATI.md, risultati.json) il primo stimatore di
+prognosi: retta sul canale dalle ore dopo il segnale, prolungata alla soglia
+di crollo tarata per tipo di guasto, con intervallo di previsione di Fieller.
+Dati solo dall'API; la verita' di scenario solo in `verita.py` per valutare.
+
+**Risultati su deriva_lenta_60d** (adesso = segnale + 24/36/48 h): valvola 8
+errori +8,7 / +1,7 / +4,5 h; valvola 30 errori −4,3 / −3,7 / −3,1 h; 6/6
+entro ±12 h, 6/6 coperti dalla fascia al 95% (larghezze 10-37 h). Soglie di
+crollo: restriction 2.030 ms, flowmeter_dropout 2.000 ms di
+`mean_filling_time_ms`, concordi fra le due run allo 0,3-0,4% con rampe
+diverse di 9 volte. Per closing_delay e pressure_instability lo stimatore
+risponde «soglia non definita» e non stampa una data. Reperto: a +6/+12 h la
+fascia e' stretta e sbagliata (0/4 coperti): la regola delle 24 h e' il
+confine fra stime coperte e scoperte.
+
+**Correzione ai numeri.** Le decisioni del 30 agosto e del 2 settembre e
+l'addendum di verifica dicono che la pagina PREDITTIVA mostra 75,5 h (v8) e
+47,0 h (v30) e che «i margini ricalcolati dall'API sono identici». Il worker
+non li ha riprodotti e ha dimostrato che sono un'altra grandezza: 75,5 e 47,0
+sono l'anticipo dell'allarme del MODELLO (passo 3, `.scratch/v2-predittiva/
+passo-3`, righe 85-86); il margine della pagina (segnale del canale fisico →
+degrado) e' intero per costruzione, secchielli orari, e vale 78 e 48 h (passo
+4 lo scriveva gia' in parole). Verificato aprendo la pagina vera il 15
+settembre: sul run corrente `storico_60d` mostra 6,0 h (v8), 8,0 h (v30),
+0,0 h (v21), coerenti con la regola. La frase «identici a quelli mostrati
+(75,5 h)» del 2 settembre era quindi sbagliata nel numero, non nel metodo.
+Le due pagine artefatto sono state corrette. Nessun file della dashboard e'
+stato toccato.
+
+Nota di infrastruttura: il ground truth di `deriva_lenta_60d` non e' su disco
+come parquet (solo `valve_cycles.parquet`); l'onset si ricava da
+`scenarios/deriva_lenta_60d.yaml` piu' la mappa ciclo→istante, e coincide con
+il passo 3 al minuto.
+
+
+## 2026-09-15 — La rotta `GET /valves/decision`, il verdetto 6c esce dall'API
+
+La schermata della decisione (il «pezzo 7») leggeva sei file registrati. Adesso
+il verdetto lo calcola l'API in diretta.
+
+### Cosa e' stato costruito
+
+- `pipeline/decision.py`, modulo nuovo: il calcolo 6c riscritto dentro
+  `pipeline/`, con zero import da `work/`. Porta `comune.py`, `stima.py`,
+  `politica.py`, `costi.py`, `banco.py` del Policy Lab e `work/pezzo7/fixture.py`.
+- `GET /valves/decision` in `pipeline/api.py`, con `run_id` e `adesso`
+  facoltativi. La forma della risposta e' quella di `work/pezzo7/CONTRATTO.md`.
+- `"valves/decision"` nella lista bianca del proxy, `dashboard/server_api.py:76`.
+- `pipeline/tests/test_valves_decision.py`, 19 test nuovi.
+
+### Perche' riscritto invece che importato
+
+`work/policy-lab/banco.py` righe 67-78 riscrive `comune.baseline_da_serie` con
+un memo a chiave `id()`. Gli `id()` si riusano dopo una deallocazione, quindi
+dentro un processo che serve piu' richieste quel memo puo' restituire in
+silenzio la baseline di un'altra valvola. `comune.API` e' poi cablato a
+`127.0.0.1:8123` e `costi.PREZZO_VALVOLA_EUR` vale `None`.
+
+### Il prelievo, misurato
+
+| strada | tempo |
+|---|---|
+| rotta HTTP `/valves/progression/series`, una valvola | 9,14 s |
+| `_progressione_medie` interna, tutte e 35 insieme | 0,24 s |
+| `_progressione_sigma`, una valvola | 4,11 s |
+
+La sigma il verdetto non la legge mai, ed e' li' che se ne andava il tempo. La
+rotta usa una sola chiamata a `_progressione_medie` con `valve_id=None`.
+
+### Verifica
+
+Confronto campo per campo della rotta viva contro tutti e sei i file
+registrati, 35 valvole ciascuno: **0 differenze**. Tempi di risposta da 0,32 s
+a 2,17 s sui sei istanti, 4,81 s sull'ultima ora della corsa. Suite intera
+**338 passed**. Valvola 8 al 4 luglio alle 07:00, arrivata attraverso il proxy
+della dashboard: D 8,14 € contro R 2,00 €, azione `intervieni`.
+
+### Un limite dichiarato
+
+Il segnale si cerca sulla serie intera della corsa, come facevano le fixture.
+Calcolato alla cieca, cioe' con i soli dati fino all'ora scelta, il segnale
+cambierebbe in 8 valvole su 35, ma il verdetto cambia in un caso solo sui sei
+istanti (valvola 30 il 23 giugno, `continua` contro `continua degradata`, con
+D pari a 0,08 €) e la versione cieca allarma di piu'. Su una corsa registrata
+la fotografia e' corretta. Su dati vivi la regola va rifatta.
+
+## 2026-09-15 — La striscia dei due mesi, e la giostra entra in dashboard
+
+Il pezzo 7 e' montato. La schermata della decisione vive in
+`dashboard/decisione/` e si sceglie l'ora trascinando una striscia lunga
+quanto la corsa.
+
+### La rotta `GET /valves/decision/timeline`
+
+Disegnare la striscia vuole i conteggi di **tutte** le 1.407 ore della corsa,
+in una richiesta sola all'apertura. Misurato: una passata costa **5,1 s** e
+pesa **8 kB**. Chiedere un'ora per volta mentre si trascina costerebbe da
+0,3 a 4,8 s a scatto, e un comando che risponde dopo secondi si legge come un
+comando rotto.
+
+La risposta porta `prima_ora`, `ultima_ora`, `ore`, due liste di interi lunghe
+quanto la corsa (`i` quante valvole in `intervieni` a quell'ora, `d` quante in
+`continua degradata`) e le `chiamate` con l'ora della chiamata e quella
+dell'arrivo della squadra.
+
+**Il vincolo che contava.** La camminata sulla griglia sta in un posto solo.
+`camminata(f)` e' un generatore in `pipeline/decision.py` che sia
+`percorso(f, bersaglio)` sia la nuova `linea(...)` consumano. Se le due
+camminate divergessero, un giorno la striscia e il verdetto direbbero cose
+diverse sulla stessa ora, ed e' il difetto peggiore che questo lavoro possa
+avere. La suite passa da **338** a **350** test.
+
+`"valves/decision/timeline"` sta in `ROUTE_AMMESSE` di
+`dashboard/server_api.py` come voce propria: la lista confronta la stringa per
+intero e non per prefisso, quindi la voce `"valves/decision"` non copre la
+rotta con la barra in piu'.
+
+### La banda che sceglie l'ora
+
+Forma scelta dall'utente fra cinque anteprime vere. La striscia dei due mesi
+sta **in fondo, a tutta larghezza**, dove la striscia del tempo sta gia' nella
+pagina TEMPO. Novantasei pixel in tutto: 52 di striscia, 4 di stacco, 38 della
+fila di bottoni, 2 di fondo. La giostra non ha cambiato ne' corpo del testo ne'
+dimensioni.
+
+L'altezza grigia dice quante valvole sono in `continua degradata`. Un segno
+rosso pieno sta sulle ore con almeno un `intervieni`. Niente giallo: le ore con
+almeno una degradata sono **909 su 1.407**, e tingerle renderebbe la striscia
+gialla per due terzi senza dire piu' niente.
+
+Sopra la striscia ci sono le tacche dei momenti che contano, e sotto una fila
+di bottoni per gli stessi momenti. Trascinare, le frecce, pagina su e giu',
+inizio e fine funzionano tutti. Il verdetto si chiede al rilascio, con
+`AbortController`, mentre cursore e conteggi si muovono subito perche' i dati
+sono gia' in pagina.
+
+La pagina chiede la linea del tempo **senza** `run_id` e poi porta il
+`run_id` che la linea dichiara dentro ogni richiesta di verdetto. Cosi' la
+striscia e la giostra stanno sempre sulla stessa corsa.
+
+### Verifiche, e due difetti trovati guardando
+
+Rotta: 32 controlli su 32. Forma esatta, 1.407 ore contigue dal
+`2026-06-22T04:00:00Z` al `2026-08-19T18:00:00Z`, 29 ore con almeno un
+`intervieni`, 909 con almeno una degradata, massimo di `d` pari a 7, le due
+chiamate giuste. Quattordici ore confrontate una per una contro
+`GET /valves/decision`: la casella della striscia e il verdetto a
+quell'ora dicono sempre lo stesso numero.
+
+Pagina: 12 controlli su 12 con Playwright a 1536x770 contro la rotta vera.
+Altezza della pagina 770 in ogni caso, banda 96,0 px, console pulita.
+
+Due difetti che la prova automatica non vede e che si trovano solo guardando
+l'immagine. La scritta «crollo: nessuna stima» partiva dall'arrivo della
+squadra, usciva dalla scheda e si leggeva «crollo: nessi». Ora e' ancorata a
+destra sotto l'asse. Trascinare la striscia selezionava il nome del mese e lo
+colorava di blu, come se si stesse copiando del testo: mancava
+`user-select:none`.
+
+### Limite dichiarato
+
+Senza `--run` il proxy risolve `storico_60d`, dove le chiamate sono tre (v8 il
+3 luglio, v21 il 16 luglio, v30 il 12 agosto). I numeri visti finora nelle
+anteprime (v8 il 4 luglio alle 07:00, D 8,14 € contro R 2,00 €) sono della
+corsa `deriva_lenta_60d`. Quale delle due debba essere la corsa di casa della
+pagina resta da decidere.
+
+
+## 2026-09-16 — Il verdetto precalcolato, e il sigillo sui parametri
+
+L'utente ha aperto `dashboard/decisione/` e ha detto che era lenta, chiedendo
+se fosse colpa dell'architettura e se non ci fosse un database da cui leggere.
+
+### La misura, che ribalta la risposta naturale
+
+La risposta d'istinto era «e' il database». E' sbagliata di un fattore venti.
+Misurato su tre livelli (HTTP, divisione in memoria fra lettura e calcolo,
+cProfile).
+
+| | costo | come cresce |
+|---|---|---|
+| `api._serie_per_decisione`, la lettura da Postgres | **0,21 s** | costante |
+| `decision.decisione()`, il calcolo | 0,05 s al 5% della corsa, 1,14 s a meta', **4,6 s all'ultima ora** | piu' che lineare |
+
+La pagina apre sull'ultima ora e carica anche la striscia dei due mesi, quindi
+la prima schermata costava circa 17 secondi.
+
+Il profilo dell'ultima ora: il 95% del tempo sta in `stima_crollo`. Dentro,
+`t_cdf` viene chiamata 309.356 volte per richiesta, `abs()` 46,8 milioni di
+volte e `datetime.fromisoformat` 6,03 milioni di volte. E' statistica di
+Student in Python puro, rifatta da capo a ogni clic.
+
+### Il fatto che rende la cura economica
+
+`decision.linea()`, che produce tutte le 1.407 ore della corsa, costa 4,5 s,
+cioe' quanto una sola richiesta sull'ultima ora. Una passata calcola ogni
+casella al prezzo di una. Oggi quel lavoro veniva buttato via.
+
+Da qui la scelta, approvata dall'utente: precalcolare una volta per corsa e
+leggere.
+
+### Cosa e' stato costruito
+
+`pipeline/decision_rollup.py` e la tabella `decision_rollup_hour` (chiave
+`run_id, ora_ts, valve_id`, la stima in JSONB, 49.245 righe per corsa,
+riempimento circa 5,5 s). `stima_piena()` riusa la scansione invece di
+richiamare `stima_crollo` per l'ora bersaglio. Un memo (`lru_cache`) sulla t di
+Student. Le due rotte leggono dalla tabella e ripiegano sul calcolo quando la
+tabella non e' fresca, senza nessun `degraded` nuovo: una pagina lenta e' un
+difetto, una pagina rotta e' un'altra cosa.
+
+`mostra` ha una colonna sua perche' in `percorso` si porta dietro l'inizio
+della corsa e una finestra di 24 righe non basta a ricostruirlo. `storia_24h`
+sono le ultime 24 **righe** della griglia e non le ultime 24 ore, quindi si
+legge con `ORDER BY ora_ts DESC LIMIT 24`.
+
+### Il sigillo, cioe' il difetto che il precalcolo introduceva
+
+Chi ha costruito il precalcolo ha segnalato da solo il difetto peggiore che
+lasciava, e aveva ragione. `fresco()` confrontava solo `MAX(ora_ts)` con
+l'ultimo secchiello dei cicli: vedeva allungarsi la corsa e non vedeva
+nient'altro. Cambiare una costante della politica, oppure la finestra sana,
+lasciava la tabella formalmente fresca e faceva servire numeri vecchi in
+silenzio. Non era teorico: `PREZZO_VALVOLA_EUR` aspetta un preventivo vero.
+
+Rimedio: `decision.impronta_parametri(finestra)` e una colonna `impronta`.
+L'impronta e' lo sha256 delle diciassette costanti della politica piu' gli
+estremi della finestra sana. `fresco()` pretende che la tabella porti quella e
+solo quella. Un test nuovo confronta l'elenco con le maiuscole del modulo, meno
+tre esclusioni dichiarate una per una, cosi' dimenticarsi una costante nuova
+diventa un errore invece di un silenzio.
+
+### Un secondo difetto, trovato mentre si provava il primo
+
+`verdetto()` prendeva prezzo, `F_U` e `L` come valori predefiniti di firma. In
+Python quei valori si calcolano una volta sola, al caricamento del modulo.
+Cambiare la costante muoveva il blocco `parametri` della risposta e non muoveva
+il conto: la pagina dichiarava un prezzo e ne usava un altro. Ora si risolvono
+alla chiamata. Una scansione di tutto `pipeline/` trova lo stesso schema in 17
+firme, tutte su costanti di configurazione e nessuna nel percorso del verdetto.
+
+### Verificato
+
+Prima di qualunque modifica e' stato preso un metro che non si puo' aggirare:
+lo sha256 del corpo della risposta, una corsa per volta. Dopo il lavoro i due
+valori sono identici (`c63b36f0…` per `storico_60d`, `a91dfc13…` per
+`deriva_lenta_60d`), insieme a tutti i numeri della striscia, alle chiamate,
+ai conteggi e alle 69 ore sparse confrontate una per una fra striscia e
+verdetto orario: zero disaccordi, 37 controlli su 37.
+
+Il confronto campo per campo fra il corpo calcolato e quello letto dalla
+tabella da' zero differenze su tutte e 35 le valvole.
+
+| | prima | dopo |
+|---|---|---|
+| ultima ora, dalla rotta | ~6 s | **0,05 s** |
+| striscia dei due mesi | 10,3 s | **0,07 s** |
+| prima schermata in un browser vero, a freddo | ~17 s | **1,35 s** |
+| prima schermata, a caldo | | **0,17 s** |
+
+Misure di pagina fatte a 1536x770 su `http://127.0.0.1:8089/decisione/`: 35
+tessere disegnate, altezza del documento 770, banda 96,0 px, console pulita.
+
+### Perche' non era un lusso
+
+Il costo cresceva con la lunghezza della corsa. Una corsa doppia avrebbe
+portato l'ultima ora oltre i 30 secondi di taglio del proxy, e la pagina
+avrebbe smesso di rispondere invece di essere lenta.
+
+### Resta aperto
+
+Quale delle due corse debba essere quella di casa della pagina. Senza `--run`
+il proxy risolve `storico_60d`, dove le chiamate sono tre. Tutte le anteprime
+mostrate finora erano su `deriva_lenta_60d`.
+
+## 2026-09-16 — Due difetti trovati dall'utente su una schermata sola
+
+L'utente ha aperto la pagina della decisione, ha scelto la valvola 8 nell'ora
+delle 02:00 del 4 luglio sulla corsa `storico_60d`, e ha scritto:
+
+> «doamdna in questo, perche' e' con i punti tratteggiati ma c'e' un unto rosso?
+> il messaggio non e' uaguale. dice uno rosos ma 8 non e' rosso, io non capisco»
+
+Aveva ragione due volte. La suite passava 365 test e la mia verifica del giorno
+prima ne aveva controllati 37 punti. Nessuno dei due ha visto quello che si vede
+guardando la schermata.
+
+### Il rosso cancellato dal grigio
+
+La valvola 8 in quell'ora e' `intervieni` e insieme `dati_insufficienti`, quindi
+la sua tessera portava tutte e due le classi, `grave` e `nostima`. In
+`dashboard/decisione/stile.css` le due regole avevano la stessa specificita' e
+`nostima` era scritta dopo, quindi il suo `stroke` grigio sovrascriveva il rosso.
+Il conteggio al centro diceva «1 intervieni» e sull'anello non c'era una sola
+tessera rossa. E' esattamente il difetto gia' registrato nella memoria
+`il-rosso-si-deve-trovare`.
+
+La causa vera sta sotto il CSS. La tessera stava portando **due assi di
+significato sulla stessa proprieta' grafica**: il colore del contorno diceva il
+verdetto, il tratteggio dello stesso contorno diceva quanto sappiamo del crollo.
+Due domande diverse che si contendevano un segno solo.
+
+La correzione separa i due assi invece di riordinare le righe:
+
+```css
+.cella .sfondo.nostima{ stroke-dasharray:4 3; }
+.cella .sfondo.nostima:not(.grave):not(.attenz){ stroke:var(--muto); }
+```
+
+Il colore resta al verdetto e il tratteggio non lo tocca mai. Misurato in un
+browser vero nello stato esatto dello screenshot dell'utente: valvola 8 con
+`rgb(143, 36, 24)` in tema chiaro e `rgb(217, 96, 74)` in tema scuro, 3,5 px,
+tratto `4 3`. Gli script che rimettono la pagina in quello stato sono
+`scratchpad/ripeti_v8.py` e `scratchpad/ripeti_v8_scuro.py`.
+
+### Il conto alla rovescia che era una costante
+
+Trovato da me guardando la stessa scheda. La tessera del tempo scriveva «la
+squadra arriva fra 24,0 h» sempre, anche a undici ore dalla partenza. Il campo
+`squadra.ore` che la rotta manda vale `int(L_H)` a `pipeline/decision.py:894`,
+cioe' il ritardo nominale fra la chiamata e l'arrivo. Non e' l'attesa di adesso.
+Alle 02:00 del 4 luglio, con l'arrivo alle 15:00, mancavano 13 ore.
+
+Corretto nella pagina e **deliberatamente non nell'API**. I due sha256 del metro
+(`c63b36f0` per `storico_60d`, `a91dfc13` per `deriva_lenta_60d`) si calcolano
+sull'oggetto che torna da `decision.decisione()`, e cambiare quel campo li
+sposterebbe entrambi, buttando via il criterio di accettazione che ha retto il
+precalcolo. La pagina ha gia' tutte e due le ore nella risposta, quindi
+`quanteOreAll()` in `pagina.js` fa la sottrazione fra `squadra.arrivo` e
+`adesso`, con zero come minimo perche' un'attesa non va all'indietro. La scheda
+e l'asse dicono tutti e due 13,0 h. Se un giorno si decide di correggere la
+rotta, i due metri vanno rifatti insieme.
+
+### Cosa resta aperto, e viene dalla stessa domanda
+
+Il segno «senza stima» e' ancora il quarto quadratino della legenda accanto a
+tre verdetti, e non e' un verdetto. Le valvole 21 e 30 in quell'ora sono
+`continua` sane e portano lo stesso segno della 8. La legenda mostra quattro
+cose e il conteggio ne conta tre. In piu' la valvola piu' grave ha il bordo
+tratteggiato mentre la meno grave lo ha pieno, quindi la piu' grave pesa di meno
+sull'occhio.
+
+Prima di proporre una forma ho fatto la ricognizione sui prodotti veri (riga 36
+del ledger). Quattro prodotti, e **nessuno dei quattro mette lo stato e
+l'incertezza sulla stessa proprieta' grafica**: Ignition di Inductive Automation
+usa un overlay sovrapposto («Using an overlay on a component lets the operator
+know that they could be looking at a bad value for that Tag»), Eurostat una
+lettera accanto al numero, Datadog un quinto stato che cancella gli altri,
+Grafana il colore base della scala. La spaccatura fra i quattro: due fanno
+sparire lo stato quando manca il dato, due lo lasciano visibile e aggiungono una
+marca.
+
+Le quattro forme vanno davanti all'utente come pagina da aprire
+(`work/pezzo7/stima/index.html`, pacchetto in `work/pezzo7/PACCHETTO-STIMA.md`),
+per la memoria `anteprime-invece-di-implementare`. La raccomandazione e' la
+marca separata che compare solo dove il verdetto non e' `continua`: il verdetto
+della tessera non e' incerto, l'incertezza riguarda solo il quando, e su una
+valvola sana quel segno accende un allarme che non esiste.
+
+### Suite
+
+365 passed in 215 s dopo le due correzioni, gli stessi di prima. Le correzioni
+stanno tutte e due nella pagina, quindi la suite non poteva accorgersene. E' il
+motivo per cui il criterio non e' il verde.
+
+## 2026-09-16 — La forma B: il segno «senza stima» esce dal contorno
+
+L'utente ha scelto fra quattro forme disegnate e ha risposto *«okay, vai con la tua
+raccomandazione»*. La B e' entrata in `dashboard/decisione/` lo stesso giorno.
+
+### Il problema che chiude
+
+La tessera dell'anello portava due assi di significato sulla stessa proprieta' grafica. Il
+colore del contorno diceva il verdetto, cioe' cosa fare adesso, e il tratteggio dello stesso
+contorno diceva quanto sappiamo del crollo futuro. Sulla valvola 8, che era `intervieni` e
+insieme senza stima, il grigio copriva il rosso. Il conteggio al centro diceva «1 intervieni»
+e sull'anello non c'era una sola tessera rossa.
+
+La regola scritta da questa correzione: **un asse di significato possiede una proprieta'
+grafica e non la presta a nessun altro asse.**
+
+### Come si presenta ora
+
+| | prima | dopo |
+|---|---|---|
+| contorno della tessera | verdetto e stima insieme | solo il verdetto, sempre pieno |
+| «senza stima» | tratteggio sullo stesso contorno | quadratino vuoto di 7 unita' all'angolo |
+| dove compare | su ogni valvola senza stima | solo dove il verdetto non e' `continua` |
+| legenda, quarto quadratino | quadrato di 16 px tratteggiato | quadratino di 8 px pieno |
+
+Prima della proposta ho guardato come risolvono lo stesso problema quattro prodotti veri.
+Ignition di Inductive Automation sovrappone un overlay separato, Eurostat mette una lettera
+accanto al numero, Datadog fa di «No Data» un quinto stato che cancella gli altri, Grafana
+usa il colore base della scala e nel proprio tracker ha una richiesta aperta perche' quella
+soluzione non basta. Nessuno dei quattro carica due significati sullo stesso attributo.
+
+### Una decisione mia dentro la forma scelta
+
+La marca sta in un gruppo annidato `rotate(-ang)`, come il numero della valvola. Cosi' resta
+un quadrato dritto in ogni posizione dell'anello. Senza quel gruppo, in alto si leggerebbe
+come un rombo e sembrerebbe un secondo segno. L'anteprima approvata non lo esercitava,
+perche' su quei dati l'unica valvola marcata era quella uscita dall'anello, che non ruota.
+
+### Verificato da me in un browser vero
+
+A 1536x770, nei due temi, alle 02:00 del 04-07 su `storico_60d`, cioe' l'istante esatto dello
+screenshot dell'utente. Zero tessere con `stroke-dasharray` su 35. Una marca sola, la valvola
+8. La 8 con contorno `rgb(143,36,24)` a 3,5 px in chiaro e `rgb(217,96,74)` in scuro. La 21 e
+la 30, che a quell'ora sono `continua` e senza stima, tessere normali. Conteggio 1, 1, 33 su
+35. Zero errori di console.
+
+Caso ruotato controllato a parte, alle 12:00 del 03-07: la valvola 8 e' `continua degradata`,
+resta dentro l'anello su una cella `rotate(-18.00)`, e la matrice a schermo della marca vale
+[1,0,0,1]. Quadrato dritto.
+
+I file toccati sono tre e stanno tutti nella pagina: `dashboard/decisione/pagina.js`,
+`stile.css`, `index.html`. `pipeline/` non e' stato toccato, quindi i due sha256 del metro
+restano dove sono.
+
+### Una correzione al numero della suite che questo progetto si ripeteva
+
+`pytest` dalla radice raccoglie **624 test e li passa tutti**, in 944 s. Il numero 365 che
+gira nelle voci dei giorni scorsi e' la sola cartella `pipeline/tests`. L'altra e'
+`edge/tests`, e vale le 259 di differenza. Da qui in avanti il numero da citare e' 624, con
+la cartella dichiarata quando si cita un sottoinsieme.
+
+## 2026-09-16 — La lentezza e' chiusa dall'utente
+
+Ha aperto `http://127.0.0.1:8089/decisione/` e ha scritto: *«okay, adesso la velocita' va
+bene»*. Chiude la sua segnalazione del 16 mattina, *«ti faccio sapere che lo ho appena aperto
+ed e' lenot, e' a causa dell'achitettura? non c'e' nessun databse da dove puo prendere per
+evitare questa lentezza?»*.
+
+La risposta naturale a quella domanda sarebbe stata si', ed era sbagliata. Misurando su tre
+livelli, il database costava 0,21 s costanti e il calcolo 6c costava 4,6 s all'ultima ora,
+con il 95% del tempo dentro `stima_crollo`. La correzione e' stata precalcolare il verdetto
+per tutte le 1.407 ore della corsa in una volta sola, perche' `decision.linea()` le calcola
+tutte allo stesso prezzo di una.
+
+Prima schermata in un browser vero, da circa 17 s a 1,35 s a freddo e 0,17 s a caldo.
+
+## 2026-09-16 — Il segnale dal futuro, trovato e corretto
+
+Trovato da me controllando i numeri di un'anteprima, non da un test. `decision.fatti_valvola`
+cercava il primo segno di degrado sulla serie **intera** della corsa registrata, scelta
+dichiarata nella sua docstring, quindi la risposta a un'ora poteva portare un `stima.segnale`
+datato **dopo** quell'ora. Alle 02:00 del 4 luglio su `storico_60d` le tre valvole senza stima
+erano la 8, la 21 e la 30, e due su tre lo erano per un segno non ancora avvenuto.
+
+Misurato su tutte le ore e non a campione, perche' una misura precedente aveva risposto
+guardando sei istanti scelti a mano: 2.064 coppie (ora, valvola) colpite su `storico_60d`,
+1.224 ore su 1.407, cioe' l'87 per cento della corsa; 1.203 coppie e 937 ore su
+`deriva_lenta_60d`.
+
+Avevo scritto che sullo schermo non ne arrivava niente, e mi sbagliavo. Il quadratino «senza
+stima» compariva con un segno datato nel futuro in **96 ore** su `storico_60d` e **48** su
+`deriva_lenta_60d`. Il motivo che mi ero perso: `continua degradata` nasce dal tasso di scarti
+fuori banda, non dalla stima, quindi una valvola e' degradata mesi prima che il suo regime
+sopra banda qualifichi come segnale.
+
+La scelta e' stata messa davanti all'utente come tre strade con una raccomandazione, in un
+artefatto. Ha scelto la prima: cercare il segno solo fino all'ora guardata.
+
+La correzione sta in `pipeline/decision.py`. `segnali_per_ora` costruisce in una passata sola
+la mappa del segnale ora per ora, come lo conoscerebbe chi guarda a quell'ora. `fatti_valvola`
+la conserva e prende il proprio segnale con una bisezione. `stima_piena` legge il segnale
+dell'ora invece di quello di fine corsa. La mappa e' necessaria perche' `decision_rollup.py`
+chiama `fatti_valvola` una volta sola per valvola a fine corsa e poi legge da li' tutte le
+1.407 ore: senza la mappa, la tabella che la rotta serve davvero avrebbe continuato a
+rispondere come prima.
+
+Il taglio riguarda il solo segnale. La baseline resta calcolata sulla serie intera, perche' la
+finestra sana finisce il 2 luglio, cioe' dentro la corsa, e tagliare la serie la calcolerebbe
+su una finestra monca spostando dei verdetti.
+
+Costo misurato: il segno trovato e' lo stesso e compare esattamente 24 ore dopo essere
+avvenuto, per tutte e tre le valvole, perche' `REGIME_MIN_H = 24` pretende un giorno di misure
+che confermano. Verifiche: i due sha256 del metro identici, le cifre di `linea()` identiche su
+entrambe le corse, 67.130 confronti fra la mappa nuova e la regola originale con zero
+differenze, zero segnali datati dopo l'ora sulle ore campione.

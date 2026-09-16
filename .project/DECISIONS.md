@@ -1046,3 +1046,287 @@ dall'API identici a quelli mostrati (75,5 h su v8, 47,0 h su v30), suite da
 **Il piano v2 e' COMPLETO.** Passi 1-4 eseguiti e verificati; passo 5
 rinviato per decisione utente (i dati non impongono lavoro sul modello);
 passo 6 chiuso — forma scelta, innestata, pagina accettata.
+
+
+## 2026-09-15 · Il calcolo 6c si riscrive dentro `pipeline/`, non si importa dal laboratorio
+
+La schermata della decisione ha bisogno del verdetto di tutte e 35 le valvole a un'ora
+scelta. Il calcolo esisteva gia' in `work/policy-lab/`. Importarlo sarebbe stato il
+percorso corto, ed e' stato scartato per un motivo verificato riga per riga.
+
+`work/policy-lab/banco.py` righe 67-78 riscrive `comune.baseline_da_serie` a livello di
+modulo con un memo a chiave `id()`. Gli `id()` di Python si riusano dopo una
+deallocazione, quindi dentro un processo che serve piu' richieste quel memo puo'
+restituire in silenzio la baseline di un'altra valvola. `comune.API` e' inoltre cablato a
+`127.0.0.1:8123`, cioe' l'API chiamerebbe se stessa via rete, e
+`costi.PREZZO_VALVOLA_EUR` vale `None`. Dentro `pipeline/` non c'e' un solo import da
+`work/`, e quella regola resta.
+
+Il calcolo vive quindi in `pipeline/decision.py`, riscritto leggendo il laboratorio come
+riferimento, con cinque scostamenti dichiarati nel modulo. Il prelievo dei dati passa da
+una sola chiamata interna a `_progressione_medie` per tutte e 35 le valvole insieme, che
+costa 0,24 s, invece delle rotte HTTP a 9,14 s per valvola. La sigma non viene calcolata
+perche' il verdetto non la legge, ed e' li' che se ne andavano tre minuti.
+
+Un limite resta scritto nel codice: il segnale si cerca sulla serie intera della corsa,
+come facevano i file registrati. Su una corsa gia' avvenuta e' una fotografia corretta.
+Su dati vivi la stessa ora potrebbe cambiare verdetto man mano che la corsa avanza.
+
+## 2026-09-15 · La politica 6c e' «costo atteso» ora per ora, con tre esclusioni dichiarate
+
+La 6c confronta ogni ora quanto costa aspettare (scarti delle ultime 24 ore piu' la
+probabilita' che il crollo cada nell'ora regalata, per il salto fra fermo subito e fermo
+pianificato) con quanto rende aspettare (un'ora di vita della valvola, P / 500 h, per la
+quota di esercizio). Chiama al K-esimo «intervieni» di fila, riferimento K = 2. La
+probabilita' viene dalla stessa retta della stima 6a, letta con la t di Student.
+
+Tre esclusioni sono scelte, non dimenticanze, e l'utente puo' cambiarle: l'ispezione non
+e' modellata perche' sui dati registrati non produce informazione che la stima non abbia
+gia'. La fermata notturna 19:00-04:00 non e' un momento di intervento a costo zero. La
+regola chiama alla prima ora utile perche' il salto fra i due fermi (4.821 EUR) rende
+qualunque delta_p sopra 0,0004 piu' caro di un'ora di vita del pezzo, e questo e' voluto.
+
+Sotto 500 EUR di valvola la 6c esce sul rumore delle sane: il banco lo mostra e il report
+lo dichiara. Il conto degli scarti usa l'ora di nascita del guasto da `verita.py`, che e'
+oracolo per definizione. Nessuna politica la vede.
+
+Motivo del metodo: costruttore, verificatore e correttore sono tre worker diversi. Il
+verificatore ha smentito una frase del costruttore e ha chiuso la domanda sulla prima ora.
+
+## 2026-09-14 · Il passo dopo la v2 e' il Policy Lab, e i costi si cercano
+
+L'utente ha letto l'audit e la pagina del Policy Lab e ha accettato la
+direzione: *«mi va bene fare la policy lab»*, *«cio' che ho letto mi va bene»*.
+Il Policy Lab e' il progetto 2 della career map del 14 settembre: passare dal
+rilevamento alla decisione (continua / ispeziona / intervieni) con un modello
+dei costi, tre baseline (a guasto, a calendario, soglia 5/150 attuale) e un
+oracolo dalla verita' di scenario.
+
+**I costi non li sceglie l'utente e non si inventano.** Il primo audit aveva
+scritto «la prima decisione tua sono i cinque costi»; l'utente ha rifiutato:
+*«inventarli e basta non ci sta, ci vuole una ricerca intelligente... quindi
+non li voglio scegliere io i costi»*. Il metodo e' quello del simulatore: si
+prende un sistema reale, lo si capisce, e si ricava il nostro caso con la
+traduzione dichiarata. Ogni numero del modello porta fonte, anno e
+affidabilita' (misurato / citato / stimato); dove il numero non esiste si
+dichiara il vuoto e il limite inferiore.
+
+**Il compromesso «presto / tardi / degradato» entra nel modello** per richiesta
+esplicita dell'utente: cambiare prima un pezzo che rende meno ma rende ancora
+spreca la vita residua; aspettare accumula scarti ogni ora; il fermo non
+pianificato pesa 10-50 volte l'intervento pianificato. Il caso «rischio basso
+ma deriva rilevata» esce dal confronto dei costi, senza regola speciale.
+
+**Cosa non cambia**: verita' di scenario separata, dashboard solo sull'API,
+modello ML e motore degli allarmi congelati (diventano baseline), nessun numero
+inventato, accettazione a schermo solo dell'utente, tre varianti per ogni
+schermata nuova.
+
+**Primo taglio deciso**: retta sul canale dopo l'uscita di banda con banda di
+previsione, tre azioni (adesso / prossima fermata programmata / aspetta), foglio
+dei costi con fonti, prova su run tenute da parte contro le quattro baseline,
+costo per orizzonte con intervallo. Niente modello nuovo, niente pagine prima
+che la decisione esista e sia valutata.
+
+**Parametro in attesa**: il prezzo di una valvola isobarica e del kit
+guarnizioni. Richiesta di quotazione mandata a Eckenroth il 14 settembre. Fino
+alla risposta il modello e' parametrico nel prezzo, con il limite inferiore
+Made-in-China dichiarato.
+
+## 2026-09-15 · L'ora si sceglie con una striscia lunga quanto la corsa, e la camminata sta in un posto solo
+
+**Contesto.** La schermata della decisione mostra il verdetto delle 35 valvole a
+**un'ora** della corsa. La corsa dura 1.407 ore. Serviva un comando per scegliere
+quell'ora.
+
+**Prima di proporre, ho guardato come lo risolvono gli altri.** Ignition SCADA lo
+chiama «Historical Playback» e mette una striscia da trascinare in fondo allo
+schermo. Grafana separa la finestra relativa da quella assoluta con due campi.
+La pagina TEMPO di questo stesso progetto ha gia' una striscia dei due mesi
+(`dashboard/pc/index.html:73-79`, un `role="slider"` con
+`aria-label="Finestra di tempo sui due mesi"`) e il foglio di stile la mette
+nell'**ultima** riga della griglia, a tutta larghezza, con il commento «la
+striscia e' intoccabile». Quel precedente di casa ha deciso la posizione.
+
+**Cinque forme diverse, tutte vive sui dati veri**, messe davanti all'utente come
+anteprime da aprire e non come descrizioni. Ha scelto la **E**: la striscia da
+trascinare **con sopra le tacche dei momenti che contano**, piu' una fila di
+bottoni per quegli stessi momenti sotto.
+
+**La rotta.** Disegnare la striscia vuole i conteggi di tutte le ore in una
+richiesta sola. Misurato: una passata costa 5,1 s e 8 kB. Un'ora per volta
+costerebbe da 0,3 a 4,8 s a scatto, e un comando che risponde dopo secondi si
+legge come un comando rotto. Quindi `GET /valves/decision/timeline`, chiamata una
+volta all'apertura.
+
+**Il vincolo che conta piu' della rotta.** La regola che percorre la griglia ora
+per ora sta in **un posto solo**: il generatore `camminata(f)` in
+`pipeline/decision.py`, che sia `percorso(f, bersaglio)` sia `linea(...)`
+consumano. Scriverla due volte costava meno subito, ma il giorno in cui le due
+copie divergessero la striscia e il verdetto direbbero cose diverse sulla stessa
+ora, in silenzio, e nessuna prova se ne accorgerebbe se non quella che le
+confronta. Il test parametrico fra le due rotte e' l'unica guardia.
+
+**Niente giallo sulla striscia.** Le ore con almeno una `continua degradata` sono
+909 su 1.407. Tingerle renderebbe la striscia gialla per due terzi senza dire
+piu' niente. Le degradate sono l'altezza grigia. Il rosso resta alle 29 ore con
+almeno un `intervieni`.
+
+**Il verdetto si ricalcola al rilascio, non a ogni scatto.** Cursore, conteggi e
+tacche si muovono subito, perche' quei numeri sono gia' in pagina. La scheda
+della valvola arriva al rilascio con `AbortController`.
+
+**Costo che cresce con la corsa, dichiarato.** La rotta costa 5,1 s su 1.407 ore.
+Una corsa lunga il doppio supererebbe i 12 s, e il proxy taglia a 30 s. Non e' un
+problema oggi, lo diventa se le corse si allungano.
+
+**La riga bianca del proxy si scrive per intero.** `ROUTE_AMMESSE` in
+`dashboard/server_api.py` confronta la stringa per intero e non per prefisso,
+quindi `"valves/decision"` non copre `"valves/decision/timeline"`. La voce nuova
+sta accanto alla vecchia, non al posto suo.
+
+
+## 2026-09-16 · Il verdetto si precalcola una volta per corsa, e la freschezza guarda anche i parametri
+
+L'utente ha aperto la schermata della decisione e ha detto che era lenta,
+chiedendo se fosse colpa dell'architettura e se non ci fosse un database da cui
+leggere. La risposta d'istinto era che il collo di bottiglia fosse il database.
+È sbagliata di un fattore venti, e la misura lo dice su tre livelli.
+
+**La lettura da Postgres costa 0,21 s e non cresce.** Il calcolo 6c costa 0,05 s
+al 5% della corsa, 1,14 s a metà e 4,6 s all'ultima ora. Il 95% di quel tempo sta
+in `stima_crollo`: `t_cdf` viene chiamata 309.356 volte per richiesta, `abs()`
+46,8 milioni di volte. È statistica di Student in Python puro, rifatta da capo a
+ogni clic. La pagina apre sull'ultima ora e carica anche la striscia, quindi la
+prima schermata costava circa 17 secondi.
+
+**Il fatto che rende la cura economica.** `decision.linea()` produce tutte le
+1.407 ore della corsa e costa 4,5 s, cioè quanto una sola richiesta sull'ultima
+ora. Una passata calcola ogni casella al prezzo di una, e quel lavoro veniva
+buttato via a ogni richiesta. Quindi si precalcola una volta per corsa dentro
+`decision_rollup_hour` e le due rotte leggono.
+
+**Il ripiego non produce un `degraded` nuovo.** Quando la tabella non è fresca le
+rotte ricalcolano e rispondono lente. Una pagina lenta è un difetto. Una pagina
+che dichiara dati degradati dice un'altra cosa, e dirla per un problema di
+prestazioni renderebbe quella parola meno credibile quando conta davvero.
+
+**La freschezza guarda i parametri, non solo l'ora.** Confrontare `MAX(ora_ts)`
+con l'ultimo secchiello dei cicli vede allungarsi la corsa e non vede nient'altro:
+cambiare una costante della politica, oppure la finestra sana, lascia la tabella
+formalmente fresca e fa servire numeri vecchi in silenzio. Non è teorico, perché
+`PREZZO_VALVOLA_EUR` aspetta un preventivo vero. La colonna `impronta` porta lo
+sha256 delle diciassette costanti della politica più gli estremi della finestra, e
+`fresco()` pretende quella e solo quella. L'elenco è scritto a mano, quindi un
+test lo confronta con le maiuscole del modulo meno tre esclusioni dichiarate una
+per una: dimenticare una costante nuova diventa un errore invece di un silenzio.
+
+**I valori predefiniti di firma non servono per i parametri della politica.**
+`verdetto()` prendeva prezzo, `F_U` e `L` come valori predefiniti. Python li
+calcola una volta sola, al caricamento del modulo, quindi cambiare la costante
+muoveva il blocco `parametri` della risposta e non muoveva il conto: la pagina
+poteva dichiarare un prezzo e usarne un altro. Ora si risolvono alla chiamata.
+Lo stesso schema esiste in altre 17 firme di `pipeline/`, tutte su costanti di
+configurazione e nessuna nel percorso del verdetto, quindi restano come sono.
+
+**Il metro si consegna con la ricetta, non solo con il numero.** Lo sha256 di
+riferimento è preso sull'oggetto che torna da `decision.decisione()`. Il corpo
+HTTP della rotta non è lo stesso oggetto, perché la rotta aggiunge `degraded` e
+`reason`. Chi ha ricalcolato l'impronta sui byte HTTP ha concluso che il metro
+fosse scaduto, e ha sbagliato. Da qui in avanti un metro passato a qualcun altro
+porta scritto su cosa si calcola.
+
+## 2026-09-16 · Un asse di significato, una proprieta' grafica. E il conto alla rovescia si corregge nella pagina
+
+### Il contesto
+
+L'utente ha guardato una schermata sola della pagina della decisione e ha trovato
+due difetti che 365 test verdi e una mia verifica di 37 punti non avevano visto.
+
+### Decisione 1: il colore appartiene al verdetto e a niente altro
+
+La tessera della giostra stava dicendo due cose con lo stesso segno. Il colore
+del contorno portava il verdetto, e il tratteggio dello stesso contorno portava
+la stima del crollo. Sono due domande diverse: la prima chiede cosa fare adesso,
+la seconda chiede fra quante ore la valvola cedera'. Sulla valvola 8, che aveva
+tutte e due le condizioni, il grigio ha vinto sul rosso e l'unica valvola da
+guardare era l'unica spenta.
+
+La correzione poteva essere una riga spostata nel foglio di stile. Non lo e'.
+La regola scritta e' che **un asse di significato possiede una proprieta'
+grafica, e quella proprieta' non la presta a nessun altro asse**. Il colore
+appartiene al verdetto. Il tratteggio puo' dire altro, a patto che non tocchi il
+colore:
+
+```css
+.cella .sfondo.nostima{ stroke-dasharray:4 3; }
+.cella .sfondo.nostima:not(.grave):not(.attenz){ stroke:var(--muto); }
+```
+
+La ricognizione sui prodotti veri, fatta dopo e non prima, conferma che la regola
+e' la pratica corrente: Ignition sovrappone un overlay separato, Eurostat mette
+una lettera accanto al numero, Datadog fa dell'incertezza un quinto stato che
+sostituisce gli altri, Grafana usa il colore base della scala e nel proprio
+tracker ha una richiesta aperta perche' quella soluzione non basta. Nessuno dei
+quattro carica due significati sullo stesso attributo.
+
+### Decisione 2: il conto alla rovescia si corregge nella pagina e non nella rotta
+
+La scheda diceva «la squadra arriva fra 24,0 h» in ogni istante, perche' il campo
+`squadra.ore` che la rotta manda vale `int(L_H)` a `pipeline/decision.py:894`,
+cioe' il ritardo previsto fra la chiamata e l'arrivo. E' un parametro della
+politica e il suo valore e' giusto. Quello che mancava era l'attesa di adesso.
+
+La correzione sta in `dashboard/decisione/pagina.js` e non nella rotta. Il motivo
+e' il metro. I due sha256 che hanno fatto accettare il precalcolo si calcolano
+sull'oggetto che torna da `decision.decisione()`, e aggiungere o cambiare un
+campo li sposterebbe tutti e due, buttando via il criterio di accettazione piu'
+forte che questa parte del progetto possiede. La risposta contiene gia' sia
+`squadra.arrivo` sia `adesso`, quindi la pagina ha tutto per fare la sottrazione
+da sola, con zero come minimo perche' un'attesa non va all'indietro.
+
+Il costo di questa scelta va dichiarato: chi consuma la rotta senza passare dalla
+pagina continua a leggere un `squadra.ore` che vale sempre 24. Se un giorno si
+decide di correggere la rotta, i due metri vanno rifatti nello stesso giro, con
+la ricetta esatta scritta accanto.
+
+### La lezione, che vale oltre questi due difetti
+
+I due difetti erano visibili guardando una schermata. Nessuno dei due poteva
+essere trovato da un test, perche' uno e' una regola di cascata fra due classi e
+l'altro e' una sottrazione che la pagina non faceva. Il verde della suite ha
+detto la verita' su cio' che misurava, e cio' che misurava non era la schermata.
+
+## 2026-09-16 — Il segno «senza stima» e' un elemento separato, e compare solo dove c'e' da fare
+
+Scelta dall'utente fra quattro forme disegnate: *«okay, vai con la tua raccomandazione»*.
+
+### La decisione
+
+«Senza stima» non tocca piu' il contorno della tessera. Diventa un quadratino vuoto di 7
+unita', contorno in `var(--muto)`, appoggiato all'angolo in alto a destra e centrato su
+quell'angolo. Compare soltanto dove il verdetto non e' `continua`.
+
+### Perche'
+
+Il contorno appartiene al verdetto. Quando due assi diversi scrivono sulla stessa proprieta'
+grafica, uno dei due vince per ordine nel foglio di stile e l'altro sparisce senza che
+nessun test se ne accorga. E' successo: la valvola piu' grave della schermata era l'unica
+spenta.
+
+Il secondo pezzo della regola, cioe' la marca solo sui verdetti che chiedono qualcosa, viene
+dal significato. Il verdetto della tessera non e' incerto, perche' i costi che lo generano
+vengono da dati veri. Quello che non sappiamo e' il quando, ed e' la domanda a cui risponde
+la scheda. Su una valvola sana quel segno accenderebbe un allarme che non esiste.
+
+### Cosa costa
+
+La marca dipende dal verdetto, quindi la stessa valvola puo' portarla in un'ora e non
+nell'ora dopo, senza che la stima sia cambiata. E' il prezzo della B ed e' stato accettato
+sapendolo. La forma A, che marcava sempre, era l'alternativa disegnata e mostrata.
+
+### Dove sta
+
+`dashboard/decisione/pagina.js` disegna la marca in un gruppo annidato `rotate(-ang)` cosi'
+resta dritta sulle tessere ruotate. `stile.css` porta `.cella .marca` e `.sw-marca`.
+`pipeline/` non e' stato toccato e i due sha256 del metro restano validi.

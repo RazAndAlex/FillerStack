@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="it">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manuale della dashboard · FillerStack</title>
+<style>
+/* Tinte copiate da dashboard/comune/lessico.css. */
+:root{
+  color-scheme: light;
+  --pagina:#e9ebee; --sup:#ffffff; --sup-2:#f4f6f7; --bordo:#b9c0c8;
+  --barra:#2f3640; --barra-t:#f2f5f7; --barra-muto:#aab3bc;
+  --ink:#16191d; --muto:#79818a; --dato:#4a545e;
+  --traccia:#e3e7ea; --banda:#cfd5db; --rif:#5d666f;
+  --attenz:#b9880f; --grave:#8f2418;
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --pagina:#14171a; --sup:#1c2126; --sup-2:#232a30; --bordo:#333c45;
+  --barra:#0f1418; --barra-t:#dfe5ea; --barra-muto:#aab3bc;
+  --ink:#e8ecef; --muto:#8a939c; --dato:#9aa6b1;
+  --traccia:#2a3138; --banda:#3a434c; --rif:#98a2ab;
+  --attenz:#d9a227; --grave:#d9604a;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --pagina:#14171a; --sup:#1c2126; --sup-2:#232a30; --bordo:#333c45;
+    --barra:#0f1418; --barra-t:#dfe5ea; --barra-muto:#aab3bc;
+    --ink:#e8ecef; --muto:#8a939c; --dato:#9aa6b1;
+    --traccia:#2a3138; --banda:#3a434c; --rif:#98a2ab;
+    --attenz:#d9a227; --grave:#d9604a;
+  }
+}
+*{ box-sizing:border-box; }
+body{
+  margin:0; background:var(--pagina); color:var(--ink);
+  font:14px/1.5 "Segoe UI", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+code{ font-family:"JetBrains Mono", ui-monospace, Consolas, monospace; font-size:.92em;
+  background:var(--sup-2); padding:0 5px; border-radius:2px; }
+
+.nav{ display:flex; align-items:stretch; background:var(--barra); color:var(--barra-t);
+  height:46px; position:sticky; top:0; z-index:8; }
+.nav-marca{ display:flex; align-items:center; padding:0 18px; font-size:13px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--barra-muto);
+  border-right:1px solid #454e59; }
+.nav-voci{ display:flex; list-style:none; margin:0; padding:0; }
+.nav-voci li{ display:flex; align-items:center; padding:0 16px; font-size:12px;
+  letter-spacing:.08em; color:#c3cbd3; }
+.nav-voci li a{ color:inherit; text-decoration:none; }
+.nav-voci li a:hover{ color:var(--barra-t); text-decoration:underline;
+  text-underline-offset:3px; }
+.nav-voci li.attiva{ background:var(--sup); color:var(--ink); font-weight:600; }
+.nav-dx{ margin-left:auto; display:flex; align-items:center; padding:0 14px; }
+.btn-tema{ font:12px "Segoe UI", system-ui, sans-serif; padding:4px 8px; cursor:pointer;
+  background:#454e59; color:#e7ebef; border:1px solid #5c656f; border-radius:2px;
+  letter-spacing:.06em; min-width:66px; }
+.btn-tema:hover{ background:#5a646f; }
+.btn-tema:focus-visible{ outline:2px solid #9fb4c8; outline-offset:1px; }
+
+.foglio{ max-width:1060px; margin:0 auto; padding:22px 16px 90px;
+  display:flex; flex-direction:column; gap:16px; }
+
+/* frontespizio */
+.fronte{ background:var(--sup); border:1px solid var(--bordo); border-radius:3px;
+  padding:34px 34px 28px; }
+.fronte .eyebrow{ font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--muto); margin:0 0 8px; }
+.fronte h1{ margin:0 0 6px; font-size:30px; font-weight:600; }
+.fronte .sottot{ font-size:16px; color:var(--dato); margin:0 0 18px; }
+.fronte .meta{ display:flex; gap:26px; font-size:12.5px; color:var(--muto);
+  border-top:1px solid var(--traccia); padding-top:12px; }
+
+h2.cap{ margin:0; font-size:20px; font-weight:600; }
+p{ margin:0 0 10px; max-width:78ch; }
+p.min{ font-size:12.5px; color:var(--muto); }
+ol{ margin:0 0 10px; padding-left:22px; max-width:78ch; }
+ol li{ margin-bottom:5px; }
+ul{ margin:0 0 10px; padding-left:20px; max-width:78ch; }
+ul li{ margin-bottom:5px; }
+
+.box{ background:var(--sup); border:1px solid var(--bordo); border-radius:3px; }
+.box-tit{ margin:0; background:var(--barra); color:var(--barra-t);
+  font-size:11.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+  padding:5px 11px; border-radius:2px 2px 0 0; display:inline-block; }
+.box-corpo{ padding:14px 16px 16px; display:flex; flex-direction:column; gap:12px; }
+
+figure{ margin:0; }
+figure img{ width:100%; display:block; border:1px solid var(--bordo);
+  border-radius:2px; background:#fff; }
+figcaption{ font-size:12.5px; color:var(--muto); margin-top:6px; }
+figcaption b{ color:var(--ink); font-weight:600; }
+
+table.tab{ border-collapse:collapse; width:100%; font-size:13px; }
+table.tab th{ text-align:left; font-size:10.5px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muto); font-weight:600;
+  border-bottom:1px solid var(--bordo); padding:5px 10px 5px 0; width:1%; }
+table.tab th+th{ width:auto; }
+table.tab td{ padding:6px 10px 6px 0; border-bottom:1px solid var(--traccia);
+  vertical-align:top; }
+table.tab tr:last-child td{ border-bottom:none; }
+table.tab td.n{ white-space:nowrap; font-weight:700; color:var(--dato); }
+/* pallino numerato uguale a quello sulle figure */
+.pn{ display:inline-flex; align-items:center; justify-content:center;
+  width:20px; height:20px; border-radius:50%; background:#d61820; color:#fff;
+  font-size:12px; font-weight:700; margin-right:7px; vertical-align:-4px; }
+
+.nota{ border:1px solid var(--bordo); border-left:4px solid var(--attenz);
+  border-radius:3px; background:var(--sup-2); padding:10px 13px; }
+.nota h3{ margin:0 0 5px; font-size:12px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--attenz); }
+.nota p{ margin:0; font-size:13px; color:var(--ink); }
+.nota p+p{ margin-top:6px; }
+
+.check li{ list-style:none; margin-bottom:7px; }
+.check{ padding-left:4px; }
+.check li::before{ content:"☐"; margin-right:9px; color:var(--muto); }
+
+@media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+
+<nav class="nav">
+  <span class="nav-marca">filler01</span>
+  <ul class="nav-voci">
+    <li class="attiva" aria-current="page">MANUALE</li>
+    <li><a href="#cap1">MACCHINA</a></li>
+    <li><a href="#cap2">VALVOLE</a></li>
+    <li><a href="#cap3">OEE</a></li>
+    <li><a href="#cap4">TEMPO</a></li>
+    <li><a href="#cap5">CARTA</a></li>
+    <li><a href="#cap6">PREDITTIVA</a></li>
+    <li><a href="#cap7">PANNELLI</a></li>
+  </ul>
+  <span class="nav-dx">
+    <button id="tema" type="button" class="btn-tema" aria-label="Tema chiaro o scuro">SCURO</button>
+  </span>
+</nav>
+
+<div class="foglio">
+
+<div class="fronte">
+  <p class="eyebrow">FillerStack · riempitrice rotativa · 35 valvole</p>
+  <h1>Manuale della dashboard</h1>
+  <p class="sottot">Come si leggono le sei pagine, i grafici e gli elementi che le compongono.</p>
+  <div class="meta">
+    <span>Versione 1.0</span>
+    <span>2 settembre 2026</span>
+    <span>Figure catturate sul run <code>storico_60d</code> (dati reali)</span>
+  </div>
+</div>
+
+<section class="box">
+  <h2 class="box-tit">Capitolo 0 · Prima di iniziare</h2>
+  <div class="box-corpo">
+    <h2 class="cap">Scopo</h2>
+    <p>Questo manuale spiega come leggere la dashboard di supervisione. Non serve conoscere
+    la macchina né il software che la misura: ogni elemento a schermo è spiegato con una figura
+    annotata e una tabella.</p>
+
+    <h2 class="cap">Prerequisiti</h2>
+    <ul>
+      <li>Un browser recente (Chrome, Edge o Firefox).</li>
+      <li>La dashboard avviata con un doppio clic su <code>dashboard.bat</code>. Si apre da sola
+      sulla pagina Macchina.</li>
+    </ul>
+
+    <h2 class="cap">Flusso consigliato</h2>
+    <ol>
+      <li>Apri <b>Macchina</b> e guarda se c'è giallo o rosso da qualche parte.</li>
+      <li>Se c'è, apri <b>Valvole</b> per sapere quale valvola guardare.</li>
+      <li>Clicca la valvola e leggi il pannello di dettaglio.</li>
+      <li>Per capire da quando dura, apri <b>Tempo</b>. Per quanto è fuori misura, <b>Carta</b>.
+      Per quanto tempo resta prima che il prodotto si rovini, <b>Predittiva</b>.</li>
+    </ol>
+
+    <h2 class="cap">Tre convenzioni valide su tutte le pagine</h2>
+    <ul>
+      <li><b>Il colore è riservato a chi sta male.</b> Grigio vuol dire nella norma. Giallo e
+      rosso compaiono solo dove serve attenzione, a gradini crescenti. Il verde non esiste.</li>
+      <li><b>Ogni grafico ha un riferimento.</b> Una linea tratteggiata (la <i>tacca</i>) è il
+      valore normale, la fascia chiara attorno (la <i>banda</i>) è l'intervallo ancora normale.
+      Accanto c'è sempre scritto da dove viene, per esempio <i>rif. 64% · run sano</i>.</li>
+      <li><b>Il mouse spiega.</b> Su ogni grafico, passare il mouse apre un riquadro scuro con
+      valore, momento e scostamento dal riferimento. Cliccare una valvola apre il suo pannello
+      di dettaglio, che si chiude con ✕, con Esc o cliccando il fondo.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="box" id="cap1">
+  <h2 class="box-tit">Capitolo 1 · Macchina</h2>
+  <div class="box-corpo">
+    <p>Risponde a: <b>la macchina sta lavorando, e con che esito?</b> È la pagina di apertura.</p>
+    <figure>
+      <img src="shots/ann-01-macchina.png" alt="La pagina Macchina con otto riquadri numerati in rosso">
+      <figcaption><b>Figura 1.</b> La pagina Macchina sul run storico. La macchina è in marcia
+      (RUNNING), l'OEE delle ultime 24 ore è 47,3% contro un riferimento del 50,4%, e nove
+      valvole hanno un allarme attivo.</figcaption>
+    </figure>
+    <table class="tab">
+      <tr><th>N.</th><th>Elemento</th><th>Indicazione</th></tr>
+      <tr><td class="n"><span class="pn">1</span></td><td>Stato macchina</td>
+        <td>La parola grande è lo stato attuale, col codice OMAC a fianco. OMAC è la numerazione
+        standard degli stati di una macchina di produzione. Sotto, la scala degli stati possibili
+        evidenzia quello corrente.</td></tr>
+      <tr><td class="n"><span class="pn">2</span></td><td>Ultimo dato</td>
+        <td>Orario dell'ultimo ciclo arrivato e da quanto. Diventa giallo solo se la macchina è
+        in marcia e il dato ha più di cinque minuti: in quel caso l'acquisizione si è fermata.</td></tr>
+      <tr><td class="n"><span class="pn">3</span></td><td>OEE · ultime 24 h</td>
+        <td>Il gauge grande. L'OEE è la quota di tempo in cui la macchina produce, e produce bene.
+        La tacca è il 50,4% misurato sul run sano. Sopra la tacca il numero resta grigio: superare
+        il riferimento non è un evento.</td></tr>
+      <tr><td class="n"><span class="pn">4</span></td><td>Disponibilità, Prestazione, Qualità</td>
+        <td>Le tre componenti che moltiplicate danno l'OEE. Ognuna col suo riferimento: 64% dal
+        run sano, 100% come target, 78,7% come base misurata sulle 35 valvole.</td></tr>
+      <tr><td class="n"><span class="pn">5</span></td><td>Andamento OEE</td>
+        <td>L'OEE come linea nel tempo, con banda e tacca. I pallini compaiono solo dove la linea
+        entra o esce dalla banda.</td></tr>
+      <tr><td class="n"><span class="pn">6</span></td><td>Ripartizione del tempo</td>
+        <td>Quante delle 24 ore la macchina ha passato in ogni stato. La tacca segna il 64% di
+        marcia del run sano. Gli stati sono tutti grigi: una macchina ferma per scelta non è un
+        allarme.</td></tr>
+      <tr><td class="n"><span class="pn">7</span></td><td>Allarmi attivi per valvola</td>
+        <td>35 celle numerate. Grigio: nessun allarme. Giallo: un allarme. Rosso: due o più.
+        Il clic sulla cella apre il pannello della valvola (capitolo 7).</td></tr>
+      <tr><td class="n"><span class="pn">8</span></td><td>Turno in corso e Contatori</td>
+        <td>L'OEE del turno contro il turno precedente, e i conti delle 24 ore: cicli, buoni,
+        scarti, allarmi. Gli scarti portano la base del 21,3%: è lo scarto che questa macchina
+        ha anche da sana.</td></tr>
+    </table>
+    <div class="nota">
+      <h3>Nota</h3>
+      <p>Se l'OEE del turno non è calcolabile (zero cicli nel turno), il gauge diventa
+      tratteggiato e compare la scritta <i>non calc.</i>. Non è un errore della pagina.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box" id="cap2">
+  <h2 class="box-tit">Capitolo 2 · Valvole</h2>
+  <div class="box-corpo">
+    <p>Risponde a: <b>quale valvola merita attenzione?</b> La giostra è vista dall'alto, con le
+    35 valvole nelle loro posizioni fisiche: la 1 in alto, poi in senso orario.</p>
+    <figure>
+      <img src="shots/ann-02-valvole.png" alt="La pagina Valvole con sette riquadri numerati in rosso">
+      <figcaption><b>Figura 2.</b> La pagina Valvole. Nove valvole in allarme (mozzo centrale),
+      tre col tempo di riempimento fuori norma. Le candele delle valvole 8 e 30 escono dal loro
+      anello grigio.</figcaption>
+    </figure>
+    <table class="tab">
+      <tr><th>N.</th><th>Elemento</th><th>Indicazione</th></tr>
+      <tr><td class="n"><span class="pn">1</span></td><td>La giostra</td>
+        <td>Una candela per valvola: dove sono caduti gli ultimi 400 tempi di riempimento.
+        Si legge dentro o fuori, non lunga o corta.</td></tr>
+      <tr><td class="n"><span class="pn">2</span></td><td>Mozzo centrale</td>
+        <td>I conti di macchina: quante valvole in allarme su 35, quante fuori norma, l'età
+        dell'ultimo dato, lo stato macchina.</td></tr>
+      <tr><td class="n"><span class="pn">3</span></td><td>Legenda della candela</td>
+        <td>La banda è il normale della singola valvola (base sui cicli sani, ±3σ). Il corpo va
+        dal 10° al 90° percentile, la tacca trasversale è la mediana dei 400 cicli.</td></tr>
+      <tr><td class="n"><span class="pn">4</span></td><td>Corona esterna</td>
+        <td>Gli allarmi attivi, nella posizione fisica della valvola. Stessa legenda di Macchina:
+        grigio nessuno, giallo uno, rosso due o più.</td></tr>
+      <tr><td class="n"><span class="pn">5</span></td><td>Riempimenti conformi</td>
+        <td>La quota di cicli buoni sulle 35 valvole, contro il riferimento 78,7% della
+        baseline.</td></tr>
+      <tr><td class="n"><span class="pn">6</span></td><td>Motivi di chiusura del ciclo</td>
+        <td>Come si sono chiusi i cicli: sul bersaglio (target), sul limite dell'encoder, per
+        timeout. Tutto grigio di proposito: è una ripartizione, non un allarme.</td></tr>
+      <tr><td class="n"><span class="pn">7</span></td><td>Riempimenti non conformi</td>
+        <td>Una barra per valvola contro la propria base, che è la tacca tratteggiata sulla
+        barra. Le valvole 9 e 21 arrivano alla propria tacca senza colorarsi: sbagliano da
+        sempre, e quello è il loro normale.</td></tr>
+    </table>
+    <div class="nota">
+      <h3>Nota</h3>
+      <p>Passando il mouse su una valvola della giostra si apre un riquadro con il nome del
+      guasto e le cinque grandezze del ciclo confrontate con la base. Il clic apre il pannello
+      di dettaglio (capitolo 7).</p>
+    </div>
+  </div>
+</section>
+
+<section class="box" id="cap3">
+  <h2 class="box-tit">Capitolo 3 · OEE</h2>
+  <div class="box-corpo">
+    <p>Risponde a: <b>perché l'OEE è quello che è?</b> Scompone le 24 ore fino all'ultimo
+    minuto.</p>
+    <figure>
+      <img src="shots/ann-03-oee.png" alt="La pagina OEE con cinque riquadri numerati in rosso">
+      <figcaption><b>Figura 3.</b> La pagina OEE. La cascata porta dalle 24 ore della finestra
+      alle 11,3 ore produttive: le fermate e l'attesa (−8,6 h) e gli scarti (−4 h) sono le due
+      perdite. L'OEE della finestra è 47,3%.</figcaption>
+    </figure>
+    <table class="tab">
+      <tr><th>N.</th><th>Elemento</th><th>Indicazione</th></tr>
+      <tr><td class="n"><span class="pn">1</span></td><td>Cascata del tempo</td>
+        <td>Si legge da sinistra: dalle 24 ore si tolgono la parte senza storia, le fermate, la
+        perdita di velocità e gli scarti, e resta il tempo produttivo. Sopra ogni colonna le ore,
+        sotto la percentuale della finestra. L'ultima colonna porta il numero grande dell'OEE con
+        la tacca del 50,4% del run sano.</td></tr>
+      <tr><td class="n"><span class="pn">2</span></td><td>Disponibilità · tempo per stato</td>
+        <td>Una riga per stato OMAC. Gli stati mai visti restano tratteggiati con scritto
+        <i>non osservato nella finestra</i>.</td></tr>
+      <tr><td class="n"><span class="pn">3</span></td><td>Prestazione</td>
+        <td>Due barre alla stessa scala: i cicli prodotti, piena, e quelli producibili al target,
+        tratteggiata. Qui quasi coincidono: questa macchina perde tempo da ferma, non da
+        lenta.</td></tr>
+      <tr><td class="n"><span class="pn">4</span></td><td>Qualità</td>
+        <td>Buoni e scarti in numeri assoluti. La tacca segna dove cadrebbe il confine alla
+        qualità sana del 78,7%.</td></tr>
+      <tr><td class="n"><span class="pn">5</span></td><td>Adesso</td>
+        <td>Stato macchina, età del dato, il turno in corso con le sue quattro barre e il
+        confronto col turno precedente.</td></tr>
+    </table>
+    <div class="nota">
+      <h3>Nota</h3>
+      <p><b>Senza storia</b> non è una perdita. È la parte di finestra di cui il sistema non
+      conosce lo stato della macchina. Resta grigia perché non è tempo perso: è tempo non
+      osservato.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box" id="cap4">
+  <h2 class="box-tit">Capitolo 4 · Tempo</h2>
+  <div class="box-corpo">
+    <p>Risponde a: <b>com'è andata, e quando?</b> In fondo c'è la striscia dei due mesi; la
+    finestra che trascini lì decide cosa vedono tutti i riquadri sopra.</p>
+    <figure>
+      <img src="shots/ann-04-tempo.png" alt="La pagina Tempo con sei riquadri numerati in rosso">
+      <figcaption><b>Figura 4.</b> La pagina Tempo con la finestra sugli ultimi 14 giorni. L'OEE
+      è sceso sotto la banda attorno al 13 agosto. Nella vista delle 35 valvole la 8, la 21 e la
+      30 stanno sotto la mediana del gruppo.</figcaption>
+    </figure>
+    <table class="tab">
+      <tr><th>N.</th><th>Elemento</th><th>Indicazione</th></tr>
+      <tr><td class="n"><span class="pn">1</span></td><td>OEE</td>
+        <td>L'OEE nel periodo scelto contro il riferimento, con banda ±1σ e minimo dichiarato di
+        ±2 punti. Il numero grande in alto a destra è l'ultimo OEE del periodo.</td></tr>
+      <tr><td class="n"><span class="pn">2</span></td><td>Le tre componenti</td>
+        <td>Disponibilità, Prestazione e Qualità sullo stesso asse del tempo. Restano grigie anche
+        quando si muovono: il colore sta solo sul grafico principale.</td></tr>
+      <tr><td class="n"><span class="pn">3</span></td><td>Le 35 sulla stessa scala</td>
+        <td>Una colonna per valvola contro la mediana del gruppo, in ordine di macchina e non di
+        merito. Il gambo che scende dalla mediana è la distanza dalle altre 34. L'interruttore in
+        alto cambia il metro: qualità del periodo oppure tempo di riempimento. La voce spenta dice
+        già quante valvole sarebbero fuori con quell'altro metro (<i>4 fuori</i>).</td></tr>
+      <tr><td class="n"><span class="pn">4</span></td><td>Qualità per valvola</td>
+        <td>35 piccole celle, ciascuna contro la propria base. Qui il confronto è con sé stesse;
+        nel riquadro sopra è con le altre. Servono tutti e due: le valvole 9 e 21 contro sé stesse
+        risultano normali.</td></tr>
+      <tr><td class="n"><span class="pn">5</span></td><td>La striscia dei due mesi</td>
+        <td>L'OEE di macchina su tutta la run. I tratti tratteggiati in testa e in coda sono zone
+        senza dato confrontabile, e la finestra non può entrarci.</td></tr>
+      <tr><td class="n"><span class="pn">6</span></td><td>La finestra</td>
+        <td>Il rettangolo con due maniglie. Trascina dentro per spostarla, trascina le maniglie
+        per ridimensionarla (minimo sei ore), clicca fuori per centrarla sul clic, rotellina per
+        lo zoom. La durata scelta è scritta dentro la finestra.</td></tr>
+    </table>
+    <div class="nota">
+      <h3>Nota</h3>
+      <p>Cliccando una colonna o una cella si apre il pannello della valvola, con il profilo del
+      ciclo medio disegnato con tre soli punti misurati: apertura, fine riempimento, fine coda.
+      Contro la sagoma tratteggiata della base, con lo scarto riempito fra le due.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box" id="cap5">
+  <h2 class="box-tit">Capitolo 5 · Carta</h2>
+  <div class="box-corpo">
+    <p>Risponde a: <b>quanto è fuori misura?</b> Una valvola alla volta, 5.000 cicli, una
+    grandezza sola: il tempo di riempimento.</p>
+    <figure>
+      <img src="shots/ann-05-carta.png" alt="La pagina Carta con cinque riquadri numerati in rosso">
+      <figcaption><b>Figura 5.</b> La pagina Carta sulla valvola 1, che è sana: zero cicli fuori
+      banda su 5.000 in entrambe le carte. Nella striscia in basso le valvole 8, 21 e 30 portano
+      il segno rosso.</figcaption>
+    </figure>
+    <table class="tab">
+      <tr><th>N.</th><th>Elemento</th><th>Indicazione</th></tr>
+      <tr><td class="n"><span class="pn">1</span></td><td>Ciclo singolo</td>
+        <td>Ogni ciclo è un punto. La banda è la media ±3σ della base della valvola, la linea
+        tratteggiata è la media. L'area fra la linea e la media è riempita: la differenza sta
+        lì.</td></tr>
+      <tr><td class="n"><span class="pn">2</span></td><td>Media mobile di 46 cicli</td>
+        <td>La stessa carta sulla media di 46 cicli, il periodo dell'oscillazione naturale della
+        macchina. La banda si stringe da ±215,8 ms a ±5,2 ms, e i gradini lenti che nella prima
+        carta spariscono qui si vedono.</td></tr>
+      <tr><td class="n"><span class="pn">3</span></td><td>Primi 45 cicli</td>
+        <td>Nella seconda carta i primi 45 cicli sono tratteggiati: la finestra mobile non è
+        ancora piena e quel tratto non è un dato confrontabile.</td></tr>
+      <tr><td class="n"><span class="pn">4</span></td><td>Asse sigma</td>
+        <td>A destra, in σ: dice quanto il punto è fuori. A sinistra, in millisecondi. Se il
+        picco supera 4σ il valore appare in grassetto e colorato.</td></tr>
+      <tr><td class="n"><span class="pn">5</span></td><td>La striscia delle 35</td>
+        <td>Una cella per valvola. Sotto il numero, una riga divisa a metà: a sinistra quanto sta
+        fuori la carta del ciclo singolo, a destra quella della media di 46. Il clic cambia la
+        valvola delle due carte. Sotto le valvole 13-18 un segno dichiara che l'instabilità di
+        pressione non la vede nessuna delle due carte.</td></tr>
+    </table>
+    <div class="nota">
+      <h3>Nota</h3>
+      <p>Il mirino è uno solo: passando il mouse, lo stesso ciclo si accende sulle due carte
+      insieme e il riquadro mostra entrambi i valori.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box" id="cap6">
+  <h2 class="box-tit">Capitolo 6 · Predittiva</h2>
+  <div class="box-corpo">
+    <p>Risponde a: <b>quanto tempo resta prima che un guasto in corso rovini il prodotto?</b>
+    Una riga per valvola: quelle in allarme più tre sane di campione.</p>
+    <figure>
+      <img src="shots/ann-06-predittiva.png" alt="La pagina Predittiva con sei riquadri numerati in rosso">
+      <figcaption><b>Figura 6.</b> La pagina Predittiva. La valvola 8 ha un margine di 6,0 ore,
+      la 30 di 8,0 ore. Sulle sei valvole con pressione instabile il margine non è vedibile e la
+      pagina lo dichiara.</figcaption>
+    </figure>
+    <table class="tab">
+      <tr><th>N.</th><th>Elemento</th><th>Indicazione</th></tr>
+      <tr><td class="n"><span class="pn">1</span></td><td>Legenda</td>
+        <td>La scala dei colori ai gradini 3·10·30·100σ di scostamento dalla base, e i tre segni:
+        tacca bassa = segnale, tacca alta = allarme, sbarra piena = degrado. Il riquadro
+        tratteggiato vuol dire non vedibile.</td></tr>
+      <tr><td class="n"><span class="pn">2</span></td><td>Etichette</td>
+        <td>Per ogni riga: il numero della valvola, il nome del guasto previsto dal modello e il
+        canale fisico guardato (riempimento, coda, dispersione o qualità). <i>Il modello la dice
+        sana</i> vuol dire che l'allarme c'è ma il modello non concorda.</td></tr>
+      <tr><td class="n"><span class="pn">3</span></td><td>La striscia</td>
+        <td>Una colonna al giorno per due mesi. Il colore dice di quanto il canale fisico si è
+        allontanato dal normale di quella valvola: grigio fino a 3σ, poi i gradini della
+        legenda.</td></tr>
+      <tr><td class="n"><span class="pn">4</span></td><td>Le tacche</td>
+        <td>I tre momenti piantati sopra la striscia: il primo segnale (prima uscita definitiva
+        oltre le 3σ), l'apertura dell'allarme, il degrado della qualità.</td></tr>
+      <tr><td class="n"><span class="pn">5</span></td><td>Il margine</td>
+        <td>Il numero grande, in ore: quanto passa fra il primo segnale e il degrado. È il tempo
+        che hai per intervenire mentre il prodotto è ancora buono.</td></tr>
+      <tr><td class="n"><span class="pn">6</span></td><td>Il vuoto tratteggiato</td>
+        <td>Se il canale non esce mai dal regime sano, il margine non esiste e al suo posto c'è
+        scritto <i>non vedibile</i>. Sulle tre valvole sane di campione non c'è nessun margine:
+        non c'è niente da prevedere.</td></tr>
+    </table>
+    <div class="nota">
+      <h3>Nota</h3>
+      <p>Il clic sulla riga apre il pannello con il grafico del canale e le date dei tre momenti
+      (capitolo 7). Passando il mouse sulla striscia, il riquadro dice il valore del giorno e di
+      quanto è oltre la banda.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box" id="cap7">
+  <h2 class="box-tit">Capitolo 7 · I pannelli di dettaglio</h2>
+  <div class="box-corpo">
+    <p>Cliccando una valvola si apre un pannello sopra la pagina. Si chiude con la ✕, con Esc
+    o cliccando il fondo scuro, e si torna dove si era.</p>
+    <figure>
+      <img src="shots/ann-07-pannello-valvola.png" alt="Il pannello della valvola 8 aperto sulla pagina Macchina, con quattro riquadri numerati">
+      <figcaption><b>Figura 7.</b> Il pannello della valvola 8 aperto da Macchina. L'allarme
+      <i>restringimento</i> è attivo dal 3 luglio, l'ultimo ciclo è marcato sospetto e non
+      conforme.</figcaption>
+    </figure>
+    <table class="tab">
+      <tr><th>N.</th><th>Elemento</th><th>Indicazione</th></tr>
+      <tr><td class="n"><span class="pn">1</span></td><td>Testata</td>
+        <td>Il numero della valvola e la ✕ per chiudere.</td></tr>
+      <tr><td class="n"><span class="pn">2</span></td><td>Allarmi attivi</td>
+        <td>Un chip per allarme: il nome del guasto, da quando, e lo stato. Il nome arriva dalla
+        previsione del modello, non dal registro dell'allarme.</td></tr>
+      <tr><td class="n"><span class="pn">3</span></td><td>Ultimo ciclo</td>
+        <td>Diagnostica, esito di qualità, motivo di chiusura e numero di ciclo.</td></tr>
+      <tr><td class="n"><span class="pn">4</span></td><td>Ultime 400 cicli contro la base</td>
+        <td>Tre carte di controllo: tempo di riempimento, tempo di coda, scarto impulsi. La banda
+        è la base della singola valvola, ±3σ. Il contatore in alto a destra dice quanti cicli
+        sono fuori banda.</td></tr>
+    </table>
+    <figure>
+      <img src="shots/ann-08-pannello-predittiva.png" alt="Il pannello della valvola 8 aperto dalla pagina Predittiva, con tre riquadri numerati">
+      <figcaption><b>Figura 8.</b> Il pannello della valvola 8 aperto da Predittiva. Il segnale è
+      del 3 luglio alle 04:00, l'allarme un'ora dopo, il degrado della qualità alle 10:00: sei
+      ore di margine.</figcaption>
+    </figure>
+    <table class="tab">
+      <tr><th>N.</th><th>Elemento</th><th>Indicazione</th></tr>
+      <tr><td class="n"><span class="pn">1</span></td><td>I tre momenti</td>
+        <td>Un chip per momento con la data: primo segnale, allarme, degrado. Sotto, il margine
+        segnale → degrado in ore.</td></tr>
+      <tr><td class="n"><span class="pn">2</span></td><td>Grafico del canale</td>
+        <td>L'andamento del canale fisico nei due mesi. Oltre la banda ci sono le zone di deriva
+        colorate ai gradini 3·10·30·100σ, e la linea si colora della zona che attraversa.</td></tr>
+      <tr><td class="n"><span class="pn">3</span></td><td>Nota a piè</td>
+        <td>La provenienza di tutto: finestra sana, ampiezza della banda, e le definizioni di
+        segnale e degrado.</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Capitolo 8 · Le cose che stupiscono la prima volta</h2>
+  <div class="box-corpo">
+    <ul>
+      <li><b>Un guasto può avere l'OEE più pieno del sano.</b> Le run con guasto non si fermano
+      mai e macinano ore di marcia. L'OEE misura il rendimento, non la salute meccanica.</li>
+      <li><b>Le valvole 9 e 21 sembrano a posto.</b> Sono anomale dal primo giorno, quindi la
+      loro anomalia è dentro la loro stessa base. Le vedi nei confronti fra valvole: la corona
+      degli allarmi e il riquadro delle 35 su Tempo.</li>
+      <li><b>«Il modello la dice sana» su una valvola in allarme.</b> Il modello e il motore
+      degli allarmi sono due strumenti separati. Quando non concordano, la dashboard lo scrive
+      invece di scegliere per te.</li>
+      <li><b>Cento per cento non esiste.</b> Su questa macchina 100% non è mai stato osservato:
+      la base sana porta circa il 21% di scarto. I riferimenti sono misurati sul run sano, non
+      sul fondoscala.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Checklist finale</h2>
+  <div class="box-corpo">
+    <ul class="check">
+      <li>So dire se la macchina è in marcia e da quanto arriva l'ultimo dato.</li>
+      <li>So leggere il gauge dell'OEE contro la sua tacca, senza aspettarmi il 100%.</li>
+      <li>So trovare quale valvola è in allarme e aprire il suo pannello.</li>
+      <li>So spostare la finestra dei due mesi e leggere un periodo a scelta.</li>
+      <li>So leggere le due carte e dire quanto una valvola è fuori, in σ.</li>
+      <li>So leggere il margine in ore su Predittiva e riconoscere un <i>non vedibile</i>.</li>
+    </ul>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var btn = document.getElementById('tema');
+  function scuroOra(){
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function etichetta(){ btn.textContent = scuroOra() ? 'CHIARO' : 'SCURO'; }
+  btn.addEventListener('click', function(){
+    document.documentElement.setAttribute('data-theme', scuroOra() ? 'light' : 'dark');
+    etichetta();
+  });
+  etichetta();
+})();
+</script>

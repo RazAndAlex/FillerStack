@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FillerStack — a che punto siamo · 2 settembre 2026</title>
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --carta: #ffffff;
+    --inchiostro: #1d1c1a;
+    --muto: #6b675f;
+    --linea: #e4e1da;
+    --accento: #1a6e4e;
+    --accento-tenue: #e3f0ea;
+    --avviso: #8a6d1d;
+    --avviso-tenue: #f7f0dc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--inchiostro);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    line-height: 1.55;
+    padding: 40px 20px 80px;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  header { margin-bottom: 36px; }
+  .data { color: var(--muto); font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
+  h1 { font-size: 30px; margin-top: 6px; }
+  h2 { font-size: 19px; margin: 0 0 14px; }
+  section {
+    background: var(--carta);
+    border: 1px solid var(--linea);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin-bottom: 18px;
+  }
+  p { margin-bottom: 10px; }
+  p:last-child { margin-bottom: 0; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 8px; }
+  li:last-child { margin-bottom: 0; }
+  code { background: var(--bg); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+
+  .verdetto {
+    display: inline-block;
+    background: var(--accento-tenue);
+    color: var(--accento);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 3px 12px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+  }
+
+  /* barra di avanzamento */
+  .barra { background: var(--linea); border-radius: 999px; height: 14px; overflow: hidden; margin: 14px 0 6px; }
+  .barra > div { background: var(--accento); height: 100%; width: 100%; border-radius: 999px; }
+  .barra-nota { color: var(--muto); font-size: 13px; }
+
+  /* tabella pagine */
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 7px 4px; border-bottom: 1px solid var(--linea); }
+  th { color: var(--muto); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; }
+  tr:last-child td { border-bottom: none; }
+  td.ok { color: var(--accento); font-weight: 600; white-space: nowrap; }
+  tr.nuova td { background: var(--accento-tenue); }
+  tr.nuova td:first-child { border-radius: 6px 0 0 6px; padding-left: 10px; }
+  tr.nuova td:last-child { border-radius: 0 6px 6px 0; }
+
+  /* numeri */
+  .numeri { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 6px; }
+  .numero { text-align: center; padding: 14px 6px; background: var(--bg); border-radius: 8px; }
+  .numero .v { font-size: 22px; font-weight: 700; }
+  .numero .k { font-size: 12.5px; color: var(--muto); margin-top: 2px; }
+
+  .rinvio { background: var(--avviso-tenue); border: 1px solid #e8dcc0; border-radius: 8px; padding: 14px 18px; margin-top: 12px; font-size: 14.5px; }
+  .rinvio strong { color: var(--avviso); }
+
+  footer { color: var(--muto); font-size: 13px; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <div class="data">FillerStack · riepilogo del 2 settembre 2026</div>
+  <h1>A che punto siamo</h1>
+</header>
+
+<section>
+  <span class="verdetto">Obiettivo raggiunto</span>
+  <p>FillerStack è la catena completa dietro un riempitore rotativo di lattine:
+  simulatore fisico, PLC virtuale, telemetria, machine learning, allarmi e
+  dashboard di supervisione.</p>
+  <p><strong>L'obiettivo è completo.</strong> La roadmap IIoT è chiusa, la
+  dashboard ha sei pagine tutte accettate da te, e il piano «predittiva v2» —
+  anticipare i guasti prima che la qualità crolli — è finito e approvato.</p>
+  <div class="barra"><div></div></div>
+  <div class="barra-nota">Piano v2: 6 passi su 6 — cinque eseguiti e verificati, uno rinviato per tua decisione (i dati non lo impongono).</div>
+</section>
+
+<section>
+  <h2>Cosa abbiamo fatto nell'ultima sessione</h2>
+  <p>La superficie predittiva — la forma a «strisce» che avevi scelto e
+  approvato il 30 agosto — è diventata una <strong>pagina vera della
+  dashboard</strong>, su dati reali:</p>
+  <ul>
+    <li>nata la pagina <code>dashboard/predittiva/</code>, che mostra per ogni
+    valvola quanto margine resta prima del guasto;</li>
+    <li>l'API ha una route nuova, <code>/valves/progression/series</code>, che
+    porta fuori i canali di progressione;</li>
+    <li>la voce di menu PREDITTIVA è arrivata su tutte le altre cinque pagine;</li>
+    <li>verifica indipendente superata: i margini mostrati a schermo sono
+    identici a quelli ricalcolati dall'API (75,5 ore di anticipo sulla valvola 8,
+    47,0 ore sulla 30), suite di <strong>578 test verde</strong>.</li>
+  </ul>
+  <p>L'hai vista a schermo e l'hai accettata: <em>«si va bene»</em>. Con questo
+  il piano v2 si è chiuso.</p>
+</section>
+
+<section>
+  <h2>Il quadro completo: sei pagine, tutte accettate</h2>
+  <table>
+    <tr><th>Pagina</th><th>Cosa risponde</th><th>Accettata</th></tr>
+    <tr><td>MACCHINA</td><td>come sta la macchina</td><td class="ok">19 agosto</td></tr>
+    <tr><td>VALVOLE</td><td>quale valvola aprire</td><td class="ok">19 agosto</td></tr>
+    <tr><td>OEE</td><td>perché l'OEE è quello che è</td><td class="ok">19 agosto</td></tr>
+    <tr><td>TEMPO</td><td>cosa è successo nei due mesi</td><td class="ok">20 agosto</td></tr>
+    <tr><td>CARTA</td><td>la carta di controllo per valvola</td><td class="ok">22 agosto</td></tr>
+    <tr class="nuova"><td><strong>PREDITTIVA</strong></td><td>quanto margine resta prima del guasto</td><td class="ok">2 settembre</td></tr>
+  </table>
+  <p style="margin-top:14px">Anche il <strong>percorso live</strong> è chiuso:
+  la catena macchina → OPC UA → Node-RED → MQTT → database → predizioni →
+  allarmi gira da sola, provata con un guasto vero iniettato dal vivo.</p>
+  <div class="numeri">
+    <div class="numero"><div class="v">36,2 M</div><div class="k">cicli nello storico</div></div>
+    <div class="numero"><div class="v">723.110</div><div class="k">predizioni persistite</div></div>
+    <div class="numero"><div class="v">9 / 9</div><div class="k">guasti rilevati</div></div>
+    <div class="numero"><div class="v">578</div><div class="k">test, tutti verdi</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Quanto manca</h2>
+  <p><strong>Niente di pianificato.</strong> L'obiettivo — il proof of concept
+  della catena completa, con la supervisione e la predittiva — è raggiunto.</p>
+  <p>Restano solo tre voci rinviate per iscritto, ognuna con la sua condizione di
+  riapertura. Nessuna morde oggi:</p>
+  <ul>
+    <li><strong>SpeedActual fuori scala</strong> — si riapre solo se quel segnale
+    dovesse servire;</li>
+    <li><strong>provenienza del modello</strong> — conta il giorno in cui si
+    spedisse un modello nuovo;</li>
+    <li><strong>un ADR mancante</strong> per una modifica di agosto a
+    <code>plcsim/run.py</code> — è un documento da scrivere, non un danno:
+    l'identità del comportamento è stata misurata e regge.</li>
+  </ul>
+  <div class="rinvio">
+    <strong>Una decisione resta tua:</strong> il passo 5 del piano v2 (lavoro sul
+    modello per graduare la severità) è rinviato, non cancellato — le misure
+    dicono che i dati non lo impongono. Se un giorno vorrai un punteggio che
+    gradua il guasto, si riparte da lì.
+  </div>
+</section>
+
+<footer>
+  Fonti: <code>.project/STATE.md</code>, <code>.project/RECENT_WORK.md</code>,
+  storia git al commit <code>c0cbb89</code> del 2026-09-02.
+</footer>
+
+</main>
+</body>
+</html>
