@@ -66,8 +66,14 @@ async function caricaBase() {
   base = await r.json();
 }
 
-async function caricaSerie(id) {
-  const p = `valves/${id}/kpi?limit=${LIMITE}`;
+// `event_ts` serve solo alla data del punto puntato, cioe' alla sola valvola
+// disegnata. Le altre 34 alimentano la striscia, che conta quante quote sono
+// fuori banda e non mostra mai un istante: chiederlo per tutte raddoppierebbe
+// il JSON da leggere senza mettere a schermo niente in piu'.
+async function caricaSerie(id, conIstante = false) {
+  const campi = conIstante ? 'cycle_id,event_ts,filling_time_ms'
+                           : 'cycle_id,filling_time_ms';
+  const p = `valves/${id}/kpi?limit=${LIMITE}&fields=${campi}`;
   const r = await fetch(`/api/${scenarioCorrente()}/${p}`, { cache: 'no-store' });
   if (!r.ok) throw new Error(`${p} -> HTTP ${r.status}`);
   const d = await r.json();
@@ -581,7 +587,7 @@ async function apri() {
   mira = null;
   el('tip').hidden = true;
   try {
-    serie = await caricaSerie(valvola);
+    serie = await caricaSerie(valvola, true);
   } catch (err) {
     serie = { righe: [], route: `valves/${valvola}/kpi`, motivo: String(err.message) };
   }

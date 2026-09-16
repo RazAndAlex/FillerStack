@@ -1,6 +1,6 @@
 # Open questions
 
-Updated: 2026-09-14
+Updated: 2026-09-16
 
 > **Fonti citate.** Molte voci rimandano a documenti di lavoro sotto
 > `.scratch/`, `work/`, `Proposte/`, `feedback/` e ai file `HANDOFF-*.md`.
@@ -1207,4 +1207,3 @@ misure che confermano.
 **Verifiche.** I due sha256 del metro identici, le cifre di `linea()` identiche su entrambe
 le corse, 67.130 confronti fra la mappa nuova e la regola originale con zero differenze,
 zero segnali datati dopo l'ora su quattro ore campione.
-

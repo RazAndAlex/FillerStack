@@ -29,7 +29,7 @@ ma ON CONFLICT sì): stessa piattaforma del resto del layer operazionale.
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Sequence
 
 from sqlalchemy import (
     Boolean,
@@ -314,22 +314,38 @@ class CyclesStorage:
         return inserted
 
     def kpi_series(self, valve_id: int, limit: int = 200,
-                   run_id: str | None = None) -> list[dict[str, Any]]:
+                   run_id: str | None = None,
+                   fields: Sequence[str] | None = None
+                   ) -> list[dict[str, Any]]:
         """Serie KPI della valvola nel run: ultimi `limit` cicli, cycle_id DESC.
 
         `run_id=None` → `resolve_run_id` (KV `current_run_id`, o unico run
         presente); più run e nessuno scelto → `AmbiguousRunError`, mai una
         serie che mescola due run.
 
-        Ogni dict ha i 22 campi di `CYCLES_COLUMNS`. Valvola senza cicli →
-        lista vuota.
+        `fields=None` mantiene il contratto storico: ogni dict ha i 22 campi
+        di `CYCLES_COLUMNS`. Una sequenza seleziona solo i campi richiesti.
+        Un nome estraneo al contratto produce `ValueError` prima del SQL.
+        Valvola senza cicli → lista vuota.
         """
         if limit < 1:
             raise ValueError(f"limit deve essere >= 1, got {limit}")
+        if fields is None:
+            selezione = select(self.cycles)
+        else:
+            colonne = tuple(dict.fromkeys(fields))
+            if not colonne:
+                raise ValueError("fields deve contenere almeno un campo")
+            sconosciuti = [c for c in colonne if c not in CYCLES_COLUMNS]
+            if sconosciuti:
+                raise ValueError(
+                    f"campi KPI sconosciuti: {', '.join(sconosciuti)}. "
+                    f"Campi ammessi: {', '.join(CYCLES_COLUMNS)}")
+            selezione = select(*(self.cycles.c[c] for c in colonne))
         run = self.resolve_run_id(run_id)
         with self.engine.connect() as conn:
             rows = conn.execute(
-                select(self.cycles)
+                selezione
                 .where(self.cycles.c.valve_id == valve_id)
                 .where(true() if run is None else self.cycles.c.run_id == run)
                 .order_by(self.cycles.c.cycle_id.desc())

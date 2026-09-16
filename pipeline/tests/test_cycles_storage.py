@@ -277,6 +277,40 @@ def test_kpi_series_ordering_and_shape(cs):
     assert cs.kpi_series(99) == []
 
 
+def test_kpi_series_fields_preserva_valori_e_default(cs):
+    """La proiezione riduce le chiavi, non cambia righe o valori."""
+    cs.bulk_insert([
+        _rec(1, 1, event_ts=datetime(2026, 8, 1, 10, tzinfo=timezone.utc)),
+        _rec(1, 2, event_ts=datetime(2026, 8, 1, 11, tzinfo=timezone.utc)),
+    ])
+
+    completa = cs.kpi_series(1)
+    attesa_completa = [_rec(1, 2), _rec(1, 1)]
+    attesa_completa[0]["event_ts"] = datetime(
+        2026, 8, 1, 11, tzinfo=timezone.utc)
+    attesa_completa[1]["event_ts"] = datetime(
+        2026, 8, 1, 10, tzinfo=timezone.utc)
+    assert completa == attesa_completa
+
+    campi = ("cycle_id", "event_ts", "filling_time_ms")
+    ridotta = cs.kpi_series(1, fields=campi)
+    assert ridotta == [
+        {campo: riga[campo] for campo in campi}
+        for riga in completa
+    ]
+
+
+def test_kpi_series_rifiuta_un_campo_sconosciuto_prima_del_sql(cs,
+                                                               monkeypatch):
+    monkeypatch.setattr(
+        cs, "resolve_run_id",
+        lambda _run_id: pytest.fail("il campo sconosciuto ha superato la guardia"))
+    with pytest.raises(ValueError, match="campo_inventato") as errore:
+        cs.kpi_series(1, fields=("cycle_id", "campo_inventato"))
+    for campo in CYCLES_COLUMNS:
+        assert campo in str(errore.value)
+
+
 def test_kpi_series_limit_validation(cs):
     with pytest.raises(ValueError):
         cs.kpi_series(1, limit=0)
@@ -343,6 +377,79 @@ def test_api_serve_i_timestamp_con_offset_esplicito(cs):
         assert last["event_ts"] == "2026-06-01T23:41:55.210000+00:00"
         assert not any(str(v).endswith("Z") for v in last.values()
                        if isinstance(v, str))
+    finally:
+        st.metadata.drop_all(st.engine, checkfirst=True)
+        st.engine.dispose()
+        api._store = None
+        if prev is None:
+            os.environ.pop("PLCSIM_DATABASE_URL", None)
+        else:
+            os.environ["PLCSIM_DATABASE_URL"] = prev
+
+
+def test_api_kpi_filtra_i_campi_senza_cambiare_la_risposta_piena(cs):
+    """Il filtro HTTP è una proiezione della risposta storica completa."""
+    import os
+
+    from fastapi.testclient import TestClient
+
+    from pipeline import api
+    from pipeline.storage import Storage
+
+    ts1 = datetime(2026, 6, 1, 10, tzinfo=timezone.utc)
+    ts2 = datetime(2026, 6, 1, 11, tzinfo=timezone.utc)
+    records = [
+        _rec(13, 1, event_ts=ts1, filling_time_ms=2411),
+        _rec(13, 2, event_ts=ts2, filling_time_ms=2422),
+    ]
+    cs.bulk_insert(records)
+    prev = os.environ.get("PLCSIM_DATABASE_URL")
+    os.environ["PLCSIM_DATABASE_URL"] = TEST_DB_URL
+    api._store = None
+    st = Storage(make_engine(TEST_DB_URL))
+    st.init()
+    try:
+        client = TestClient(api.app)
+        completa = client.get("/valves/13/kpi?limit=2")
+        assert completa.status_code == 200, completa.text
+
+        serie_attesa = [dict(records[1]), dict(records[0])]
+        for riga in serie_attesa:
+            for campo in ("event_ts", "source_ts", "ingest_ts"):
+                valore = riga[campo]
+                if isinstance(valore, datetime):
+                    riga[campo] = valore.isoformat()
+        assert completa.json() == {
+            "valve_id": 13,
+            "series": serie_attesa,
+            "run_id": "runA",
+            "degraded": False,
+            "reason": None,
+        }
+
+        campi = ("cycle_id", "event_ts", "filling_time_ms")
+        ridotta = client.get(
+            "/valves/13/kpi?limit=2&fields=" + ",".join(campi))
+        assert ridotta.status_code == 200, ridotta.text
+        assert ridotta.json()["series"] == [
+            {campo: riga[campo] for campo in campi}
+            for riga in completa.json()["series"]
+        ]
+        assert {
+            riga["cycle_id"]: riga["filling_time_ms"]
+            for riga in ridotta.json()["series"]
+        } == {
+            riga["cycle_id"]: riga["filling_time_ms"]
+            for riga in completa.json()["series"]
+        }
+
+        non_valida = client.get(
+            "/valves/13/kpi?fields=cycle_id,campo_inventato")
+        assert non_valida.status_code == 422, non_valida.text
+        dettaglio = non_valida.json()["detail"]
+        assert "campo_inventato" in dettaglio
+        for campo in CYCLES_COLUMNS:
+            assert campo in dettaglio
     finally:
         st.metadata.drop_all(st.engine, checkfirst=True)
         st.engine.dispose()

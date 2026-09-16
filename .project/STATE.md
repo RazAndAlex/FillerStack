@@ -823,12 +823,21 @@ avviato il 21 agosto. Non c'entra col lanciatore e non viene toccato.
   della chiave, che non guardava il riepilogo, e' stata colta dai test
   `test_serie_identica_con_e_senza_riepilogo` perche' nascondeva il ripiego. Risposte
   confrontate campo per campo con il codice precedente sulle due corse, zero differenze.
-- **Resta lenta la CARTA** (`/k1/`, 8,7 s) e non e' calcolo: il database risponde in
-  0,22 s a valvola, ma la pagina scarica `valves/N/kpi?limit=5000` per tutte e 35 le
-  valvole, 2,4 MB ciascuna, circa 84 MB che il browser riceve e interpreta. Si corregge
-  solo cambiando cosa la pagina carica (la valvola scelta subito, le altre a richiesta),
-  quindi e' una decisione dell'utente e sta davanti a lui.
-- **Cosa resta aperto**: la decisione sulla CARTA; la quotazione della valvola isobarica
+- **CARTA da 8,71 s a 1,95 s**, cronometrata in un browser vero a 1536x770 dal clic alla
+  rete ferma, con la memoria di processo calda. La pagina scaricava tutte e 22 le colonne
+  di `CYCLES_COLUMNS` per 5.000 cicli su tutte e 35 le valvole, circa 84 MB, e ne leggeva
+  tre. Ora `GET /valves/{id}/kpi` accetta `fields`: senza il parametro usa ancora il
+  `SELECT` storico e produce lo stesso SHA-256, con `fields` proietta le sole colonne
+  chieste e un nome sconosciuto e' 422 prima del SQL. Sulla valvola 1 la risposta passa da
+  2.393.669 a 450.084 byte; la pagina intera da 84 MB a 6,27 MB.
+  `event_ts` lo chiede **solo la valvola disegnata**, perche' e' l'unica che mostra un
+  istante: le altre 34 alimentano la striscia, che conta soltanto. Quel taglio da solo ha
+  dimezzato i byte (14,03 -> 6,27 MB) ma ha tolto appena mezzo secondo (2,44 -> 1,95 s), e
+  quella sproporzione e' la misura che chiude il caso: il tempo che resta e' lavoro del
+  browser — leggere il JSON, fare la media mobile su 5.000 punti per 35 valvole, disegnare
+  — non trasferimento. Per questo la compressione HTTP non e' stata aggiunta: la stessa
+  risposta compressa pesa 36.642 byte, ma avrebbe accorciato il pezzo che gia' non pesa.
+- **Cosa resta aperto**: la quotazione della valvola isobarica
   da Eckenroth; la pulizia delle incoerenze docs/codice (README e `dashboard.ps1` dicono
   ancora «cinque pagine», titolo di PREDITTIVA, conteggi test); il «-27,4 h · crollo
   stimato, al piu' presto» su v8 il 04-07 alle 04:00 su `storico_60d`, che e' di prima

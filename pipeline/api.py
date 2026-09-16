@@ -3253,16 +3253,21 @@ def valve_kpi(valve_id: int,
               run_id: str | None = Query(
                   None, description="run da interrogare in `cycles`; default: "
                   "KV `current_run_id`, oppure l'unico run presente"),
+              fields: str | None = Query(
+                  None, description="colonne di `cycles` separate da virgola; "
+                  "default: tutte le colonne"),
               ) -> dict[str, Any]:
     """Serie KPI per ciclo della valvola (vista valvola, spec M10 §5).
 
-    Ritorna `{"valve_id": int, "series": [<dict delle 18 colonne
-    operazionali>]}` ordinato per cycle_id DESC (default 200). Le chiavi
-    JSON sono i nomi operazionali di ingest (`machine_id, cycle_id,
-    valve_id, filling_time_ms, tail_time_ms, tail_pulse, pulse_count,
-    target, delta_pulse, filling_step_out, filling_ok, fill_quality_ok,
-    sequence_ok, sample_valid, diagnostic_status, close_reason,
-    position_limit, filling_overtime`) — niente alias FT/TT/TP/PC inventati.
+    Ritorna `{"valve_id": int, "series": [<dict delle 22 colonne
+    operative>]}` ordinato per cycle_id DESC (default 200). Le chiavi JSON
+    sono i nomi di `CYCLES_COLUMNS`: niente alias FT/TT/TP/PC inventati.
+
+    `fields` (opzionale) limita ogni riga ai nomi separati da virgola. Esiste
+    per le viste che leggono poche grandezze: con `limit=5000` la risposta
+    completa misura circa 2,4 MB per valvola, mentre CARTA usa solo
+    `cycle_id`, `event_ts` e `filling_time_ms`. Se manca, la risposta resta
+    quella completa storica, campo per campo.
 
     I dati vivono nella tabella `cycles` (pipeline/cycles_storage.py, modulo
     dello stesso pool): import lazy qui — se import o tabella non sono
@@ -3277,6 +3282,26 @@ def valve_kpi(valve_id: int,
     """
     if not 1 <= valve_id <= 35:
         raise HTTPException(status_code=404, detail="valve_id fuori range 1-35")
+    campi: tuple[str, ...] | None = None
+    if fields is not None:
+        try:
+            from pipeline.cycles_storage import CYCLES_COLUMNS  # noqa: PLC0415
+        except ImportError as exc:
+            raise HTTPException(
+                status_code=501,
+                detail="serie KPI non disponibile: pipeline.cycles_storage "
+                       "non presente",
+            ) from exc
+        richiesti = tuple(dict.fromkeys(c.strip() for c in fields.split(",")))
+        sconosciuti = [c or "<vuoto>" for c in richiesti
+                       if c not in CYCLES_COLUMNS]
+        if sconosciuti:
+            raise HTTPException(
+                status_code=422,
+                detail=f"campi KPI sconosciuti: {', '.join(sconosciuti)}. "
+                       f"Campi ammessi: {', '.join(CYCLES_COLUMNS)}",
+            )
+        campi = richiesti
     st = _storage()
     run, run_reason = _resolve_run(st, run_id)
     if run_reason:
@@ -3292,7 +3317,8 @@ def valve_kpi(valve_id: int,
                    "installato o tabella non inizializzata",
         )
     try:
-        series = cs.kpi_series(valve_id, limit=limit, run_id=run)
+        series = cs.kpi_series(
+            valve_id, limit=limit, run_id=run, fields=campi)
     except Exception as exc:  # noqa: BLE001 — tabella assente / non inizializzata
         raise HTTPException(
             status_code=501,

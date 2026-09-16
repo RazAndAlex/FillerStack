@@ -81,3 +81,6 @@ node_modules/
 # --- Scarti degli strumenti ------------------------------------------------
 # Log di console salvati dal server MCP di Playwright a ogni corsa.
 .playwright-mcp/
+
+# registro della workforce vnext: e' il diario di una sessione, non codice
+.vnext/

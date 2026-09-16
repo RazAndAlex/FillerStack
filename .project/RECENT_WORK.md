@@ -3636,3 +3636,57 @@ committata.
 **Verifiche**: 81 test passati fra OEE, riepilogo, `run_id` e progressione; giro finale
 delle sette pagine su `deriva_lenta_60d` con zero errori di console e zero risposte
 >= 400. Commit `70138e7` (la marca), `cd40c8b` (la casa) e `a0e6c5e` (la velocita').
+
+---
+
+## 2026-09-16 — CARTA scarica solo i campi che legge: 8,71 s -> 1,95 s
+
+La CARTA era l'ultima pagina lenta. Non era calcolo: il database risponde in 0,22 s a
+valvola. Era quantita' di dati. `dashboard/k1/pagina.js` chiedeva
+`valves/{id}/kpi?limit=5000` per tutte e 35 le valvole, e ogni risposta portava tutte e 22
+le colonne di `CYCLES_COLUMNS` — 2.393.669 byte a valvola, circa 84 MB in tutto. La pagina
+ne usa tre: `cycle_id`, `event_ts`, `filling_time_ms`.
+
+**La proposta scartata.** All'utente era stato proposto, e raccomandato, di caricare solo
+la valvola scelta e le altre al clic. Quella strada rinuncia alla striscia delle 35 celle
+colorate, che e' proprio cio' per cui la pagina scarica tutto, e in cambio non tocca la
+vera causa. Non e' stata presa.
+
+**Cosa e' stato fatto.** `CyclesStorage.kpi_series()` accetta una proiezione validata
+contro le 22 colonne del contratto. `GET /valves/{valve_id}/kpi` espone `fields` come CSV
+e risponde 422 prima del SQL per un nome sconosciuto. Senza `fields` esegue ancora
+`select(self.cycles)`. Nella pagina cambia solo `caricaSerie()`: `quoteDa`, la striscia e
+il disegno restano dov'erano, nel browser, in un posto solo.
+
+`event_ts` lo chiede **solo la valvola disegnata**. E' l'unica che mostra un istante — la
+data del punto puntato; le altre 34 alimentano la striscia, che conta le quote fuori banda
+e non mostra mai un istante.
+
+**Le misure, in un browser vero a 1536x770, dal clic alla rete ferma:**
+
+| | tempo | byte della pagina |
+|---|---|---|
+| prima | 8,71 s | ~84 MB |
+| con i tre campi | 2,44 s | 14,03 MB |
+| con `event_ts` alla sola valvola disegnata | **1,95 s** | **6,27 MB** |
+
+Le altre sei pagine, nello stesso giro e con la memoria di processo calda: MACCHINA 0,70 s,
+VALVOLE 1,32 s, OEE 0,59 s, TEMPO 0,73 s, PREDITTIVA 0,71 s, DECISIONE 0,63 s.
+
+**Perche' ci si e' fermati qui.** L'ultimo taglio ha dimezzato i byte e ha tolto mezzo
+secondo. Quella sproporzione dice dove sta il tempo che resta: nel browser — leggere il
+JSON, calcolare la media mobile su 5.000 punti per 35 valvole, disegnare — non sul filo.
+La compressione HTTP porterebbe la risposta da 450.084 a 36.642 byte, misurati, ma
+accorcerebbe il pezzo che gia' non pesa. Aggiungerla vorrebbe dire toccare il trasporto di
+ogni rotta per un guadagno che le misure non promettono.
+
+**Verifiche.** Le due risposte piene, prima e dopo il codice, hanno lo stesso SHA-256
+`868C349E40602C8D29BE891FB5E631357D07C7BC95587C7256DC19D730D271B6`. I 5.000 valori di
+`filling_time_ms` coincidono per `cycle_id`. Un campo inventato restituisce 422 e il
+messaggio elenca le 22 colonne ammesse. La suite intera era passata poco prima della
+modifica — 624 test in 21 minuti e 25 secondi.
+
+**Nota sull'ambiente.** Il processo in ascolto sulla 8137 non era arrestabile dal sandbox
+del worker: la misura dei byte ha avviato lo stesso codice sulla 8138 per la sola durata
+dei `curl`. Il cronometraggio delle pagine e' stato fatto dopo, sulla 8137 riavviata con
+il codice nuovo.
