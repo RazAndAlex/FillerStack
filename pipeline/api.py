@@ -73,9 +73,10 @@ silenziosa (`_resolve_run`).
 from __future__ import annotations
 
 from bisect import bisect_left
+from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 from math import gcd
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from sqlalchemy import DateTime, desc, func, select, text
@@ -504,6 +505,7 @@ class _CycleCountsRollup(_CycleCountsBucketed):
         super().__init__(st, run, anchor, lo, grain)
         self._cov: tuple[datetime, datetime] | None = None   # (primo, ultimo) bucket
         self._sx_illimitato = False
+        self._dx_vuoto_da: datetime | None = None   # dopo qui il run e' finito
         self._attivo = False
         self._buckets: dict[int, tuple[list[datetime], list[int], list[int]]] = {}
         self._bordi: dict[tuple[datetime, datetime], dict[int, tuple[int, int]]] = {}
@@ -529,7 +531,7 @@ class _CycleCountsRollup(_CycleCountsBucketed):
         return True
 
     def _carica_copertura(self) -> bool:
-        """Copertura del riepilogo, piu' il permesso di estenderla a sinistra.
+        """Copertura del riepilogo, piu' il permesso di estenderla ai due lati.
 
         Una finestra che comincia PRIMA del primo secchiello non e' per forza
         fuori copertura: se prima di quell'istante il run non ha alcun ciclo,
@@ -537,6 +539,22 @@ class _CycleCountsRollup(_CycleCountsBucketed):
         discesa di indice (`LIMIT 1`) e vale molto: senza, una serie su 60
         giorni ricade tutta sulla lettura diretta proprio nel caso per cui
         esiste il riepilogo — misurato il 2026-08-20, 147 secondi contro 0,3.
+
+        **Lo stesso a destra (2026-09-16).** Una corsa registrata finisce a una
+        data del passato, ma la dashboard chiede la serie fino ad ADESSO: la
+        coda fra la fine della corsa e l'orologio vero e' calendario vuoto, e
+        ogni suo punto cadeva fuori copertura e si pagava la sua andata e
+        ritorno su `cycles` per farsi rispondere "nessuna riga". Misurato su
+        `deriva_lenta_60d` il 2026-09-16: 332 interrogazioni, 1,7 s contro
+        0,24 s per la stessa serie ancorata alla fine della corsa.
+
+        Il confine a destra NON e' la fine della copertura. Il riepilogo tiene
+        solo ore intere, e l'ultima ora della corsa e' quasi sempre parziale:
+        su `deriva_lenta_60d` l'ultimo secchiello e' il 19-08 18:00 mentre i
+        cicli arrivano alle 19:29 — 19.361 righe che il riepilogo non ha. Il
+        confine e' quindi **l'ora successiva all'ultimo ciclo del run**: da li'
+        in poi non esiste alcun ciclo, e "nessuna riga" e' un fatto, non
+        un'ignoranza. Costa un'altra discesa di indice (`MAX(event_ts)`).
         """
         if self._cov is not None:
             return True
@@ -553,16 +571,20 @@ class _CycleCountsRollup(_CycleCountsBucketed):
                     f"FROM {ROLLUP_TABLE}{dove}"), params).first()
                 if row is None or row[0] is None:
                     return False
-                cov_lo = _as_utc(row[0])
+                cov_lo, cov_hi = _as_utc(row[0]), _as_utc(row[1])
                 prima = conn.execute(text(
                     "SELECT 1 FROM cycles" +
                     (dove + " AND " if cond else " WHERE ") +
                     "event_ts < :cov_lo LIMIT 1"),
                     {**params, "cov_lo": cov_lo}).first()
+                ultimo_ciclo = conn.execute(text(
+                    f"SELECT MAX(event_ts) FROM cycles{dove}"), params).scalar()
         except SQLAlchemyError:
             return False
-        self._cov = (cov_lo, _as_utc(row[1]))
+        self._cov = (cov_lo, cov_hi)
         self._sx_illimitato = prima is None
+        self._dx_vuoto_da = (_ceil_ora(_as_utc(ultimo_ciclo))
+                             if ultimo_ciclo is not None else None)
         return True
 
     def _leggi_secchielli(self, lo: datetime, hi: datetime):
@@ -743,7 +765,9 @@ class _CycleCountsRollup(_CycleCountsBucketed):
             return False
         primo, ultimo = self._cov
         return ((cs >= primo or self._sx_illimitato)
-                and fe <= ultimo + ROLLUP_BUCKET)
+                and (fe <= ultimo + ROLLUP_BUCKET
+                     or (self._dx_vuoto_da is not None
+                         and cs >= self._dx_vuoto_da)))
 
     def _righe(self, start: datetime, end: datetime) -> list[tuple[int, int, int]]:
         if not self._attivo:
@@ -1347,6 +1371,82 @@ def _last_cycle_ts(st: Storage, run: str | None = None) -> datetime | None:
     return _as_utc(v) if isinstance(v, datetime) else None
 
 
+# --- memoria delle risposte costose ------------------------------------------
+# Perche' esiste (misurato il 2026-09-16, dalla lamentela dell'utente "ho
+# cliccato su macchina e ci ha messo molto tempo a caricare"): la dashboard
+# mostra una CORSA REGISTRATA, e il proxy le fissa l'istante di osservazione
+# alla fine della corsa. La richiesta che la pagina MACCHINA manda e' quindi
+# byte per byte la stessa a ogni apertura, e la risposta e' byte per byte la
+# stessa: 4,2 s di calcolo rifatto da capo per riottenere le stesse 347 kB.
+#
+# La chiave porta l'istante dell'ULTIMO CICLO del run. Finche' quello non si
+# muove i cicli del run non sono cambiati, quindi la risposta memorizzata e'
+# ancora quella che il calcolo produrrebbe; appena il run cresce — cioe' su una
+# corsa viva — la chiave cambia e la memoria viene ignorata da sola. Non e' una
+# scadenza a tempo: e' un'impronta del dato, come `decision_rollup_hour`.
+# Costa la discesa di indice di `_last_cycle_ts`, che la route pagava comunque.
+#
+# Vale la stessa disciplina della cache della baseline: e' la memoizzazione di
+# una lettura dell'API, non un fatto nuovo, ed e' interamente ricalcolabile
+# dalla chiave. Vive nel processo e muore con lui: riavviare l'API la svuota.
+_RISPOSTE: "OrderedDict[tuple[Any, ...], dict[str, Any]]" = OrderedDict()
+_RISPOSTE_MAX = 48
+
+
+def _impronta_riepilogo(st: Storage, run: str | None) -> tuple[Any, ...] | None:
+    """Estremi e numero di secchielli del riepilogo: cambia, e la memoria cade.
+
+    Non vede un secchiello RISCRITTO con lo stesso `bucket_ts` — e' la stessa
+    cecita' dell'impronta di `decision_rollup_hour`, e ha la stessa risposta:
+    un ricalcolo del riepilogo passa sempre da un riavvio dell'API, che questa
+    memoria non sopravvive (vive nel processo).
+    """
+    cond, params = [], {}
+    if run is not None:
+        cond.append("run_id = :run")
+        params["run"] = run
+    dove = (" WHERE " + " AND ".join(cond)) if cond else ""
+    try:
+        with st.engine.connect() as conn:
+            row = conn.execute(text(
+                "SELECT MIN(bucket_ts), MAX(bucket_ts), COUNT(*) "
+                f"FROM {ROLLUP_TABLE}{dove}"), params).first()
+    except SQLAlchemyError:
+        return None
+    return (None, None, 0) if row is None else (
+        _iso(_as_utc(row[0])) if row[0] else None,
+        _iso(_as_utc(row[1])) if row[1] else None, int(row[2]))
+
+
+def _memoria_risposta(st: Storage, run: str | None, chiave: tuple[Any, ...],
+                      calcola: Callable[[], dict[str, Any]]) -> dict[str, Any]:
+    """La risposta memorizzata se il run non si e' mosso, altrimenti calcolata.
+
+    Il payload restituito e' l'OGGETTO memorizzato, non una copia: chi chiama
+    lo serializza e basta. Nessuna route lo modifica dopo averlo restituito —
+    se una lo facesse, modificherebbe la memoria di tutte le chiamate
+    successive, quindi la regola e' che questi payload sono di sola lettura.
+    """
+    impronta = _last_cycle_ts(st, run)
+    if impronta is None:                     # run vuoto o database muto:
+        return calcola()                     # nessuna impronta, nessuna memoria
+    # Anche il riepilogo entra nell'impronta. I cicli fermi non bastano: queste
+    # risposte dichiarano in `__meta` DA DOVE hanno preso i conteggi, e un
+    # riepilogo svuotato o riempito cambia quella dichiarazione a parita' di
+    # cicli. Senza, una risposta calcolata su `cycles` continuerebbe a essere
+    # servita dicendo "cycles" anche dopo che il riepilogo e' tornato.
+    k = (run, impronta, _impronta_riepilogo(st, run), *chiave)
+    memorizzata = _RISPOSTE.get(k)
+    if memorizzata is not None:
+        _RISPOSTE.move_to_end(k)
+        return memorizzata
+    fresca = calcola()
+    _RISPOSTE[k] = fresca
+    while len(_RISPOSTE) > _RISPOSTE_MAX:
+        _RISPOSTE.popitem(last=False)
+    return fresca
+
+
 def _passo_serie(window: str, ampiezza: timedelta) -> timedelta:
     """Il passo effettivo: quello di `SERIES_STEP`, diradato se serve.
 
@@ -1443,76 +1543,84 @@ def machine_oee_series(
     st = _storage()
     speed_target, speed_target_source = _oee_speed_target(st)
     run, run_reason = _resolve_run(st, run_id)
-    primo = _first_cycle_ts(st, run) if not run_reason else None
-    out: dict[str, Any] = {"__meta": {
-        "at_corrente": _iso(end),
-        "primo_ciclo_reale": _iso(primo),
-        "run_id": run,
-        "run_reason": run_reason,
-        "speed_target": speed_target,
-        "speed_target_source": speed_target_source,
-        "origine": "GET /machine/oee richiamata con `at` camminante "
-                   "all'indietro (stessa funzione, un solo punto di verita')",
-        "regola_omissione": REGOLA_OMISSIONE,
-    }}
-    out["__meta"]["intervallo_esplicito"] = (
-        None if inizio is None else {"from": _iso(inizio), "to": _iso(end)})
-    # Passo e istanti di OGNI finestra chiesta, prima di leggere qualunque
-    # cosa: i conteggi e la history si preparano una volta sola per l'intera
-    # richiesta, non una volta per finestra.
-    piano: list[tuple[str, list[datetime], timedelta]] = []
-    for window in chieste:
-        # copertura: mai prima del primo ciclo reale. Senza cicli si emette
-        # comunque UN punto (che sara' degradato): e' il fatto "non c'e' dato".
-        # Con `from` esplicito il bordo sinistro e' quello chiesto, sempre
-        # limitato al primo ciclo reale: chiedere un periodo antecedente al run
-        # non deve fabbricare punti.
-        copertura = (end - primo) if primo is not None else timedelta(0)
-        if inizio is not None:
-            copertura = min(copertura, end - inizio) if primo is not None \
-                else timedelta(0)
-        ampiezza = min(SERIES_SPAN_MAX[window], max(copertura, timedelta(0)))
-        passo = _passo_serie(window, ampiezza)
-        n = min(int(ampiezza // passo) + 1, SERIES_MAX_POINTS)
-        piano.append((window, [end - k * passo for k in range(n)], passo))
-    # I conteggi di TUTTI i punti di TUTTE le finestre in una preparazione
-    # sola: ore intere dal riepilogo orario, bordi parziali letti da `cycles`
-    # in un solo statement (vedi `_CycleCountsRollup`). Senza riepilogo
-    # utilizzabile si ricade sulla lettura in secchielli di prima.
-    counter = _contatore_richiesta(st, run, piano)
-    # La history OMAC dell'INTERO arco coperto, letta una volta. Ogni punto ne
-    # prende la sua fetta in memoria: la tabella ha 300 righe in tutto, mentre
-    # i punti sono fino a 200 per finestra — 400 andate e ritorni per leggere
-    # sempre lo stesso pugno di righe (misurato: 1,1 s per finestra).
-    storia = _storia_omac(st, min(min(a) for _, a, _ in piano)
-                          - 2 * max(WINDOW_INTERVALS[w] for w, _, _ in piano),
-                          end)
-    for window, ats, passo in piano:
-        n = len(ats)
-        punti = [_oee_payload(st, window, t, speed_target,
-                              speed_target_source, run=run,
-                              run_reason=run_reason, counter=counter,
-                              storia=storia)
-                 for t in ats]
-        punti.reverse()                      # ordine cronologico crescente
-        deg = [p for p in punti if p["source"]["degraded"]]
-        out["__meta"][window] = {
-            "passo": f"{int(passo.total_seconds() // 60)}min",
-            "passo_base": f"{int(SERIES_STEP[window].total_seconds() // 60)}min",
-            "conteggi_da": ("cycle_rollup_hour + bordi da cycles"
-                            if isinstance(counter, _CycleCountsRollup)
-                            and counter._attivo else "cycles"),
-            "ampiezza_finestra": f"{int(WINDOW_INTERVALS[window].total_seconds() // 60)}min",
-            "punti": n,
-            "primo_at": punti[0]["at"],
-            "ultimo_at": punti[-1]["at"],
-            "punti_degradati": len(deg),
-            "motivi_degrado": sorted({p["source"]["reason"] for p in deg
-                                      if p["source"]["reason"]}),
-        }
-        out[window] = punti
-        out[f"{window}_ridotto"] = [_serie_ridotta(p) for p in punti]
-    return out
+    # La stessa richiesta, sulla stessa corsa ferma, da' la stessa risposta:
+    # la dashboard apre sempre l'istante di fine corsa, quindi senza memoria
+    # questi 4,2 s si ripagano a ogni clic su MACCHINA. Vedi `_memoria_risposta`.
+    def calcola() -> dict[str, Any]:
+        primo = _first_cycle_ts(st, run) if not run_reason else None
+        out: dict[str, Any] = {"__meta": {
+            "at_corrente": _iso(end),
+            "primo_ciclo_reale": _iso(primo),
+            "run_id": run,
+            "run_reason": run_reason,
+            "speed_target": speed_target,
+            "speed_target_source": speed_target_source,
+            "origine": "GET /machine/oee richiamata con `at` camminante "
+                       "all'indietro (stessa funzione, un solo punto di verita')",
+            "regola_omissione": REGOLA_OMISSIONE,
+        }}
+        out["__meta"]["intervallo_esplicito"] = (
+            None if inizio is None else {"from": _iso(inizio), "to": _iso(end)})
+        # Passo e istanti di OGNI finestra chiesta, prima di leggere qualunque
+        # cosa: i conteggi e la history si preparano una volta sola per l'intera
+        # richiesta, non una volta per finestra.
+        piano: list[tuple[str, list[datetime], timedelta]] = []
+        for window in chieste:
+            # copertura: mai prima del primo ciclo reale. Senza cicli si emette
+            # comunque UN punto (che sara' degradato): e' il fatto "non c'e' dato".
+            # Con `from` esplicito il bordo sinistro e' quello chiesto, sempre
+            # limitato al primo ciclo reale: chiedere un periodo antecedente al run
+            # non deve fabbricare punti.
+            copertura = (end - primo) if primo is not None else timedelta(0)
+            if inizio is not None:
+                copertura = min(copertura, end - inizio) if primo is not None \
+                    else timedelta(0)
+            ampiezza = min(SERIES_SPAN_MAX[window], max(copertura, timedelta(0)))
+            passo = _passo_serie(window, ampiezza)
+            n = min(int(ampiezza // passo) + 1, SERIES_MAX_POINTS)
+            piano.append((window, [end - k * passo for k in range(n)], passo))
+        # I conteggi di TUTTI i punti di TUTTE le finestre in una preparazione
+        # sola: ore intere dal riepilogo orario, bordi parziali letti da `cycles`
+        # in un solo statement (vedi `_CycleCountsRollup`). Senza riepilogo
+        # utilizzabile si ricade sulla lettura in secchielli di prima.
+        counter = _contatore_richiesta(st, run, piano)
+        # La history OMAC dell'INTERO arco coperto, letta una volta. Ogni punto ne
+        # prende la sua fetta in memoria: la tabella ha 300 righe in tutto, mentre
+        # i punti sono fino a 200 per finestra — 400 andate e ritorni per leggere
+        # sempre lo stesso pugno di righe (misurato: 1,1 s per finestra).
+        storia = _storia_omac(st, min(min(a) for _, a, _ in piano)
+                              - 2 * max(WINDOW_INTERVALS[w] for w, _, _ in piano),
+                              end)
+        for window, ats, passo in piano:
+            n = len(ats)
+            punti = [_oee_payload(st, window, t, speed_target,
+                                  speed_target_source, run=run,
+                                  run_reason=run_reason, counter=counter,
+                                  storia=storia)
+                     for t in ats]
+            punti.reverse()                      # ordine cronologico crescente
+            deg = [p for p in punti if p["source"]["degraded"]]
+            out["__meta"][window] = {
+                "passo": f"{int(passo.total_seconds() // 60)}min",
+                "passo_base": f"{int(SERIES_STEP[window].total_seconds() // 60)}min",
+                "conteggi_da": ("cycle_rollup_hour + bordi da cycles"
+                                if isinstance(counter, _CycleCountsRollup)
+                                and counter._attivo else "cycles"),
+                "ampiezza_finestra": f"{int(WINDOW_INTERVALS[window].total_seconds() // 60)}min",
+                "punti": n,
+                "primo_at": punti[0]["at"],
+                "ultimo_at": punti[-1]["at"],
+                "punti_degradati": len(deg),
+                "motivi_degrado": sorted({p["source"]["reason"] for p in deg
+                                          if p["source"]["reason"]}),
+            }
+            out[window] = punti
+            out[f"{window}_ridotto"] = [_serie_ridotta(p) for p in punti]
+        return out
+
+    return _memoria_risposta(
+        st, run, ("machine/oee/series", _iso(end), _iso(inizio),
+                  tuple(chieste), run_reason), calcola)
 
 
 # --- qualita' per valvola nel tempo ------------------------------------------
@@ -2045,68 +2153,75 @@ def valves_progression_series(
     """
     st = _storage()
     run, run_reason = _resolve_run(st, run_id)
-    out: dict[str, Any] = {
-        "run_id": run, "valve_id": valve_id,
-        "channels": list(_PROGRESSIONE_CANALI),
-        "from": None, "to": None,
-        "valves": {},
-        "degraded": True, "reason": None,
-    }
-    if run_reason:
-        out["reason"] = f"{run_reason} ({RUN_AMBIGUO_HINT})"
-        return out
-    cov_lo, cov_hi, _cicli_prima = _copertura_riepilogo(st, run)
-    if cov_lo is None or cov_hi is None:
-        out["reason"] = (
-            f"nessuna ora riassunta in {ROLLUP_TABLE} per il run {run!r}: "
-            "riempire il riepilogo con `python -m pipeline.cycle_rollup "
-            f"--run-id {run} --since-last`")
-        return out
-    lo, hi = cov_lo, cov_hi + ROLLUP_BUCKET
-    out["from"], out["to"] = _iso(lo), _iso(hi)
-
-    motivi: list[str] = []
-    medie = _progressione_medie(st, run, valve_id, lo, hi)
-    sigma, sigma_ko = _progressione_sigma(st, run, valve_id, lo, hi)
-    if sigma_ko:
-        motivi.append(sigma_ko)
-
-    valvole = (sorted({*medie, *sigma}) if valve_id is None
-               else [valve_id])
-    n_ore = int((hi - lo) // ROLLUP_BUCKET)
-    istanti = [lo + k * ROLLUP_BUCKET for k in range(n_ore)]
-    for v in valvole:
-        per_ora_medie = medie.get(v, {})
-        per_ora_sigma = sigma.get(v, {})
-        if valve_id is not None and not per_ora_medie and not per_ora_sigma:
-            out["reason"] = (
-                f"nessun ciclo riassunto per la valvola {v} nel run "
-                f"{run!r} nella finestra {_iso(lo)} → {_iso(hi)}")
+    # La sigma oraria e' l'unico canale che scandisce `cycles`, e su una corsa
+    # registrata da' sempre lo stesso numero: la pagina PREDITTIVA la chiede per
+    # tutte e 35 le valvole a ogni apertura, 6 s a valvola. Vedi `_memoria_risposta`.
+    def calcola() -> dict[str, Any]:
+        out: dict[str, Any] = {
+            "run_id": run, "valve_id": valve_id,
+            "channels": list(_PROGRESSIONE_CANALI),
+            "from": None, "to": None,
+            "valves": {},
+            "degraded": True, "reason": None,
+        }
+        if run_reason:
+            out["reason"] = f"{run_reason} ({RUN_AMBIGUO_HINT})"
             return out
-        serie: list[dict[str, Any]] = []
-        for t in istanti:
-            riga = per_ora_medie.get(t)
-            punto: dict[str, Any] = {
-                "at": _iso(t), "total": 0, "good": 0,
-                **{c: None for c in _PROGRESSIONE_CANALI},
-            }
-            if riga is not None:
-                total, good = riga["total"], riga["good"]
-                punto["total"], punto["good"] = total, good
-                for m in _PROGRESSIONE_MEDIE:
-                    s, n = riga[m]
-                    if n:
-                        punto[f"mean_{m}"] = _round3(s / n)
-                if total:
-                    punto["quality_rate"] = round(good / total, 3)
-            sig = per_ora_sigma.get(t)
-            if sig is not None:
-                punto["sigma_filling_time_ms"] = _round3(sig)
-            serie.append(punto)
-        out["valves"][str(v)] = serie
-    out["degraded"] = bool(motivi)
-    out["reason"] = "; ".join(motivi) or None
-    return out
+        cov_lo, cov_hi, _cicli_prima = _copertura_riepilogo(st, run)
+        if cov_lo is None or cov_hi is None:
+            out["reason"] = (
+                f"nessuna ora riassunta in {ROLLUP_TABLE} per il run {run!r}: "
+                "riempire il riepilogo con `python -m pipeline.cycle_rollup "
+                f"--run-id {run} --since-last`")
+            return out
+        lo, hi = cov_lo, cov_hi + ROLLUP_BUCKET
+        out["from"], out["to"] = _iso(lo), _iso(hi)
+
+        motivi: list[str] = []
+        medie = _progressione_medie(st, run, valve_id, lo, hi)
+        sigma, sigma_ko = _progressione_sigma(st, run, valve_id, lo, hi)
+        if sigma_ko:
+            motivi.append(sigma_ko)
+
+        valvole = (sorted({*medie, *sigma}) if valve_id is None
+                   else [valve_id])
+        n_ore = int((hi - lo) // ROLLUP_BUCKET)
+        istanti = [lo + k * ROLLUP_BUCKET for k in range(n_ore)]
+        for v in valvole:
+            per_ora_medie = medie.get(v, {})
+            per_ora_sigma = sigma.get(v, {})
+            if valve_id is not None and not per_ora_medie and not per_ora_sigma:
+                out["reason"] = (
+                    f"nessun ciclo riassunto per la valvola {v} nel run "
+                    f"{run!r} nella finestra {_iso(lo)} → {_iso(hi)}")
+                return out
+            serie: list[dict[str, Any]] = []
+            for t in istanti:
+                riga = per_ora_medie.get(t)
+                punto: dict[str, Any] = {
+                    "at": _iso(t), "total": 0, "good": 0,
+                    **{c: None for c in _PROGRESSIONE_CANALI},
+                }
+                if riga is not None:
+                    total, good = riga["total"], riga["good"]
+                    punto["total"], punto["good"] = total, good
+                    for m in _PROGRESSIONE_MEDIE:
+                        s, n = riga[m]
+                        if n:
+                            punto[f"mean_{m}"] = _round3(s / n)
+                    if total:
+                        punto["quality_rate"] = round(good / total, 3)
+                sig = per_ora_sigma.get(t)
+                if sig is not None:
+                    punto["sigma_filling_time_ms"] = _round3(sig)
+                serie.append(punto)
+            out["valves"][str(v)] = serie
+        out["degraded"] = bool(motivi)
+        out["reason"] = "; ".join(motivi) or None
+        return out
+
+    return _memoria_risposta(
+        st, run, ("valves/progression/series", valve_id), calcola)
 
 
 # ---------------------------------------------------------------------------
