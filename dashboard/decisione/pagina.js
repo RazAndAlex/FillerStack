@@ -297,8 +297,12 @@ function statoDi(v) {
   if (v.azione === 'continua degradata') return 'attenz';
   return 'neutro';
 }
-const senzaStima = (v) =>
-  v.stima && (v.stima.esito === 'dati_insufficienti' || v.stima.esito === 'senza_dati');
+// La scheda scrive «nessuna stima» ogni volta che l'esito non e' `stimato`
+// (vedi `stimato` in scheda()). La marca sulla tessera deve rispondere alla
+// stessa domanda, altrimenti le due meta' dello schermo dicono cose diverse:
+// elencare due esiti su nove lasciava senza marca proprio `nessun_segnale`,
+// cioe' il caso piu' frequente da quando il segnale si cerca solo fino a adesso.
+const senzaStima = (v) => !!v.stima && v.stima.esito !== 'stimato';
 
 function disegna() {
   if (!dati) return;
