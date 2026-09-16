@@ -26,6 +26,11 @@ Endpoint (spec M10 §5):
                                 tail_pulse e qualita' dal riepilogo, piu' la
                                 sigma oraria di filling_time_ms calcolata al
                                 volo su `cycles` (STDDEV_POP)
+- GET /valves/decision          il verdetto della politica «costo atteso» per
+                                tutte le valvole a un'ora della corsa (passo
+                                7): azione, D/R, conferma, stima del crollo e
+                                le ultime 24 h. Calcolo in `pipeline/decision.py`,
+                                precalcolato in `pipeline/decision_rollup.py`
 - GET /valves                   catalogo fisso valvole 1..35 + ultima
                                 prediction + alert attivi + ultimo KPI
 - GET /valves/baseline          riferimento sano per valvola (media, sigma,
@@ -76,6 +81,7 @@ from fastapi import FastAPI, HTTPException, Query
 from sqlalchemy import DateTime, desc, func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 
+from pipeline import decision
 from pipeline.cycle_rollup import BUCKET as ROLLUP_BUCKET
 from pipeline.cycle_rollup import PROFILE_METRICS, ROLLUP_TABLE
 from pipeline.cycle_rollup import n_col as _n_col
@@ -2100,6 +2106,297 @@ def valves_progression_series(
         out["valves"][str(v)] = serie
     out["degraded"] = bool(motivi)
     out["reason"] = "; ".join(motivi) or None
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Il verdetto per valvola (passo 7 — politica 6c, 2026-09-15)
+# ---------------------------------------------------------------------------
+# Il calcolo sta tutto in `pipeline/decision.py`, che dichiara da dove vengono
+# i suoi numeri. Qui si fa solo il prelievo: una chiamata a
+# `_progressione_medie` per TUTTE e 35 le valvole (0,24 s misurati sul run
+# `deriva_lenta_60d`), convertita nella forma secchiello-per-secchiello che il
+# calcolo legge. La sigma oraria NON si tocca: il verdetto non la legge mai, e
+# costerebbe ~3 minuti per tutte le valvole (`_progressione_sigma`).
+def _serie_per_decisione(
+        st: Storage, run: str | None, lo: datetime, hi: datetime,
+) -> dict[int, list[dict[str, Any]]]:
+    """`{valve_id: [secchielli orari]}` nella forma che il verdetto legge.
+
+    Ogni secchiello porta `at`, `total`, `good`, `mean_filling_time_ms` e
+    `quality_rate`, con gli stessi arrotondamenti di
+    `/valves/progression/series`: i due numeri devono essere lo stesso numero,
+    altrimenti la pagina leggerebbe una serie e un verdetto scollati.
+
+    Restano fuori le valvole che nella corsa non hanno nemmeno un secchiello
+    con `total >= MIN_TOT`: non sono attive, e una serie di zeri sembrerebbe
+    una misura.
+    """
+    medie = _progressione_medie(st, run, None, lo, hi)
+    n_ore = int((hi - lo) // ROLLUP_BUCKET)
+    istanti = [lo + k * ROLLUP_BUCKET for k in range(n_ore)]
+    fuori: dict[int, list[dict[str, Any]]] = {}
+    for v, per_ora in medie.items():
+        if not any(r["total"] >= decision.MIN_TOT for r in per_ora.values()):
+            continue
+        serie: list[dict[str, Any]] = []
+        for t in istanti:
+            riga = per_ora.get(t)
+            punto: dict[str, Any] = {
+                "at": _iso(t), "total": 0, "good": 0,
+                "mean_filling_time_ms": None, "quality_rate": None,
+            }
+            if riga is not None:
+                total, good = riga["total"], riga["good"]
+                punto["total"], punto["good"] = total, good
+                s, n = riga["filling_time_ms"]
+                if n:
+                    punto["mean_filling_time_ms"] = _round3(s / n)
+                if total:
+                    punto["quality_rate"] = round(good / total, 3)
+            serie.append(punto)
+        fuori[v] = serie
+    return fuori
+
+
+# Il verdetto precalcolato. Il modulo si importa qui e non in testa perche'
+# `pipeline/decision_rollup.py` risale a questo file per prendersi la serie e
+# la finestra sana: l'import in testa chiuderebbe il cerchio.
+_decisioni: Any = None
+
+
+def _decision_rollup():
+    """`DecisionRollup` sull'engine dell'API, o `None` se non e' utilizzabile.
+
+    `None` non e' un errore: significa «nessun precalcolo qui», e chi chiama
+    torna a calcolare come faceva prima. Una pagina lenta e' un difetto, una
+    pagina rotta e' un'altra cosa.
+
+    Si ricostruisce quando l'engine dell'API cambia. Tenerne uno solo per
+    sempre sarebbe la vecchia trappola in forma nuova: i test spostano
+    `_store` su un database effimero, e un lettore rimasto appeso all'engine
+    di prima risponderebbe con i dati di un altro database senza dirlo.
+    """
+    global _decisioni
+    eng = _storage().engine
+    if _decisioni is None or _decisioni.engine is not eng:
+        try:
+            from pipeline.decision_rollup import DecisionRollup  # noqa: PLC0415
+            _decisioni = DecisionRollup(engine=eng)
+        except (ImportError, SQLAlchemyError):
+            return None
+    return _decisioni
+
+
+def _verdetto_precalcolato(stg, run: str | None, ora: datetime | None,
+                           cov_hi: datetime) -> dict[str, Any] | None:
+    """Il corpo del verdetto letto da `decision_rollup_hour`, o `None`.
+
+    `None` vuol dire «ricalcola come prima», e i casi sono quattro: il modulo o
+    la tabella non ci sono; il precalcolo non arriva all'ultimo secchiello dei
+    cicli; le impronte dei parametri in tabella non sono quella corrente;
+    oppure l'ora chiesta sta fuori dalle ore precalcolate. Sull'ultimo caso si
+    ricalcola invece di rispondere «senza dati»: prima delle prime 24 h la
+    griglia non esiste ancora, ed e' il calcolo a doverlo dire.
+
+    La finestra sana si rilegge qui, con la stessa chiamata che usa il ramo del
+    calcolo, e si passa a `fresco()`: e' meta' di cio' che rende valido un
+    precalcolo, e senza questo confronto un cambio di finestra o di costante
+    faceva servire i numeri vecchi senza dirlo. Non introduce nessun
+    `degraded`: se non torna, si ricalcola e basta.
+
+    `ora` a `None` chiede la linea intera invece della fotografia di un'ora.
+    """
+    dr = _decision_rollup()
+    if dr is None or run is None:
+        return None
+    fin_start, fin_end, _src, _kv = _baseline_window(stg, None, None)
+    if fin_start is None or fin_end is None:
+        return None
+    finestra = {"start": _iso(fin_start), "end": _iso(fin_end)}
+    try:
+        if not dr.fresco(run, cov_hi, finestra):
+            return None
+        if ora is None:
+            return dr.linea(run)
+        lo, hi = dr.coverage(run)
+        if lo is None or not (lo <= ora <= hi):
+            return None
+        return dr.decisione(run, ora)
+    except SQLAlchemyError:
+        return None
+
+
+@app.get("/valves/decision")
+def valves_decision(
+    run_id: str | None = Query(
+        None, description="run da interrogare; default: KV `current_run_id`, "
+        "oppure l'unico run presente"),
+    adesso: datetime | None = Query(
+        None, description="l'ora del verdetto, ISO8601 UTC; default: l'ultima "
+        "ora completa del run"),
+) -> dict[str, Any]:
+    """Il verdetto della politica «costo atteso» per tutte le valvole, a un'ora.
+
+    Perche' esiste: la pagina mostra lo stato della macchina, e lo stato non e'
+    un canale fisico ma una decisione. Ogni ora, per ogni valvola, si confronta
+    quanto costa aspettare un'ora in piu' (`D`: lattine buttate piu' il rischio
+    che il crollo cada proprio in quell'ora) con quanto fa risparmiare
+    aspettare (`R`: il pezzo di vita utile consumato invece che buttato).
+    Quando `D` supera `R` per `K` ore di fila parte la chiamata, e la squadra
+    arriva `L` ore dopo. Il conto e' in Python e la pagina non lo rifa': legge
+    e disegna.
+
+    **La forma della risposta e' quella di `work/pezzo7/CONTRATTO.md`**:
+    `run_id`, `adesso`, `parametri`, `conteggi`, `valvole`. Le fixture
+    registrate in `work/pezzo7/dati/` sono il metro: sullo stesso run e alla
+    stessa ora i numeri devono coincidere cifra per cifra.
+
+    **La corsa e' storia gia' scritta.** `adesso` e' una fotografia dentro la
+    finestra del run, non l'orologio di parete: si conta dall'inizio della
+    corsa fino a quell'ora, cosi' gli «intervieni» di fila e l'arrivo della
+    squadra sono quelli veri. Senza `adesso` risponde sull'ultima ora
+    completa disponibile.
+
+    **Run**: stesso contratto delle altre route che toccano `cycles` —
+    `run_id` esplicito, altrimenti KV `current_run_id`, poi l'unico run; con
+    piu' run e nessuno indicato la risposta e' 200 degradata con il motivo
+    (`_resolve_run`): mai un 500, mai due run mescolati.
+
+    **Costo** (misurato il 2026-09-16 sui run `storico_60d` e
+    `deriva_lenta_60d`, 35 valvole, 1407 ore): con il verdetto precalcolato in
+    `decision_rollup_hour` la risposta e' **0,02-0,05 s** a qualunque ora, ed
+    e' piatta, perche' sono due letture indicizzate e nessun conto. Senza
+    precalcolo si torna al calcolo di prima, che cresce con la posizione nella
+    corsa: 0,05 s al 5% della corsa, 0,48 s a meta', ~1,9 s all'ultima ora
+    (erano 4,6 s prima della memoria della t di Student e del riuso della
+    scansione delle stime). Il precalcolo si riempie con
+    `python -m pipeline.decision_rollup --run-id <run>` e costa ~6 s per corsa.
+    """
+    stg = _storage()
+    run, run_reason = _resolve_run(stg, run_id)
+    out: dict[str, Any] = {
+        "run_id": run, "adesso": None,
+        "parametri": decision.parametri(),
+        "conteggi": {"intervieni": 0, "continua_degradata": 0,
+                     "continua": 0, "senza_dati": 0},
+        "valvole": [],
+        "degraded": True, "reason": None,
+    }
+    if run_reason:
+        out["reason"] = f"{run_reason} ({RUN_AMBIGUO_HINT})"
+        return out
+    cov_lo, cov_hi, _cicli_prima = _copertura_riepilogo(stg, run)
+    if cov_lo is None or cov_hi is None:
+        out["reason"] = (
+            f"nessuna ora riassunta in {ROLLUP_TABLE} per il run {run!r}: "
+            "riempire il riepilogo con `python -m pipeline.cycle_rollup "
+            f"--run-id {run} --since-last`")
+        return out
+    lo, hi = cov_lo, cov_hi + ROLLUP_BUCKET
+
+    ora = cov_hi if adesso is None else _floor_ora(_as_utc(adesso))
+    if not (lo <= ora <= cov_hi):
+        out["reason"] = (
+            f"l'ora {_iso(ora)} sta fuori dalla corsa {run!r}, che copre "
+            f"{_iso(lo)} → {_iso(hi)} (secondo estremo escluso)")
+        return out
+
+    corpo = _verdetto_precalcolato(stg, run, ora, cov_hi)
+    if corpo is None:
+        serie = _serie_per_decisione(stg, run, lo, hi)
+        if not serie:
+            out["reason"] = (
+                f"nessuna valvola attiva nel run {run!r}: nessun secchiello con "
+                f"almeno {decision.MIN_TOT} cicli")
+            return out
+
+        fin_start, fin_end, _src, _kv = _baseline_window(stg, None, None)
+        if fin_start is None or fin_end is None:
+            out["reason"] = (
+                "nessuna finestra sana dichiarata: senza riferimento sano il "
+                "segnale non e' definibile. Persistere il KV `baseline_window` "
+                "{run_id, start, end}")
+            return out
+        finestra = {"start": _iso(fin_start), "end": _iso(fin_end)}
+        corpo = decision.decisione(serie, finestra, run, _iso(ora))
+    out.update(corpo)
+    out["degraded"] = False
+    out["reason"] = None
+    return out
+
+
+@app.get("/valves/decision/timeline")
+def valves_decision_timeline(
+    run_id: str | None = Query(
+        None, description="run da interrogare; default: KV `current_run_id`, "
+        "oppure l'unico run presente"),
+) -> dict[str, Any]:
+    """I conteggi del verdetto ora per ora, per tutta la corsa.
+
+    Perche' esiste: il comando che sceglie l'ora e' una striscia dei due mesi
+    da trascinare, con sopra le tacche dei momenti che contano. Per disegnarla
+    la pagina ha bisogno di tutte le ore in una sola richiesta all'apertura.
+    Chiedere un'ora per volta mentre si trascina costerebbe da 0,32 s a 4,81 s
+    a scatto, e un comando che risponde dopo secondi si legge come rotto.
+
+    La regola della camminata e' la stessa di `GET /valves/decision`:
+    `decision.camminata`, una funzione sola. La casella di un'ora qui dice
+    percio' lo stesso numero del verdetto a quell'ora.
+
+    `i[k]` sono le valvole in «intervieni» all'ora k, `d[k]` quelle in
+    «continua degradata». Le ore sono contigue e distano un'ora: la pagina le
+    ricostruisce da `prima_ora` e dall'indice, e non viaggia nessun array di
+    istanti.
+
+    **Run**: stesso contratto della route vicina — con piu' run e nessuno
+    indicato la risposta e' 200 degradata con il motivo, mai un 500.
+
+    **Costo** (misurato il 2026-09-16, 35 valvole, 1407 ore): con il verdetto
+    precalcolato la risposta e' **0,03-0,07 s**, cioe' un `GROUP BY` sulle
+    49.245 righe della corsa. Senza precalcolo si ricalcola come prima, ~1,8 s
+    per una passata su tutta la corsa (erano ~5 s). Il precalcolo si riempie
+    con `python -m pipeline.decision_rollup --run-id <run>`.
+    """
+    stg = _storage()
+    run, run_reason = _resolve_run(stg, run_id)
+    out: dict[str, Any] = {
+        "run_id": run, "prima_ora": None, "ultima_ora": None, "ore": 0,
+        "i": [], "d": [], "chiamate": [], "degraded": True, "reason": None,
+    }
+    if run_reason:
+        out["reason"] = f"{run_reason} ({RUN_AMBIGUO_HINT})"
+        return out
+    cov_lo, cov_hi, _cicli_prima = _copertura_riepilogo(stg, run)
+    if cov_lo is None or cov_hi is None:
+        out["reason"] = (
+            f"nessuna ora riassunta in {ROLLUP_TABLE} per il run {run!r}: "
+            "riempire il riepilogo con `python -m pipeline.cycle_rollup "
+            f"--run-id {run} --since-last`")
+        return out
+    lo, hi = cov_lo, cov_hi + ROLLUP_BUCKET
+
+    corpo = _verdetto_precalcolato(stg, run, None, cov_hi)
+    if corpo is None:
+        serie = _serie_per_decisione(stg, run, lo, hi)
+        if not serie:
+            out["reason"] = (
+                f"nessuna valvola attiva nel run {run!r}: nessun secchiello con "
+                f"almeno {decision.MIN_TOT} cicli")
+            return out
+
+        fin_start, fin_end, _src, _kv = _baseline_window(stg, None, None)
+        if fin_start is None or fin_end is None:
+            out["reason"] = (
+                "nessuna finestra sana dichiarata: senza riferimento sano il "
+                "segnale non e' definibile. Persistere il KV `baseline_window` "
+                "{run_id, start, end}")
+            return out
+        finestra = {"start": _iso(fin_start), "end": _iso(fin_end)}
+        corpo = decision.linea(serie, finestra, run, _iso(cov_hi))
+    out.update(corpo)
+    out["degraded"] = False
+    out["reason"] = None
     return out
 
 

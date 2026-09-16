@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decisione — giostra</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/comune/lessico.css">
+<link rel="stylesheet" href="stile.css">
+<script>
+  // tema applicato prima del primo disegno, per non far lampeggiare la pagina
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('tema-v7dec'); } catch (e) {}
+    if (t) document.documentElement.setAttribute('data-tema', t);
+  })();
+</script>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-marca">filler01</span>
+  <ul class="nav-voci">
+    <li><a id="v-macchina" href="/a/">MACCHINA</a></li>
+    <li><a id="v-valvole" href="/v1/">VALVOLE</a></li>
+    <li><a id="v-oee" href="/oee/">OEE</a></li>
+    <li><a id="v-tempo" href="/pc/">TEMPO</a></li>
+    <li><a id="v-carta" href="/k1/">CARTA</a></li>
+    <li><a id="v-predittiva" href="/predittiva/">PREDITTIVA</a></li>
+    <li class="attiva">DECISIONE</li>
+  </ul>
+  <span class="nav-dx">
+    <button id="tema" type="button" class="btn-tema" aria-label="Tema chiaro o scuro"></button>
+    <span id="switch-scenario"></span>
+  </span>
+</nav>
+
+<header class="testata">
+  <h1 class="forma">giostra</h1>
+  <div class="legenda">
+    <span class="leg"><i class="sw sw-grave"></i>intervieni</span>
+    <span class="leg"><i class="sw sw-attenz"></i>continua degradata</span>
+    <span class="leg"><i class="sw sw-neutro"></i>continua</span>
+    <span class="leg"><i class="sw sw-marca"></i>senza stima</span>
+  </div>
+  <span class="avviso" id="avviso" hidden></span>
+  <span class="prov" id="prov"></span>
+</header>
+
+<main class="corpo">
+  <section class="anello" id="anello">
+    <svg id="svg-anello" role="img" aria-label="Le 35 valvole nell'ordine della riempitrice"></svg>
+    <div class="centro" id="centro"></div>
+  </section>
+  <section class="schede" id="schede"></section>
+</main>
+
+<footer class="banda" id="banda">
+  <svg class="striscia" id="striscia" preserveAspectRatio="none" tabindex="0"
+       role="slider" aria-label="Ora della corsa sui due mesi, con i momenti segnati"></svg>
+  <div class="momenti" id="momenti"></div>
+  <div class="banda-assente" id="banda-assente" hidden></div>
+</footer>
+
+<div class="tip" id="tip" hidden role="status" aria-live="polite"></div>
+
+<script type="module" src="/comune/scenario.js"></script>
+<script type="module" src="pagina.js"></script>
+</body>
+</html>

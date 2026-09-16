@@ -8,7 +8,7 @@
   <p class="guida">Nel database ci sono cicli, indicatori di ciclo, previsioni del modello e allarmi. Mancano le
   ultime due cose: qualcuno che li serva su richiesta, e una schermata che il tecnico possa
   guardare <b>senza sapere niente di tutto quello che c'è dietro</b>.</p>
-  <p class="min">Quattro domande, nell'ordine in cui vengono in mente.</p>
+  <p class="min">Cinque domande, nell'ordine in cui vengono in mente.</p>
 </div>
 
 <section class="box">
@@ -91,13 +91,14 @@
 <section class="box">
   <h2 class="box-tit">Domanda 3 <span class="per">· e la dashboard com'è fatta?</span></h2>
   <div class="box-corpo">
-    <h2>Cinque pagine, e su ognuna una cosa sola che comanda</h2>
+    <h2>Sei pagine, e su ognuna una cosa sola che comanda</h2>
     <div class="scheda-dato">
       <div class="cella"><span class="k">Macchina</span><span class="v">come va</span></div>
       <div class="cella"><span class="k">Valvole</span><span class="v">quale</span></div>
       <div class="cella"><span class="k">OEE</span><span class="v">quanto rende</span></div>
       <div class="cella"><span class="k">Tempo</span><span class="v">da quando</span></div>
       <div class="cella"><span class="k">Carta</span><span class="v">quanto fuori</span></div>
+      <div class="cella"><span class="k">Predittiva</span><span class="v">quanto manca</span></div>
     </div>
     <p>La regola che ha guidato il disegno è che ogni schermata risponde a una domanda sola. La
     lamentela ricorrente delle versioni bocciate era sempre la stessa, <i>non so a cosa
@@ -127,6 +128,38 @@
       <p>Un doppio clic su <code>dashboard.bat</code>. Accende il database se è spento, avvia
       l'API e il server delle pagine, apre il browser. Chiudendo la finestra si spegne tutto
       quello che è stato acceso.</p>
+    </div>
+  </div>
+</section>
+
+<section class="box">
+  <h2 class="box-tit">Domanda 5 <span class="per">· e come fa a dire quanto manca?</span></h2>
+  <div class="box-corpo">
+    <h2>Ogni valvola contro sé stessa, un giorno per colonna</h2>
+    <p>Le prime cinque pagine dicono come sta la macchina. La sesta, Predittiva, risponde a una
+    domanda diversa: <b>quanto tempo resta prima che un guasto in corso rovini il prodotto</b>.</p>
+    <p>Per ogni valvola in allarme la pagina disegna una striscia di sessanta giorni, una colonna
+    al giorno. Il colore della colonna dice di quanto il canale fisico del guasto si è allontanato
+    dal comportamento sano di quella valvola. Sopra la striscia stanno tre segni: il primo
+    segnale, l'apertura dell'allarme, il degrado della qualità. Il numero grande a destra è il
+    <b>margine</b>: le ore fra il primo segnale e il degrado.</p>
+    <div class="scheda-dato">
+      <div class="cella"><span class="k">Valvola 8 · restrizione</span><span class="v">75,5 h</span></div>
+      <div class="cella"><span class="k">Valvola 30 · flussometro</span><span class="v">47,0 h</span></div>
+      <div class="cella"><span class="k">Righe a schermo</span><span class="v">12</span></div>
+      <div class="cella att"><span class="k">Route nuove</span><span class="v">1</span></div>
+    </div>
+    <p class="min">Margini misurati il 30 agosto sulla run <code>deriva_lenta_60d</code>, sessanta
+    giorni con guasti che peggiorano in settimane invece che in minuti. Sullo storico a guasti
+    rapidi gli stessi anticipi erano 5,3 e 7,5 ore. La route nuova è
+    <code>/valves/progression/series</code>: serve la serie oraria dei canali fisici di una
+    valvola. Le dodici righe sono le nove valvole in allarme più tre sane di campione.</p>
+    <div class="riquadro">
+      <h3>Il modello non è stato toccato</h3>
+      <p>La predittiva non addestra niente di nuovo. Legge canali che l'API pubblicava già: tempo
+      di riempimento, tempo di coda, la loro dispersione ora per ora, la qualità. Se il canale di
+      una valvola non esce mai dal regime sano, al posto del margine compare un vuoto dichiarato,
+      con scritto <i>non vedibile</i>.</p>
     </div>
     <div class="avanti">
       <span>Fine della guida. Dal ciclo 417 della valvola 29 alla schermata di reparto.</span>

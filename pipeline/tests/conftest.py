@@ -36,7 +36,10 @@ _PREFISSI_EFFIMERI = ("plcsim_test_fix_", "plcsim_test_oee_",
                       "plcsim_test_run_",
                       "plcsim_test_rollup_", "plcsim_test_qser_",
                       "plcsim_test_prog_",
-                      "plcsim_test_prof_")
+                      "plcsim_test_prof_",
+                      "plcsim_test_dec_",
+                      "plcsim_test_prec_",
+                      "plcsim_test_lin_")
 
 _EFFIMERO = re.compile(
     r"^(?:%s)[0-9a-f]{8}$" % "|".join(re.escape(p) for p in _PREFISSI_EFFIMERI))

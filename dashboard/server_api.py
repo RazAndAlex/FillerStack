@@ -70,6 +70,14 @@ ROUTE_AMMESSE = {
     "valves",
     "valves/baseline",
     "valves/progression/series",
+    # Il verdetto per valvola a un'ora della corsa (2026-09-15): azione, D/R,
+    # conferma e stima del crollo. E' la sorgente della schermata di stato,
+    # che senza questa riga non avrebbe niente da disegnare.
+    "valves/decision",
+    # I conteggi del verdetto ora per ora di tutta la corsa (2026-09-15):
+    # e' cio' che disegna la striscia con cui si sceglie l'ora, e la pagina la
+    # chiede una volta sola all'apertura.
+    "valves/decision/timeline",
     # Qualita' per valvola in secchielli contigui (2026-08-20): e' l'unica
     # route che porta l'andamento della SINGOLA valvola nel tempo, e nessuna
     # pagina puo' disegnarlo senza.

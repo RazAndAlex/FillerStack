@@ -1,0 +1,259 @@
+/* giostra — solo disposizione. La grammatica sta in ../lessico.css */
+
+.sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+
+/* ---------- testata ---------- */
+.testata{
+  flex:0 0 auto; display:flex; align-items:baseline; gap:22px;
+  padding:8px 14px 6px;
+}
+.forma{
+  margin:0; font-size:19px; font-weight:600; letter-spacing:.02em;
+  text-transform:lowercase;
+}
+.legenda{ display:flex; gap:16px; align-items:center; }
+.leg{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink); }
+.sw{ width:16px; height:16px; border-radius:2px; background:var(--sup); display:inline-block; }
+.sw-grave{ border:3px solid var(--grave); }
+.sw-attenz{ border:3px solid var(--attenz); }
+.sw-neutro{ border:1px solid var(--bordo); }
+/* la marca della legenda ripete il segno dell'anello: piu' piccola dei tre
+   quadratini del verdetto e con il contorno pieno, perche' non e' un verdetto */
+.sw-marca{ width:8px; height:8px; border:1px solid var(--muto); }
+.prov{ margin-left:auto; font-size:13px; color:var(--muto); }
+/* il verdetto che non arriva si dichiara dove sta sempre la provenienza */
+.prov.rotto{ color:var(--grave); }
+/* l'indirizzo incollato che chiede un'ora fuori dalla corsa: la pagina la
+   sposta e lo dice, invece di ripiegare in silenzio su un'altra ora */
+.avviso{
+  font-size:13px; color:var(--ink);
+  border-left:3px solid var(--attenz); padding-left:9px;
+}
+
+/* ---------- corpo: anello a sinistra, schede accostate a destra ---------- */
+.corpo{
+  flex:1 1 auto; min-height:0; overflow:hidden;
+  display:grid; grid-template-columns: 668px minmax(0,1fr); gap:0;
+  padding:0 14px 6px;
+}
+.anello{ position:relative; min-width:0; min-height:0; }
+/* mentre il verdetto e' in volo i numeri vecchi restano leggibili ma spenti:
+   nessuno li puo' scambiare per nuovi. I conteggi al centro non si spengono,
+   perche' vengono dalla linea del tempo e sono gia' quelli dell'ora scelta. */
+.anello.attesa #svg-anello, .schede.attesa{ opacity:.3; }
+.anello.attesa #svg-anello{ pointer-events:none; }
+/* le squadre della tessera uscita a ore tre sporgono di 2 px oltre il riquadro
+   dell'svg: senza questo il segno della scelta si vede tagliato a meta' */
+#svg-anello{ width:100%; height:100%; display:block; overflow:visible; }
+
+/* il conteggio sta al centro della giostra */
+.centro{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:300px; text-align:center; pointer-events:none;
+}
+.centro .capo{ display:flex; align-items:baseline; justify-content:center; gap:10px; }
+.centro .n-big{ font-size:46px; font-weight:600; line-height:1; }
+/* la sola cifra porta la gravita': nessun riempimento, stessa misura */
+.centro .n-big.grave{ color:var(--grave); }
+.centro .riga b.attenz{ color:var(--attenz); }
+.centro .w-big{ font-size:20px; }
+.centro .riga{ font-size:15px; margin-top:7px; }
+.centro .riga b{ font-size:19px; font-weight:600; }
+.centro .nota{ font-size:13px; color:var(--muto); margin-top:12px; }
+
+/* ---------- schede ---------- */
+.schede{
+  display:flex; flex-direction:column; justify-content:center; gap:12px;
+  min-width:0; min-height:0; overflow:hidden;
+  max-width:660px; padding:10px 0 10px 4px;
+}
+.scheda{
+  background:var(--sup); border:1px solid var(--bordo);
+  border-left:6px solid var(--grave); border-radius:3px;
+  padding:14px 18px 16px;
+}
+/* la fascia di sinistra porta il verdetto della valvola nella scheda: il rosso
+   resta a chi va fermato, come vuole la parsimonia del colore */
+.scheda.v-attenz{ border-left-color:var(--attenz); }
+.scheda.v-neutro{ border-left-color:var(--bordo); }
+.scheda-capo{ display:flex; align-items:baseline; gap:14px; }
+.scheda-capo .vv{ font-size:52px; font-weight:600; line-height:1; }
+.scheda-capo .az{ font-size:24px; font-weight:600; }
+.scheda-capo .cl{ margin-left:auto; font-size:13px; color:var(--muto); }
+
+.coppia{ display:flex; gap:10px; margin-top:12px; }
+.q{ flex:1 1 0; min-width:0; background:var(--sup-2); border:1px solid var(--bordo);
+    border-radius:2px; padding:8px 10px 9px; }
+.q .num{ font-size:30px; font-weight:600; line-height:1.05; }
+.q .et{ font-size:13px; color:var(--ink); }
+.q .barra{ display:block; height:8px; margin-top:7px; background:var(--traccia); }
+.q .barra i{ display:block; height:100%; background:var(--dato); }
+
+.tempi{ margin-top:12px; }
+.tempi svg{ display:block; width:100%; height:78px; }
+
+.stato-riga{
+  margin-top:11px; display:flex; align-items:center; gap:10px;
+  font-size:14px;
+}
+.stato-riga .pista{ flex:0 0 auto; }
+.pips{ display:inline-flex; gap:5px; }
+.pips i{ width:11px; height:11px; border-radius:50%; border:2px solid var(--dato); }
+.pips i.on{ background:var(--dato); }
+
+/* ---------- le altre chiamate, in forma compatta ----------
+   La prima scheda resta intera. Dalla seconda in poi ogni valvola prende
+   una riga sola, a colonne allineate, cosi' i costi si confrontano in
+   verticale e l'altezza cresce di 38 px per valvola invece che di 340. */
+.altre{ display:flex; flex-direction:column; gap:4px; min-height:0; }
+.altre-cap{
+  display:grid; grid-template-columns: 74px 1fr 118px 96px; gap:10px;
+  padding:0 12px; font-size:13px; color:var(--muto);
+}
+.riga-c{
+  display:grid; grid-template-columns: 74px 1fr 118px 96px; gap:10px;
+  align-items:baseline;
+  background:var(--sup); border:1px solid var(--bordo);
+  border-left:6px solid var(--grave); border-radius:3px;
+  padding:7px 12px 8px; width:100%; text-align:left;
+  color:var(--ink); font:inherit; font-variant-numeric:tabular-nums;
+  cursor:pointer;
+}
+.riga-c .v{ font-size:21px; font-weight:600; }
+.riga-c .a{ font-size:15px; }
+.riga-c .d{ font-size:19px; font-weight:600; }
+.riga-c .l{ font-size:19px; font-weight:600; }
+.riga-c:hover{ background:var(--sup-2); }
+.riga-c:focus{ outline:none; }
+.riga-c:focus-visible{ outline:2px solid var(--rif); outline-offset:1px; }
+
+/* il ritorno alla chiamata, dichiarato nella testa della scheda */
+.torna{
+  margin-left:auto; font:inherit; font-size:13px; color:var(--ink);
+  background:var(--sup-2); border:1px solid var(--bordo); border-radius:2px;
+  padding:5px 10px; cursor:pointer;
+}
+.torna:hover{ background:var(--traccia); }
+.torna:focus-visible{ outline:2px solid var(--rif); outline-offset:1px; }
+
+/* la casella che non ha un valore lo dice a parole e resta dov'e' */
+.q .parole{ font-size:15px; font-weight:600; line-height:1.25; color:var(--muto); }
+.senza-asse{
+  margin-top:12px; height:78px; display:flex; align-items:center;
+  border:1px dashed var(--bordo); border-radius:2px; padding:0 14px;
+  font-size:14px; color:var(--muto);
+}
+
+/* canale e classe, in fondo alla scheda, quando la scheda porta una scelta */
+.segnale{
+  margin-top:12px; padding-top:10px; border-top:1px solid var(--bordo);
+  display:flex; gap:22px; flex-wrap:wrap; font-size:13px;
+}
+.segnale span{ color:var(--muto); }
+.segnale b{ color:var(--ink); font-weight:600; }
+
+/* nessuna chiamata: si dichiara e non si prende lo spazio di una scheda */
+.niente{
+  border:1px dashed var(--bordo); border-radius:3px; padding:22px 18px;
+  color:var(--muto); text-align:center;
+}
+.niente .g{ font-size:24px; color:var(--ink); }
+.niente .p{ font-size:14px; margin-top:8px; }
+
+/* ---------- anello: marchi svg ---------- */
+.cella{ cursor:pointer; }
+.cella .sfondo{ fill:var(--sup); stroke:var(--bordo); stroke-width:1; }
+.cella .sfondo.grave{ stroke:var(--grave); stroke-width:3.5; }
+.cella .sfondo.attenz{ stroke:var(--attenz); stroke-width:3.5; }
+/* «senza stima» dice quanto sappiamo del crollo, il verdetto dice cosa fare:
+   sono due assi diversi. Il contorno appartiene al verdetto e a niente altro,
+   quindi resta sempre pieno e sempre del colore del verdetto. L'altro asse ha
+   un elemento suo, un quadratino appoggiato all'angolo in alto a destra, che si
+   aggiunge alla tessera invece di alterarne il contorno. Prima il tratteggio
+   grigio copriva il rosso e la valvola da guardare era l'unica spenta. */
+.cella .marca{ fill:var(--sup); stroke:var(--muto); stroke-width:1; }
+.cella .id{ fill:var(--ink); font-size:15px; text-anchor:middle; dominant-baseline:central; }
+/* il segno della scelta e' fatto di squadre agli angoli, sempre in inchiostro:
+   il colore resta a chi ha una gravita' */
+.cella .alone{ fill:none; stroke:none; stroke-linecap:square; }
+.cella:hover .alone, .cella:focus-visible .alone{ stroke:var(--ink); stroke-width:2; }
+/* la tessera scelta porta il segno fermo: si vede dove si e' */
+.cella.scelta .alone{ stroke:var(--ink); stroke-width:3; }
+.cella.scelta .id{ font-weight:600; }
+.cella:hover .id, .cella:focus-visible .id{ font-weight:600; }
+.cella:focus-visible{ outline:none; }
+.cella.fuori .id{ font-weight:600; font-size:20px; }
+.guida{ stroke:var(--grave); stroke-width:2; fill:none; }
+.indice{ fill:var(--muto); font-size:13px; }
+.indice-seg{ stroke:var(--muto); stroke-width:1.5; }
+
+/* ---------- strip dei tempi ---------- */
+.tl-asse{ stroke:var(--bordo); stroke-width:1.5; }
+.tl-tratto{ stroke:var(--dato); stroke-width:6; }
+.tl-mark{ stroke:var(--ink); stroke-width:2; }
+.tl-mark-m{ stroke:var(--muto); stroke-width:1.5; }
+.tl-et{ fill:var(--ink); font-size:13px; }
+.tl-et-m{ fill:var(--muto); font-size:13px; }
+
+/* ---------- la banda che sceglie l'ora ----------
+   In fondo, a tutta larghezza: la stessa posizione che la striscia dei due
+   mesi occupa gia' nella pagina TEMPO, dove il tecnico l'ha gia' vista.
+   Altezza dichiarata: 52 della striscia, 4 di stacco, 38 dei bottoni e 2 di
+   fondo. Novantasei in tutto, e non uno di piu'. */
+.banda{
+  flex:0 0 auto; display:flex; flex-direction:column; gap:4px;
+  padding:0 14px 2px;
+}
+.striscia{
+  width:100%; height:52px; display:block; overflow:visible;
+  cursor:pointer; touch-action:none;
+  /* senza questa riga il trascinamento seleziona il nome del mese e lo
+     colora di blu, come se si stesse copiando del testo */
+  user-select:none; -webkit-user-select:none;
+}
+.striscia:focus{ outline:none; }
+.striscia:focus-visible{ outline:2px solid var(--rif); outline-offset:1px; }
+
+/* l'altezza grigia sono le degradate, il segno rosso le ore da fermare */
+.st-degr{ stroke:var(--dato); stroke-width:1; opacity:.55; fill:none; }
+.st-base{ stroke:var(--bordo); stroke-width:1; fill:none; }
+.st-grave{ stroke:var(--grave); stroke-width:3; fill:none; }
+.st-mese{ fill:var(--muto); font-size:12px; }
+.st-tacca{ fill:var(--ink); }
+.st-guida{ stroke:var(--ink); stroke-width:1; stroke-dasharray:3 3; opacity:.5; fill:none; }
+.st-cursore{ stroke:var(--ink); stroke-width:2; fill:none; }
+
+/* i bottoni dei momenti: una riga sola che scorre, cosi' una corsa con piu'
+   chiamate non manda a capo e non ruba altezza all'anello */
+.momenti{
+  display:flex; gap:8px; height:38px; align-items:stretch;
+  overflow-x:auto; overflow-y:hidden; scrollbar-width:thin;
+}
+.mom{
+  flex:0 0 auto; font:inherit; font-size:13px; line-height:1.3; text-align:left;
+  background:var(--sup); color:var(--ink);
+  border:1px solid var(--bordo); border-radius:3px;
+  padding:2px 9px; cursor:pointer; white-space:nowrap;
+}
+.mom small{ display:block; font-size:11px; color:var(--muto); font-weight:400; }
+.mom:hover{ border-color:var(--rif); }
+.mom[aria-pressed="true"]{
+  border-color:var(--ink); border-width:2px; padding:1px 8px; font-weight:600;
+}
+.mom[aria-pressed="true"] small{ color:var(--ink); }
+.mom:focus{ outline:none; }
+.mom:focus-visible{ outline:2px solid var(--rif); outline-offset:1px; }
+
+/* la linea del tempo che non arriva: una riga, e la giostra resta viva */
+/* nascosta vuol dire nascosta: senza questa riga il `display:flex` batte il
+   `[hidden]` del browser e la riga vuota ruba 56 px alla giostra */
+.banda-assente[hidden]{ display:none; }
+.banda-assente{
+  display:flex; gap:8px; align-items:baseline; flex-wrap:wrap;
+  height:52px; padding:0 2px; font-size:13px; color:var(--muto);
+  border-top:1px dashed var(--bordo);
+}
+.banda-assente b{ color:var(--ink); font-size:14px; }
+
+/* il verdetto che non c'e', al centro della giostra */
+.centro .guasto{ font-size:22px; color:var(--grave); font-weight:600; }
