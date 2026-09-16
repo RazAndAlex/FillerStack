@@ -480,7 +480,41 @@ emesso `BadNoSubscription`. I 269 eventi già scritti restano evidenza di
 preflight, non una misura di dieci minuti. La correzione della subscription è
 una nuova attività e non è stata tentata nel Blocco A.
 
-## 2026-08-22, la corsa che la dashboard mostra (Blocco C)
+## 2026-09-16, la corsa che la dashboard mostra è `deriva_lenta_60d`
+
+**Sostituisce la voce del 2026-08-22 qui sotto**, che diceva di non spostare il
+KV senza una nuova decisione. Questa è quella decisione: *«va bene stiamo cone
+deriva lenta 60d»*, poi *«e si ti autorizzo a cambiare»* per la riga di
+database.
+
+Le due corse sono la stessa macchina e lo stesso calendario (2026-06-21 04:00 →
+2026-08-19 19:29). Cambia solo la velocità con cui nascono i guasti:
+`storico_60d` ha rampe di due giorni, `deriva_lenta_60d` rampe di due-tre
+settimane. La ragione della scelta sta nella pagina DECISIONE: una previsione
+serve solo se la squadra fa in tempo ad arrivare, e con le rampe da due giorni
+non ci arriva mai. Sulla deriva lenta, alla valvola 8 il 4 luglio alle 07:00, il
+verdetto è `intervieni` con una stima vera, la squadra arriva in 24,0 h e il
+crollo è atteso al più presto in 28,7 h: **la squadra arriva prima del crollo**.
+Sullo storico la stima arriva 14 h *dopo* il verdetto, cioè troppo tardi per
+costruirci sopra una decisione.
+
+Le due corse non sono una più povera dell'altra: la deriva lenta ha 14 allarmi
+contro 12, 82.904 transizioni contro 64.180, e le stesse 33.565 ore riassunte.
+
+Il KV `current_run_id` in `machine_state` è stato spostato a
+`deriva_lenta_60d`. Il launcher passa comunque `--run` esplicito al proxy, così
+la pagina non dipende dal KV; il KV serve a chi chiama l'API senza dire quale
+corsa vuole. La ragione che reggeva la voce del 22 agosto — le corse live si
+vedevano mezze vuote — non si applica: qui la corsa è lunga sessanta giorni come
+l'altra.
+
+Nota operativa: la cache della baseline in `machine_state` ha **un solo posto**,
+quindi due corse non possono stare su schermo insieme e il primo caricamento
+dopo un cambio di corsa paga il ricalcolo (33,9 s misurati, contro il tetto di
+30 s del proxy: senza scaldarla prima, le pagine MACCHINA e VALVOLE rispondono
+502).
+
+## 2026-08-22, la corsa che la dashboard mostra (Blocco C) — superata il 2026-09-16
 
 La dashboard mostra **`storico_60d`**, i sessanta giorni di storico. Decisione
 dell'utente, presa dopo aver aperto le due pagine vere a confronto.

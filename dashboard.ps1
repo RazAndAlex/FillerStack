@@ -87,6 +87,15 @@ $PORTA_PAGINE  = 8078
 $CONTAINER     = 'plcsim-postgres'
 $INDIRIZZO     = "http://127.0.0.1:$PORTA_PAGINE/a/"
 
+# La corsa che la dashboard apre. Nel database ce ne sono due, stessa macchina e
+# stesso calendario: cambia la velocita' con cui nascono i guasti. `storico_60d`
+# ha rampe di due giorni, `deriva_lenta_60d` rampe di due-tre settimane, cioe' il
+# tempo che serve perche' una previsione abbia senso. Passata con `--run`, viaggia
+# come `run_id` su ogni chiamata inoltrata: senza, il server ricadrebbe sul KV
+# `current_run_id` del database, che dice ancora `storico_60d`.
+# Per tornare indietro basta rimettere qui l'altro nome.
+$CORSA         = 'deriva_lenta_60d'
+
 Set-Location $RADICE
 
 $avviati           = New-Object System.Collections.ArrayList
@@ -236,9 +245,15 @@ try {
     $firma  = if ($vivo) { 'server_api.py' } else { 'server_demo.py' }
     Libera-Porta $PORTA_PAGINE $firma 'il server delle pagine'
 
+    # `--run` esiste solo sul server dei dati veri: la fotografia registrata porta
+    # gia' dentro la sua corsa e non sa cosa farsene.
+    $argomenti = @($script, '--port', $PORTA_PAGINE)
+    if ($vivo) { $argomenti += @('--run', $CORSA) }
+
     Riga "  avvio il server delle pagine sulla porta $PORTA_PAGINE"
+    if ($vivo) { Riga "  corsa mostrata: $CORSA" }
     $pagine = Start-Process -FilePath $python `
-        -ArgumentList $script, '--port', $PORTA_PAGINE `
+        -ArgumentList $argomenti `
         -NoNewWindow -PassThru
     [void]$avviati.Add($pagine)
     Adotta $pagine 'il server delle pagine'
