@@ -780,3 +780,57 @@ avviato il 21 agosto. Non c'entra col lanciatore e non viene toccato.
   tutte visibili e da mostrare all'utente prima di toccarle; provenienza del
   modello e SpeedActual invariati con le loro condizioni; quale delle due
   corse debba essere quella di casa della schermata della decisione. Chiusa il 16 settembre: dove sta il segno «senza stima» sulla giostra, con l'utente che ha scelto la forma B fra le quattro disegnate in `work/pezzo7/stima/` («okay, vai con la tua raccomandazione») e che il 16, sulla pagina vera, ha confermato il segno («si va bene il quadrato, lo avevo gia approvato questo»). Chiusa il 16 settembre anche la parte sui dati, il «segnale dal futuro»: `fatti_valvola` cercava il primo segno di degrado sulla corsa intera, quindi la risposta a un'ora poteva portare una data successiva a quell'ora. Colpiva 1.224 ore su 1.407 in `storico_60d` e arrivava sullo schermo in 96 ore, contro le zero che avevo previsto. L'utente ha scelto di cercare il segno solo fino all'ora guardata («va bene vai con la A»), e la correzione porta il segnale ora per ora anche dentro il precalcolo, perche' quello chiama `fatti_valvola` una volta sola a fine corsa. Il taglio vale per il solo segnale: la baseline resta sulla serie intera, perche' la finestra sana finisce dentro la corsa. Costo misurato: il segno e' lo stesso e compare 24 ore dopo, quante ne pretende `REGIME_MIN_H`. I due sha256 del metro e le cifre di `linea()` non si muovono.
+
+
+## Stato al 2026-09-16 — supera tutte le sezioni precedenti
+
+- **La dashboard apre su `deriva_lenta_60d`**, scelta dall'utente («va bene stiamo
+  cone deriva lenta 60d») dopo il confronto misurato fra le due corse. Il trasloco e'
+  in due posti: `dashboard.ps1` dichiara `$CORSA = 'deriva_lenta_60d'` e lo passa come
+  `--run` al proxy, e il KV `current_run_id` in `machine_state` e' stato spostato con
+  il permesso esplicito dell'utente («e si ti autorizzo a cambiare»). Le due corse non
+  possono convivere a schermo: il KV `baseline_cache` ha un solo posto, chiedere la
+  baseline dell'altra corsa forza un ricalcolo di ~34 s e il proxy stacca a 30 s, cioe'
+  HTTP 502 e pagina vuota. La casa e' per forza una sola per tutta la dashboard, e il
+  costo del trasloco e' un ricalcolo da fare una volta. Motivo della scelta: su
+  `deriva_lenta_60d` la stima del crollo arriva nella stessa ora del verdetto economico,
+  su `storico_60d` arriva 10-14 ore dopo. Decisione in `DECISIONS.md`, 2026-09-16, che
+  dichiara superata quella del 2026-08-22.
+- **La marca «senza stima» era spenta ovunque, ed e' tornata** (`dashboard/decisione/
+  pagina.js`): la tessera la accendeva su due esiti su nove, e da quando il segnale si
+  cerca solo fino all'ora guardata l'esito normale e' `nessun_segnale`, che non era in
+  quella lista. Misurato in SQL: **0 marche su 98.490 righe**, cioe' il quadratino
+  approvato dall'utente non compariva piu' da nessuna parte, mentre la scheda accanto
+  scriveva gia' «nessuna stima» con una regola diversa. La regola e' ora la stessa delle
+  due meta' dello schermo, `esito !== 'stimato'`: 1.859 coppie (ora, valvola) marcate su
+  `storico_60d` e 1.642 su `deriva_lenta_60d`, sempre e solo su tessere gia' colorate.
+- **Le pagine si aprono in meno di un secondo**, dopo che l'utente ha trovato lente
+  MACCHINA e le altre («ci ha messo molto tempo a caricare. perche'?»). Misurato in un
+  browser vero a 1536x770, dal clic alla rete ferma: MACCHINA da 4,6 a 0,70 s,
+  PREDITTIVA da 17,2 a 0,75 s, CARTA-PC da 2,3 a 0,78 s, DECISIONE da 1,10 a 0,68 s;
+  VALVOLE 1,5 s e OEE 0,64 s erano gia' a posto. Due cause, in `pipeline/api.py`:
+  (1) `_CycleCountsRollup` sapeva estendere la copertura del riepilogo a sinistra ma non
+  a destra, quindi una serie chiesta fino ad adesso su una corsa finita il 19 agosto
+  pagava 332 interrogazioni per farsi dire «nessuna riga»; il confine giusto non e' la
+  fine della copertura ma `_ceil_ora(MAX(event_ts))`, perche' l'ultima ora della corsa e'
+  parziale e porta 19.361 cicli che il riepilogo non ha. (2) Il riepilogo tiene ore
+  intere, e la corsa finisce alle 19:29:35, quindi nessun bordo di finestra cade su
+  un'ora tonda: 185 bordi parziali costavano **2.327.586 righe di `cycles` a ogni
+  apertura**, 3,8 s. Rimedio: `_memoria_risposta`, memoria di processo per
+  `machine/oee/series` e `valves/progression/series` con chiave (corsa, ultimo ciclo,
+  estremi e conteggio del riepilogo, parametri), sullo stesso precedente dichiarato del
+  KV `baseline_cache`. Su una corsa viva la chiave cambia da sola; la prima versione
+  della chiave, che non guardava il riepilogo, e' stata colta dai test
+  `test_serie_identica_con_e_senza_riepilogo` perche' nascondeva il ripiego. Risposte
+  confrontate campo per campo con il codice precedente sulle due corse, zero differenze.
+- **Resta lenta la CARTA** (`/k1/`, 8,7 s) e non e' calcolo: il database risponde in
+  0,22 s a valvola, ma la pagina scarica `valves/N/kpi?limit=5000` per tutte e 35 le
+  valvole, 2,4 MB ciascuna, circa 84 MB che il browser riceve e interpreta. Si corregge
+  solo cambiando cosa la pagina carica (la valvola scelta subito, le altre a richiesta),
+  quindi e' una decisione dell'utente e sta davanti a lui.
+- **Cosa resta aperto**: la decisione sulla CARTA; la quotazione della valvola isobarica
+  da Eckenroth; la pulizia delle incoerenze docs/codice (README e `dashboard.ps1` dicono
+  ancora «cinque pagine», titolo di PREDITTIVA, conteggi test); il «-27,4 h · crollo
+  stimato, al piu' presto» su v8 il 04-07 alle 04:00 su `storico_60d`, che e' di prima
+  della scelta A e va mostrato all'utente prima di toccarlo; provenienza del modello e
+  SpeedActual invariati con le loro condizioni.

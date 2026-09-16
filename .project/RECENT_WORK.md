@@ -3558,3 +3558,81 @@ avvenuto, per tutte e tre le valvole, perche' `REGIME_MIN_H = 24` pretende un gi
 che confermano. Verifiche: i due sha256 del metro identici, le cifre di `linea()` identiche su
 entrambe le corse, 67.130 confronti fra la mappa nuova e la regola originale con zero
 differenze, zero segnali datati dopo l'ora sulle ore campione.
+
+
+## 2026-09-16 — Le pagine si aprono in meno di un secondo, e la casa e' `deriva_lenta_60d`
+
+L'utente ha aperto la dashboard consegnata e ha scritto: *«ho cliccato su macchina e ci
+ha messo molto tempo a caricare. perche'? stessa cosa se clicco su latre, e' abbstanza
+lentino. non si puo migliorare? e si ti autorizzo a cambiare. e slave nella repo il
+quadratino»*. Tre richieste in una riga, tutte chiuse.
+
+**Dove andava il tempo, misurato.** Sette pagine cronometrate in un browser vero a
+1536x770, dal clic alla rete ferma (`scratchpad/tempi_pagine.py`):
+
+| pagina | prima | dopo |
+|---|---|---|
+| MACCHINA `/a/` | 4,60 s | 0,70 s |
+| PREDITTIVA | 17,25 s | 0,75 s |
+| CARTA-PC `/pc/` | 2,31 s | 0,78 s |
+| DECISIONE | 1,10 s | 0,68 s |
+| VALVOLE `/v1/` | 1,4 s | 1,5 s |
+| OEE | 0,63 s | 0,64 s |
+| CARTA `/k1/` | 8,71 s | 8,71 s |
+
+`EXPLAIN (ANALYZE, BUFFERS)` ha dato il numero che spiega tutto: `machine/oee/series`
+leggeva **2.327.586 righe** di `cycles` a ogni apertura, 1,6 M buffer hit, 3,8 s. La
+causa e' che `cycle_rollup_hour` tiene ore intere e l'istante di osservazione della
+corsa e' 19:29:35,5, quindi nessun bordo delle finestre (turno, giorno, settimana) cade
+su un'ora tonda: 185 bordi parziali da ~30,5 minuti e 12.582 righe l'uno, contati ciclo
+per ciclo.
+
+**Due correzioni, in `pipeline/api.py`.**
+
+1. `_CycleCountsRollup` sapeva gia' che *prima* dell'inizio della corsa il vuoto e' un
+   fatto (`_sx_illimitato`) ma non sapeva la stessa cosa a destra, e una serie chiesta
+   fino ad adesso su una registrazione ferma al 19 agosto pagava 332 interrogazioni per
+   farsi rispondere «nessuna riga». Il confine giusto non e' la fine della copertura del
+   riepilogo: e' `_ceil_ora(MAX(event_ts))`, perche' l'ultima ora della corsa e' parziale
+   e porta 19.361 cicli che il riepilogo non ha. Il primo tentativo (`_dx_illimitato`,
+   che cercava cicli dopo `cov_hi + ROLLUP_BUCKET`) non scattava mai proprio per quei
+   19.361 cicli: scartato. 332 letture diventano 8.
+2. `_memoria_risposta`, accanto a `_last_cycle_ts`: una memoria di processo da 48 posti
+   per `machine/oee/series` e `valves/progression/series`. Legittima sullo stesso
+   precedente dichiarato del KV `baseline_cache` — non entra nel piano dati ed e'
+   interamente ricalcolabile dalla chiave. La chiave e' (corsa, ultimo ciclo, estremi e
+   conteggio di `cycle_rollup_hour`, parametri della richiesta), quindi su una corsa viva
+   cade da sola. La prima versione della chiave non guardava il riepilogo e i cinque
+   `test_serie_identica_con_e_senza_riepilogo` l'hanno colta: serviva una risposta in
+   memoria attraverso una cancellazione deliberata del riepilogo, nascondendo il ripiego
+   e mentendo in `__meta.conteggi_da`. E' per questo che l'impronta del riepilogo e' nella
+   chiave.
+
+**Scartato di proposito**: allineare l'istante di osservazione all'ora tonda. Avrebbe
+dato lo stesso guadagno con due righe, ma avrebbe cambiato in silenzio i numeri di OEE
+mostrati, che e' una decisione dell'utente. Le risposte sono state confrontate **campo
+per campo** con il codice precedente sulle due corse, prima e dopo ogni modifica: zero
+differenze.
+
+**Una diagnosi mia sbagliata, per memoria**: avevo dato per colpevole la coda di
+settembre (la serie che cammina all'indietro dall'orologio di oggi). Non lo era — il
+proxy inietta `at` = fine della corsa su `machine/oee` e `machine/oee/series`. La
+correzione a destra resta giusta e utile a chi chiama l'API direttamente, ma il costo
+della pagina erano i 185 bordi. Il modo che ha trovato la verita' e' stato cronometrare
+le pagine vere in un browser invece di interrogare le rotte.
+
+**CARTA `/k1/` resta a 8,71 s ed e' una domanda di prodotto.** Il database risponde in
+0,22 s a valvola; la pagina scarica pero' `valves/N/kpi?limit=5000` per tutte e 35 le
+valvole, **2.398.994 byte ciascuna**, circa 84 MB di trasferimento e parsing nel browser.
+Il rimedio (caricare per intero la sola valvola scelta e le altre a richiesta) cambia il
+comportamento della pagina, quindi e' stato messo davanti all'utente con la
+raccomandazione esplicita invece di essere fatto.
+
+**Le altre due richieste.** Il KV `current_run_id` in `machine_state` e' passato da
+`storico_60d` a `deriva_lenta_60d` con l'autorizzazione esplicita (l'`UPDATE` era stato
+negato dal classificatore in auto mode il giorno prima). La marca «senza stima» e' stata
+committata.
+
+**Verifiche**: 81 test passati fra OEE, riepilogo, `run_id` e progressione; giro finale
+delle sette pagine su `deriva_lenta_60d` con zero errori di console e zero risposte
+>= 400. Commit `70138e7` (la marca), `cd40c8b` (la casa) e `a0e6c5e` (la velocita').
